@@ -7,16 +7,11 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { Modal } from '../components/ui/Modal';
-import { BottomNav } from '../components/ui/BottomNav';
-import type { TabType } from '../components/ui/BottomNav';
 import { useSyncEngine } from '../hooks/useSyncEngine';
 
 export const StyleGuide: React.FC = () => {
   // Sync Engine & Online Status
   const { isOnline, isSyncing } = useSyncEngine();
-
-  // Navigation State
-  const [activeTab, setActiveTab] = useState<TabType>('caisse');
 
   // Interactive component states
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -228,9 +223,6 @@ export const StyleGuide: React.FC = () => {
           </div>
         </div>
       </Modal>
-
-      {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 };
