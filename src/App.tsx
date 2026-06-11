@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Caisse } from './pages/Caisse';
-import { StyleGuide } from './pages/_StyleGuide';
+import { Dashboard } from './pages/Dashboard';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 
 function App() {
@@ -50,7 +50,7 @@ function App() {
           </div>
         )}
         
-        {activeTab === 'dashboard' && <StyleGuide />}
+        {activeTab === 'dashboard' && <Dashboard />}
       </main>
 
       {/* Global Bottom Navigation */}
