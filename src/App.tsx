@@ -6,6 +6,8 @@ import { Dashboard } from './pages/Dashboard'
 import { Stock } from './pages/Stock'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
 import { Loader2, LogOut } from 'lucide-react'
+import { SyncIndicator } from './pwa/SyncIndicator'
+import { PwaPrompt } from './pwa/PwaPrompt'
 
 function App() {
   const { user, profile, boutique, isLoading, signOut } = useAuth()
@@ -45,6 +47,7 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-md">
+          <SyncIndicator />
           <button 
             onClick={signOut}
             title="Déconnexion"
@@ -76,6 +79,9 @@ function App() {
 
       {/* Global Bottom Navigation */}
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* PWA Prompt for install & updates */}
+      <PwaPrompt />
     </div>
   )
 }
