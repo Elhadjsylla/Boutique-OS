@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import Login from './components/Login'
 import { Caisse } from './pages/Caisse'
 import { Dashboard } from './pages/Dashboard'
+import { Stock } from './pages/Stock'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
 import { Loader2, LogOut } from 'lucide-react'
 
@@ -58,15 +59,7 @@ function App() {
       <main className="w-full">
         {activeTab === 'caisse' && <Caisse />}
         
-        {activeTab === 'stock' && (
-          <div className="pt-24 px-margin-mobile text-center">
-            <div className="bg-card border border-border p-lg rounded-card shadow-sm max-w-sm mx-auto">
-              <span className="material-symbols-outlined text-5xl text-outline mb-sm">inventory_2</span>
-              <p className="font-headline-sm text-on-surface mb-xs">Inventaire & Stock</p>
-              <p className="text-body-md text-outline">Ce module est en cours de développement par Le Big EL.</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'stock' && <Stock />}
         
         {activeTab === 'ardoise' && (
           <div className="pt-24 px-margin-mobile text-center">
