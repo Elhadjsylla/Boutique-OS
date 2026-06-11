@@ -1,90 +1,139 @@
--- 20260611000000_init_schema.sql
--- BoutikOS Database Init Migration
+-- supabase/migrations/0001_init.sql
+-- Migration initiale : BoutikOS public schema, tables, triggers, indexes et RLS
 
 -- 1. EXTENSIONS
 create extension if not exists "uuid-ossp";
 
--- 2. TABLES CREATION
+-- 2. UPDATED_AT TRIGGER FUNCTION
+create or replace function public.set_current_timestamp_updated_at()
+returns trigger as $$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$$ language plpgsql;
+
+-- 3. TABLES CREATION
 
 -- Boutiques
-create table public.boutiques (
+create table if not exists public.boutiques (
     id uuid primary key default gen_random_uuid(),
     nom text not null,
     adresse text,
-    gerant_id uuid, -- Reference to auth.users (will be linked via FK or kept as UUID)
-    created_at timestamptz not null default now()
+    gerant_id uuid, -- link to auth.users (profile id)
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 -- Profils (Linked to Supabase auth.users)
-create table public.profils (
-    id uuid primary key,
+create table if not exists public.profils (
+    id uuid primary key references auth.users(id) on delete cascade,
     role text not null check (role in ('caissier', 'gerant', 'super_admin')),
     boutique_id uuid references public.boutiques(id) on delete set null,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
--- Foreign key check for boutiques.gerant_id pointing to auth.users
--- Since auth.users is managed by Supabase, we add a foreign key from profils.id to auth.users.id
-alter table public.profils add constraint fk_profils_auth_users foreign key (id) references auth.users(id) on delete cascade;
+-- Foreign key in boutiques pointing to public.profils.id (optional but secure)
+-- We can add a constraint, but it's simpler to keep gerant_id as a standard uuid reference
+alter table public.boutiques drop constraint if exists fk_boutiques_gerant;
+alter table public.boutiques add constraint fk_boutiques_gerant foreign key (gerant_id) references public.profils(id) on delete set null;
 
 -- Produits
-create table public.produits (
+create table if not exists public.produits (
     id uuid primary key default gen_random_uuid(),
     boutique_id uuid not null references public.boutiques(id) on delete cascade,
     nom text not null,
-    prix numeric not null check (prix >= 0),
-    quantite integer not null default 0 check (quantite >= 0),
-    seuil_alerte integer not null default 5,
+    prix numeric not null check (prix > 0), -- Constraint: prix > 0
+    quantite integer not null default 0 check (quantite >= 0), -- Constraint: quantite >= 0
+    seuil_alerte integer not null default 5 check (seuil_alerte >= 0), -- Constraint: seuil_alerte >= 0
     archive boolean not null default false,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 -- Ventes
-create table public.ventes (
+create table if not exists public.ventes (
     id uuid primary key default gen_random_uuid(),
     boutique_id uuid not null references public.boutiques(id) on delete cascade,
     caissier_id uuid not null references auth.users(id),
-    total numeric not null check (total >= 0),
-    created_at timestamptz not null default now()
+    total numeric not null default 0 check (total >= 0), -- Constraint: montants >= 0
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 -- Vente Items
-create table public.vente_items (
+create table if not exists public.vente_items (
     id uuid primary key default gen_random_uuid(),
     vente_id uuid not null references public.ventes(id) on delete cascade,
-    produit_id uuid not null references public.produits(id),
+    produit_id uuid not null references public.produits(id) on delete restrict,
     quantite integer not null check (quantite > 0),
-    prix_unitaire numeric not null check (prix_unitaire >= 0)
+    prix_unitaire numeric not null check (prix_unitaire >= 0), -- Constraint: montants >= 0
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 -- Ardoises (Dettes clients)
-create table public.ardoises (
+create table if not exists public.ardoises (
     id uuid primary key default gen_random_uuid(),
     boutique_id uuid not null references public.boutiques(id) on delete cascade,
     client_nom text not null,
-    montant_total numeric not null check (montant_total >= 0),
-    statut text not null check (statut in ('non_paye', 'partiel', 'paye')),
-    created_at timestamptz not null default now()
+    montant_total numeric not null default 0 check (montant_total >= 0), -- Constraint: montants >= 0
+    statut text not null check (statut in ('en_cours', 'soldee')), -- Constraint: status ('en_cours', 'soldee')
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 -- Ardoise Paiements
-create table public.ardoise_paiements (
+create table if not exists public.ardoise_paiements (
     id uuid primary key default gen_random_uuid(),
     ardoise_id uuid not null references public.ardoises(id) on delete cascade,
-    montant numeric not null check (montant > 0),
-    paid_at timestamptz not null default now()
+    montant numeric not null check (montant >= 0), -- Constraint: montants >= 0
+    paid_at timestamptz not null default now(),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
--- 3. INDEXES FOR PERFORMANCE
-create index idx_profils_boutique on public.profils(boutique_id);
-create index idx_produits_boutique on public.produits(boutique_id);
-create index idx_ventes_boutique on public.ventes(boutique_id);
-create index idx_ventes_created_at on public.ventes(created_at);
-create index idx_vente_items_vente on public.vente_items(vente_id);
-create index idx_ardoises_boutique on public.ardoises(boutique_id);
-create index idx_ardoise_paiements_ardoise on public.ardoise_paiements(ardoise_id);
+-- 4. ATTACH UPDATED_AT TRIGGERS TO EACH TABLE
+drop trigger if exists set_updated_at on public.boutiques;
+create trigger set_updated_at before update on public.boutiques
+    for each row execute procedure public.set_current_timestamp_updated_at();
 
--- 4. UTILITY SECURITY FUNCTIONS (Avoids policy recursion on public.profils)
+drop trigger if exists set_updated_at on public.profils;
+create trigger set_updated_at before update on public.profils
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+drop trigger if exists set_updated_at on public.produits;
+create trigger set_updated_at before update on public.produits
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+drop trigger if exists set_updated_at on public.ventes;
+create trigger set_updated_at before update on public.ventes
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+drop trigger if exists set_updated_at on public.vente_items;
+create trigger set_updated_at before update on public.vente_items
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+drop trigger if exists set_updated_at on public.ardoises;
+create trigger set_updated_at before update on public.ardoises
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+drop trigger if exists set_updated_at on public.ardoise_paiements;
+create trigger set_updated_at before update on public.ardoise_paiements
+    for each row execute procedure public.set_current_timestamp_updated_at();
+
+-- 5. PERFORMANCE INDEXES (On Foreign Keys and boutique_id)
+create index if not exists idx_profils_boutique_id on public.profils(boutique_id);
+create index if not exists idx_produits_boutique_id on public.produits(boutique_id);
+create index if not exists idx_ventes_boutique_id on public.ventes(boutique_id);
+create index if not exists idx_ventes_caissier_id on public.ventes(caissier_id);
+create index if not exists idx_vente_items_vente_id on public.vente_items(vente_id);
+create index if not exists idx_vente_items_produit_id on public.vente_items(produit_id);
+create index if not exists idx_ardoises_boutique_id on public.ardoises(boutique_id);
+create index if not exists idx_ardoise_paiements_ardoise_id on public.ardoise_paiements(ardoise_id);
+
+-- 6. SECURITY FUNCTIONS (RLS Helpers)
 create or replace function public.get_my_role()
 returns text
 language sql security definer
@@ -101,7 +150,7 @@ as $$
   select boutique_id from public.profils where id = auth.uid();
 $$;
 
--- 5. TRIGGER FOR AUTO-CREATING USER PROFILES
+-- 7. TRIGGER FOR AUTH -> PUBLIC.PROFILS SYNCHRONIZATION
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -119,11 +168,12 @@ begin
 end;
 $$ language plpgsql security definer;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- 6. ROW LEVEL SECURITY (RLS) POLICIES
+-- 8. ROW LEVEL SECURITY (RLS) POLICIES
 
 -- Enable RLS on all tables
 alter table public.boutiques enable row level security;
@@ -216,8 +266,6 @@ create policy "caissier, gerant and super_admin can insert sales"
         public.get_my_role() = 'super_admin'
     );
 
--- Note: No update/delete allowed on sales for security/traceability.
-
 -- Policies for VENTE_ITEMS
 create policy "Users can view sale items of their boutique"
     on public.vente_items for select
@@ -242,9 +290,7 @@ create policy "Users can insert sale items of their boutique"
         )
     );
 
--- Note: No update/delete allowed on sale items for security/traceability.
-
--- Policies for ARDOISES (Caissier has no access to Ardoises)
+-- Policies for ARDOISES
 create policy "gerant and super_admin can view ardoises"
     on public.ardoises for select
     using (
@@ -273,7 +319,7 @@ create policy "gerant and super_admin can delete ardoises"
         public.get_my_role() = 'super_admin'
     );
 
--- Policies for ARDOISE_PAIEMENTS (Caissier has no access to payments)
+-- Policies for ARDOISE_PAIEMENTS
 create policy "gerant and super_admin can view payments"
     on public.ardoise_paiements for select
     using (
