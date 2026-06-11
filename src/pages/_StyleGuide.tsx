@@ -56,7 +56,7 @@ export const StyleGuide: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="pt-20 px-margin-mobile max-w-lg mx-auto flex flex-col gap-lg">
+      <main className="pt-20 px-margin-mobile max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-lg">
         {/* Title */}
         <div className="text-left">
           <h2 className="font-headline-lg text-on-surface">Design System & UI Kit</h2>
