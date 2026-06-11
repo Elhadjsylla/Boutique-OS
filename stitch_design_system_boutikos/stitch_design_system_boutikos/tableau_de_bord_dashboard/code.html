@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#382000",
+                    "error": "#ba1a1a",
+                    "secondary": "#006d37",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#a9c9f2",
+                    "on-secondary-container": "#007239",
+                    "surface-container-highest": "#e0e3e6",
+                    "on-background": "#191c1e",
+                    "outline": "#73777f",
+                    "on-primary-fixed": "#001d36",
+                    "on-surface-variant": "#43474e",
+                    "on-secondary-fixed-variant": "#005228",
+                    "tertiary-container": "#553300",
+                    "secondary-fixed-dim": "#61de8a",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c3c6cf",
+                    "primary-fixed": "#d1e4ff",
+                    "primary-container": "#1a3c5e",
+                    "on-tertiary-fixed": "#2b1700",
+                    "on-tertiary-container": "#e69200",
+                    "surface-container": "#eceef1",
+                    "surface-dim": "#d8dadd",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#7bf8a1",
+                    "surface-container-low": "#f2f4f7",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#28496b",
+                    "on-primary-container": "#87a7ce",
+                    "on-secondary-fixed": "#00210c",
+                    "surface-bright": "#f7f9fc",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e6e8eb",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "on-secondary": "#ffffff",
+                    "primary": "#002645",
+                    "surface": "#f7f9fc",
+                    "inverse-on-surface": "#eff1f4",
+                    "inverse-surface": "#2d3133",
+                    "primary-fixed-dim": "#a9c9f2",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#7efba4",
+                    "on-tertiary-fixed-variant": "#663e00",
+                    "surface-tint": "#416084",
+                    "tertiary-fixed": "#ffddb9",
+                    "background": "#f7f9fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "margin-desktop": "48px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["DM Sans"],
+                    "numeric-display": ["DM Sans"],
+                    "headline-lg-mobile": ["DM Sans"],
+                    "headline-sm": ["DM Sans"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["DM Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "numeric-display": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-20">
+<!-- Top App Bar (Shared Component Strategy) -->
+<header class="bg-primary text-on-primary font-headline-md text-headline-md fixed top-0 left-0 w-full z-50 h-14 flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed font-bold text-xs">
+                JD
+            </div>
+<span class="font-headline-md text-headline-md text-on-primary">BoutikOS</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined hover:bg-primary-container/20 p-1 rounded-full transition-all active:scale-95" data-icon="notifications">notifications</button>
+</div>
+</header>
+<main class="pt-20 px-margin-mobile max-w-5xl mx-auto space-y-6">
+<!-- Welcome Banner -->
+<section class="space-y-1">
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">Bonjour, Jean-Marc</h1>
+<p class="font-body-md text-on-surface-variant">Lundi 14 Octobre 2024</p>
+</div>
+<div class="bg-surface-container rounded-xl px-3 py-1 flex items-center gap-2 border border-outline-variant">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="circle" style="font-variation-settings: 'FILL' 1;">circle</span>
+<span class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Ouvert</span>
+</div>
+</div>
+</section>
+<!-- Metric Cards 2x2 Grid -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Revenue Navy -->
+<div class="bg-primary p-4 rounded-[16px] flex flex-col justify-between h-32 shadow-sm relative overflow-hidden group">
+<span class="material-symbols-outlined text-on-primary/30 absolute -right-2 -top-2 text-6xl rotate-12" data-icon="payments">payments</span>
+<p class="font-label-md text-label-md text-on-primary/80 uppercase tracking-widest z-10">Revenu Jour</p>
+<div>
+<p class="font-numeric-display text-numeric-display text-on-primary tabular-nums z-10">450.500 <span class="text-sm font-normal opacity-70">F</span></p>
+<div class="mt-2 w-full h-1 bg-on-primary/20 rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed w-3/4 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Sales Green -->
+<div class="bg-secondary p-4 rounded-[16px] flex flex-col justify-between h-32 shadow-sm relative overflow-hidden group">
+<span class="material-symbols-outlined text-on-secondary/30 absolute -right-2 -top-2 text-6xl rotate-12" data-icon="shopping_basket">shopping_basket</span>
+<p class="font-label-md text-label-md text-on-secondary/80 uppercase tracking-widest z-10">Ventes</p>
+<div>
+<p class="font-numeric-display text-numeric-display text-on-secondary tabular-nums z-10">24</p>
+<p class="text-[10px] text-on-secondary/70 mt-1">+12% vs hier</p>
+</div>
+</div>
+<!-- Stock Alerts Red -->
+<div class="bg-error p-4 rounded-[16px] flex flex-col justify-between h-32 shadow-sm relative overflow-hidden group">
+<span class="material-symbols-outlined text-on-error/30 absolute -right-2 -top-2 text-6xl rotate-12" data-icon="warning">warning</span>
+<p class="font-label-md text-label-md text-on-error/80 uppercase tracking-widest z-10">Alertes Stock</p>
+<div>
+<p class="font-numeric-display text-numeric-display text-on-error tabular-nums z-10">08</p>
+<p class="text-[10px] text-on-error/70 mt-1">Articles critiques</p>
+</div>
+</div>
+<!-- Credits Orange -->
+<div class="bg-tertiary-container p-4 rounded-[16px] flex flex-col justify-between h-32 shadow-sm relative overflow-hidden group border border-tertiary/10">
+<span class="material-symbols-outlined text-on-tertiary-container/30 absolute -right-2 -top-2 text-6xl rotate-12" data-icon="history_edu">history_edu</span>
+<p class="font-label-md text-label-md text-on-tertiary-container/80 uppercase tracking-widest z-10">Ardoise</p>
+<div>
+<p class="font-numeric-display text-numeric-display text-on-tertiary-container tabular-nums z-10">12.400 <span class="text-sm font-normal opacity-70">F</span></p>
+<p class="text-[10px] text-on-tertiary-container/70 mt-1">3 clients actifs</p>
+</div>
+</div>
+</section>
+<!-- Main Content Layout (Asymmetric/Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Recent Sales (2/3 width on desktop) -->
+<section class="md:col-span-2 space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary">Ventes Récentes</h2>
+<button class="text-primary font-label-md text-label-md underline underline-offset-4">Voir tout</button>
+</div>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-[0px_4px_12px_rgba(26,60,94,0.08)]">
+<div class="divide-y divide-outline-variant">
+<!-- Sale 1 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="receipt_long">receipt_long</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold">Vente #842</p>
+<p class="font-label-md text-label-md text-on-surface-variant">14:20 • Espèces</p>
+</div>
+</div>
+<p class="font-numeric-display text-primary tabular-nums">12.500 F</p>
+</div>
+<!-- Sale 2 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="receipt_long">receipt_long</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold">Vente #841</p>
+<p class="font-label-md text-label-md text-on-surface-variant">13:45 • Orange Money</p>
+</div>
+</div>
+<p class="font-numeric-display text-primary tabular-nums">4.200 F</p>
+</div>
+<!-- Sale 3 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold">Vente #840 (Crédit)</p>
+<p class="font-label-md text-label-md text-on-surface-variant">12:10 • Client: Mamadou B.</p>
+</div>
+</div>
+<p class="font-numeric-display text-tertiary-container tabular-nums">8.000 F</p>
+</div>
+<!-- Sale 4 -->
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="receipt_long">receipt_long</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-semibold">Vente #839</p>
+<p class="font-label-md text-label-md text-on-surface-variant">11:55 • Espèces</p>
+</div>
+</div>
+<p class="font-numeric-display text-primary tabular-nums">2.300 F</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Stock Alerts Sidebar (1/3 width on desktop) -->
+<section class="space-y-4">
+<h2 class="font-headline-sm text-headline-sm text-primary">Alertes Stock</h2>
+<div class="bg-surface-container-low rounded-xl p-4 border border-outline-variant space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center gap-3">
+<img alt="Coke" class="w-12 h-12 rounded-lg object-cover" data-alt="A macro close-up of a condensation-covered beverage can against a clean, minimalist background. The lighting is bright and industrial, emphasizing the professional retail environment. The image uses a clean color palette of whites and corporate blues, maintaining the modern Japanese POS system aesthetic. High contrast and razor-sharp clarity are key." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARYURj_xvBnGAmSirj8-6BO2ncEJajDkXhQ4SmfUhyvatHteT6K0Z23KCSXGKSs9FrX3w1wu0soCvUrsDhBeA3P3q7au8lWaRoShSbAwknPSMH_j0qAmey7_FORpGblL--XtqL7CyeCOCHfzYAsYTrW4d6pqS1Y41_CwiYWgAlBGjxFu2QICO4ONgxpUmAhvDRPb0PuiXmzVmkgGppEd7qg3On9MxTQ1h6vhTl-xMk2up2MHCyazeHGwA5sc4iP20INzyGj9cp-W0"/>
+<div class="flex-1 min-w-0">
+<p class="font-body-md font-bold truncate">Coca-Cola 33cl</p>
+<div class="w-full h-1.5 bg-outline-variant rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-error w-[12%] rounded-full"></div>
+</div>
+<p class="text-[10px] font-label-md text-error mt-1 uppercase">3 unités restantes</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-3">
+<img alt="Pasta" class="w-12 h-12 rounded-lg object-cover" data-alt="A clean, professionally photographed package of premium pasta displayed in a bright, modern grocery setting. The lighting is soft and even, mimicking high-end retail displays. The overall atmosphere is grounded and accessible, focusing on product clarity and inventory management. The color palette consists of natural tones with a modern corporate blue accent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOjn7JTMgd91HGttxSS46T3WyTa7zzqSlgXJcbM2CbdzYx13UmwocpLvyP9UkugZ4rLEf5pNTDcbvB3E9RYf4TCW5PkzH5mq3G3qUdOv7lHkImf06m6Hn9rXpeVMAOUjBXp-sj6nggGG-0JQMD7QhvfgNPd-HLgZi0r9uWgbJXvIka4qS0SV6cSXq7vUB9qMkj-7ITbXexH5Y-P_fENpDKLmn08fVMaH0S003GrPVFBCmBTKdxaAwG6olCaq2PvGMSnfCmde3ol-M"/>
+<div class="flex-1 min-w-0">
+<p class="font-body-md font-bold truncate">Pâtes Spaghetti 500g</p>
+<div class="w-full h-1.5 bg-outline-variant rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-tertiary-container w-[18%] rounded-full"></div>
+</div>
+<p class="text-[10px] font-label-md text-on-tertiary-container mt-1 uppercase">5 unités restantes</p>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm" data-icon="add_shopping_cart">add_shopping_cart</span>
+                        Commander du stock
+                    </button>
+</div>
+<!-- Floating Atmospheric Element -->
+<div class="relative h-32 rounded-xl overflow-hidden bg-primary-container group cursor-pointer">
+
+<div class="relative z-10 p-4 h-full flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-secondary-fixed mb-1" data-icon="insights">insights</span>
+<p class="font-label-md text-on-primary-container text-xs uppercase tracking-widest">Analyse IA</p>
+<p class="font-body-md text-on-primary font-bold">Le stock de riz sera épuisé dans 3 jours</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Shared Component Strategy) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-primary text-on-primary flex justify-around items-center h-16 px-2 pb-safe shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-primary/60 font-label-md text-label-md hover:bg-primary-container/10 px-4 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale">point_of_sale</span>
+<span>Caisse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-primary/60 font-label-md text-label-md hover:bg-primary-container/10 px-4 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Stock</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-primary/60 font-label-md text-label-md hover:bg-primary-container/10 px-4 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Ardoise</span>
+</a>
+<!-- Active Item: Dashboard -->
+<a class="flex flex-col items-center justify-center text-secondary-fixed font-bold font-label-md text-label-md hover:bg-primary-container/10 px-4 h-full transition-all duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+<span>Dashboard</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for numeric display update simulation
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.bg-primary, .bg-secondary, .bg-error, .bg-tertiary-container');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.style.transform = 'scale(0.98)';
+                    setTimeout(() => card.style.transform = 'scale(1)', 100);
+                });
+            });
+        });
+    </script>
+</body></html>

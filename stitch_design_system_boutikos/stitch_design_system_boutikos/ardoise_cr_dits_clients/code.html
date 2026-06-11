@@ -1,0 +1,307 @@
+<!DOCTYPE html><html class="light" lang="fr"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BoutikOS - Ardoise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .progress-bar-fill {
+            transition: width 1s ease-in-out;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#382000",
+                    "error": "#ba1a1a",
+                    "secondary": "#006d37",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#a9c9f2",
+                    "on-secondary-container": "#007239",
+                    "surface-container-highest": "#e0e3e6",
+                    "on-background": "#191c1e",
+                    "outline": "#73777f",
+                    "on-primary-fixed": "#001d36",
+                    "on-surface-variant": "#43474e",
+                    "on-secondary-fixed-variant": "#005228",
+                    "tertiary-container": "#553300",
+                    "secondary-fixed-dim": "#61de8a",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c3c6cf",
+                    "primary-fixed": "#d1e4ff",
+                    "primary-container": "#1a3c5e",
+                    "on-tertiary-fixed": "#2b1700",
+                    "on-tertiary-container": "#e69200",
+                    "surface-container": "#eceef1",
+                    "surface-dim": "#d8dadd",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#7bf8a1",
+                    "surface-container-low": "#f2f4f7",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#28496b",
+                    "on-primary-container": "#87a7ce",
+                    "on-secondary-fixed": "#00210c",
+                    "surface-bright": "#f7f9fc",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e6e8eb",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "on-secondary": "#ffffff",
+                    "primary": "#002645",
+                    "surface": "#f7f9fc",
+                    "inverse-on-surface": "#eff1f4",
+                    "inverse-surface": "#2d3133",
+                    "primary-fixed-dim": "#a9c9f2",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#7efba4",
+                    "on-tertiary-fixed-variant": "#663e00",
+                    "surface-tint": "#416084",
+                    "tertiary-fixed": "#ffddb9",
+                    "background": "#f7f9fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "margin-desktop": "48px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["DM Sans"],
+                    "numeric-display": ["DM Sans"],
+                    "headline-lg-mobile": ["DM Sans"],
+                    "headline-sm": ["DM Sans"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["DM Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "numeric-display": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="text-on-primary docked full-width top-0 z-40 fixed left-0 bg-[#1A3C5E] w-full">
+<div class="flex justify-between items-center w-full px-margin-mobile h-14">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed font-bold">
+                    JD
+                </div>
+<span class="font-headline-md text-headline-md text-on-primary">BoutikOS</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="hover:bg-primary-container/20 p-2 rounded-full active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-on-primary">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 px-margin-mobile max-w-md mx-auto">
+<!-- Screen Title -->
+<div class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Gestion de l'Ardoise</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Suivi des crédits clients en temps réel.</p>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-sm mb-lg overflow-x-auto pb-2 no-scrollbar">
+<button class="px-lg h-10 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">Toutes</button>
+<button class="px-lg h-10 rounded-full border border-outline text-on-surface-variant font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all hover:bg-surface-container">En cours</button>
+<button class="px-lg h-10 rounded-full border border-outline text-on-surface-variant font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all hover:bg-surface-container">Soldées</button>
+</div>
+<!-- Ardoise Cards Container -->
+<div class="space-y-md">
+<!-- Card 1: En cours (High Priority) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0px_4px_12px_rgba(26,60,94,0.08)] flex flex-col gap-sm relative overflow-hidden">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-[44px] h-[44px] rounded-full bg-[#1A3C5E] flex items-center justify-center text-white font-headline-sm">
+                            MK
+                        </div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Moussa Keita</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Dernier achat: Hier</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-numeric-display text-numeric-display text-error">12.500 FCFA</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Reste à payer</p>
+</div>
+</div>
+<div class="mt-xs">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Remboursement</span>
+<span class="font-label-md text-label-md text-primary font-bold">45%</span>
+</div>
+<div class="h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim progress-bar-fill" style="width: 45%;"></div>
+</div>
+</div>
+<button class="mt-sm w-full py-sm border border-primary text-primary font-label-md text-label-md rounded-lg hover:bg-primary/5 active:scale-95 transition-all">
+                    Détails du compte
+                </button>
+</div>
+<!-- Card 2: En cours (Low Stock Warning Style for Progress) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0px_4px_12px_rgba(26,60,94,0.08)] flex flex-col gap-sm relative overflow-hidden">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-[44px] h-[44px] rounded-full bg-[#382000] flex items-center justify-center text-white font-headline-sm">
+                            AD
+                        </div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Amina Diallo</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Client fidèle</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-numeric-display text-numeric-display text-error">42.000 FCFA</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Reste à payer</p>
+</div>
+</div>
+<div class="mt-xs">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Remboursement</span>
+<span class="font-label-md text-label-md text-error font-bold">12%</span>
+</div>
+<div class="h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error progress-bar-fill" style="width: 12%;"></div>
+</div>
+</div>
+<button class="mt-sm w-full py-sm border border-primary text-primary font-label-md text-label-md rounded-lg hover:bg-primary/5 active:scale-95 transition-all">
+                    Détails du compte
+                </button>
+</div>
+<!-- Card 3: Soldée (Success State) -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-md flex flex-col gap-sm relative opacity-80">
+<div class="absolute top-md right-md">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">SOLDÉE</span>
+</div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-[44px] h-[44px] rounded-full bg-[#006d37] flex items-center justify-center text-white font-headline-sm">
+                            BT
+                        </div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Bakary Traoré</h3>
+<span class="font-label-md text-label-md text-on-surface-variant">Dernier paiement: Ce matin</span>
+</div>
+</div>
+<div class="text-right pt-4">
+<p class="font-numeric-display text-numeric-display text-secondary">0 FCFA</p>
+</div>
+</div>
+<div class="mt-xs">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Remboursement terminé</span>
+<span class="font-label-md text-label-md text-secondary font-bold">100%</span>
+</div>
+<div class="h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 100%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Summary Mini-Stats -->
+<div class="mt-xl grid grid-cols-2 gap-md">
+<div class="bg-surface-container p-md rounded-xl">
+<p class="font-label-md text-label-md text-on-surface-variant">Total Crédits</p>
+<p class="font-headline-sm text-headline-sm text-error">54.500 FCFA</p>
+</div>
+<div class="bg-surface-container p-md rounded-xl">
+<p class="font-label-md text-label-md text-on-surface-variant">Comptes Actifs</p>
+<p class="font-headline-sm text-headline-sm text-primary">2</p>
+</div>
+</div>
+</main>
+<!-- FAB for adding new Credit (Contextual) -->
+<button class="fixed bottom-20 right-margin-mobile w-14 h-14 bg-primary-container text-on-primary rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all z-40">
+<span class="material-symbols-outlined text-[28px]">person_add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-2 pb-safe bg-primary shadow-lg">
+<!-- Caisse -->
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[24px]">point_of_sale</span>
+<span class="font-label-md text-label-md">Caisse</span>
+</a>
+<!-- Stock -->
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[24px]">inventory_2</span>
+<span class="font-label-md text-label-md">Stock</span>
+</a>
+<!-- Ardoise (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-secondary-fixed font-bold hover:bg-primary-container/10 px-2 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Ardoise</span>
+</a>
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 h-full transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[24px]">leaderboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for filter chips
+        const chips = document.querySelectorAll('.px-lg.h-10.rounded-full');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    c.classList.add('border', 'border-outline', 'text-on-surface-variant');
+                });
+                chip.classList.remove('border', 'border-outline', 'text-on-surface-variant');
+                chip.classList.add('bg-primary-container', 'text-on-primary-container');
+            });
+        });
+
+        // Trigger progress bar animation on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const progressFills = document.querySelectorAll('.progress-bar-fill');
+            progressFills.forEach(fill => {
+                const targetWidth = fill.style.width;
+                fill.style.width = '0%';
+                setTimeout(() => {
+                    fill.style.width = targetWidth;
+                }, 100);
+            });
+        });
+    </script>
+
+
+</body></html>

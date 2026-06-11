@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import Login from './components/Login'
-import { LogOut, User, Store, Shield, Loader2 } from 'lucide-react'
+import { Caisse } from './pages/Caisse'
+import { Dashboard } from './pages/Dashboard'
+import { BottomNav, type TabType } from './components/ui/BottomNav'
+import { Loader2, LogOut } from 'lucide-react'
 
 function App() {
   const { user, profile, boutique, isLoading, signOut } = useAuth()
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState<TabType>('caisse')
 
   // 1. LOADING SCREEN
   if (isLoading) {
@@ -24,70 +27,64 @@ function App() {
 
   // 3. AUTHENTICATED SCREEN
   return (
-    <div className="min-h-screen bg-bg font-body text-text flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b border-border h-16 px-md flex items-center justify-between sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-xs">
-          <span className="text-2xl">🏪</span>
-          <span className="font-display font-bold text-lg text-primary">BoutikOS</span>
+    <div className="min-h-screen bg-background text-on-background">
+      {/* Top App Bar */}
+      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-14 flex justify-between items-center px-margin-mobile">
+        <div className="flex items-center gap-sm">
+          <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
+            <span className="font-headline-md text-sm font-bold text-on-secondary-container">
+              {profile?.role === 'caissier' ? 'C' : profile?.role === 'gerant' ? 'G' : 'A'}
+            </span>
+          </div>
+          <div className="flex flex-col text-left">
+            <h1 className="font-headline-md text-base leading-none">BoutikOS</h1>
+            <span className="text-[10px] opacity-70 tracking-wider">
+              {boutique?.nom.toUpperCase() || 'MARCHÉ CENTRAL'}
+            </span>
+          </div>
         </div>
-        
-        <button
-          onClick={signOut}
-          className="h-10 px-md bg-bg text-text hover:bg-error/10 hover:text-error rounded-button border border-border flex items-center gap-xs transition-all font-semibold text-sm cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Déconnexion</span>
-        </button>
+        <div className="flex items-center gap-md">
+          <button 
+            onClick={signOut}
+            title="Déconnexion"
+            className="flex items-center justify-center text-on-primary hover:bg-primary-container/20 p-2 rounded-full transition-transform active:scale-95 cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 p-md max-w-4xl mx-auto w-full flex flex-col gap-md">
-        {/* User Profile Summary */}
-        <div className="bg-card border border-border p-md rounded-card shadow-sm flex flex-col sm:flex-row justify-between gap-sm items-start sm:items-center">
-          <div className="flex items-center gap-md">
-            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
-              <User className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="font-display font-bold text-md text-text">{user.email}</h2>
-              <div className="flex flex-wrap gap-xs mt-xs">
-                <span className="inline-flex items-center gap-xs text-xs font-bold bg-primary/10 text-primary px-sm py-[2px] rounded-pill">
-                  <Shield className="w-3 h-3" />
-                  Rôle : {profile?.role || 'caissier'}
-                </span>
-                {boutique && (
-                  <span className="inline-flex items-center gap-xs text-xs font-bold bg-secondary/10 text-secondary px-sm py-[2px] rounded-pill">
-                    <Store className="w-3 h-3" />
-                    Boutique : {boutique.nom}
-                  </span>
-                )}
-              </div>
+      {/* Pages Switcher */}
+      <main className="w-full">
+        {activeTab === 'caisse' && <Caisse />}
+        
+        {activeTab === 'stock' && (
+          <div className="pt-24 px-margin-mobile text-center">
+            <div className="bg-card border border-border p-lg rounded-card shadow-sm max-w-sm mx-auto">
+              <span className="material-symbols-outlined text-5xl text-outline mb-sm">inventory_2</span>
+              <p className="font-headline-sm text-on-surface mb-xs">Inventaire & Stock</p>
+              <p className="text-body-md text-outline">Ce module est en cours de développement par Le Big EL.</p>
             </div>
           </div>
-        </div>
-
-        {/* Counter Demo card */}
-        <div className="bg-card border border-border p-xl rounded-card shadow-lg text-center mt-md">
-          <h3 className="text-xl font-display font-bold mb-sm">Tableau de bord</h3>
-          <p className="text-text2 mb-lg text-sm">
-            Vous êtes connecté. Le développement de la caisse et du stock est en cours.
-          </p>
-          
-          <div className="max-w-xs mx-auto">
-            <button
-              type="button"
-              className="h-12 px-lg bg-primary text-white font-bold rounded-button hover:opacity-95 active:scale-98 transition-all w-full shadow-md cursor-pointer flex items-center justify-center gap-xs"
-              onClick={() => setCount((c) => c + 1)}
-            >
-              Ventes enregistrées : <span className="numeric font-bold bg-white/20 px-xs py-[2px] rounded-button ml-xs">{count}</span>
-            </button>
+        )}
+        
+        {activeTab === 'ardoise' && (
+          <div className="pt-24 px-margin-mobile text-center">
+            <div className="bg-card border border-border p-lg rounded-card shadow-sm max-w-sm mx-auto">
+              <span className="material-symbols-outlined text-5xl text-outline mb-sm">menu_book</span>
+              <p className="font-headline-sm text-on-surface mb-xs">Registre des Ardoises</p>
+              <p className="text-body-md text-outline">Ce module est en cours de développement par Taph la hagra.</p>
+            </div>
           </div>
-        </div>
+        )}
+        
+        {activeTab === 'dashboard' && <Dashboard />}
       </main>
+
+      {/* Global Bottom Navigation */}
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   )
 }
 
 export default App
-
