@@ -80,7 +80,7 @@ export const Caisse: React.FC = () => {
   );
 
   return (
-    <div className="pb-40 pt-16 px-margin-mobile max-w-lg mx-auto flex flex-col gap-md">
+    <div className="pb-40 pt-16 px-margin-mobile max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-md">
       {toast && (
         <Toast
           message={toast.message}
