@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Caisse } from './pages/Caisse';
 import { Dashboard } from './pages/Dashboard';
+import { Ardoise } from './pages/Ardoise';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 
 function App() {
@@ -40,15 +41,7 @@ function App() {
           </div>
         )}
         
-        {activeTab === 'ardoise' && (
-          <div className="pt-24 px-margin-mobile text-center">
-            <div className="bg-card border border-border p-lg rounded-card shadow-sm max-w-sm mx-auto">
-              <span className="material-symbols-outlined text-5xl text-outline mb-sm">menu_book</span>
-              <p className="font-headline-sm text-on-surface mb-xs">Registre des Ardoises</p>
-              <p className="text-body-md text-outline">Ce module est en cours de développement par Taph la hagra.</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'ardoise' && <Ardoise />}
         
         {activeTab === 'dashboard' && <Dashboard />}
       </main>
