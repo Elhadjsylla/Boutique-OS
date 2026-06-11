@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@theme {
+  --color-primary: #1A3C5E;
+  --color-secondary: #27AE60;
+  --color-tertiary: #E69200;
+  --color-error: #BA1A1A;
+  --color-bg: #F5F7FA;
+  --color-card: #FFFFFF;
+  --color-text: #1A1A2E;
+  --color-text2: #43474E;
+  --color-border: #E5E7EB;
+
+  --border-radius-button: 10px;
+  --border-radius-card: 16px;
+  --border-radius-pill: 999px;
+
+  --font-display: "DM Sans", sans-serif;
+  --font-numeric: "DM Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-labels: "Inter", sans-serif;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-gutter: 16px;
+}
+
+@utility numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  @apply font-body bg-bg text-text antialiased;
+  font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display text-text font-bold;
+}
