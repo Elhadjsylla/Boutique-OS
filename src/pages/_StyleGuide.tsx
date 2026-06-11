@@ -9,8 +9,12 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { Modal } from '../components/ui/Modal';
 import { BottomNav } from '../components/ui/BottomNav';
 import type { TabType } from '../components/ui/BottomNav';
+import { useSyncEngine } from '../hooks/useSyncEngine';
 
 export const StyleGuide: React.FC = () => {
+  // Sync Engine & Online Status
+  const { isOnline, isSyncing } = useSyncEngine();
+
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabType>('caisse');
 
@@ -41,9 +45,14 @@ export const StyleGuide: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-on-background pb-32">
-      {/* Top App Bar Header */}
-      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-14 flex items-center px-margin-mobile">
+      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-14 flex items-center justify-between px-margin-mobile">
         <h1 className="font-headline-md text-headline-md">BoutikOS Guide de Style</h1>
+        <div className="flex items-center gap-sm">
+          <span className={`w-3.5 h-3.5 rounded-full ${isOnline ? 'bg-secondary' : 'bg-error'}`} />
+          <span className="text-xs uppercase font-bold opacity-80">
+            {isOnline ? (isSyncing ? 'Synchronisation...' : 'En Ligne') : 'Hors Ligne'}
+          </span>
+        </div>
       </header>
 
       {/* Main Content */}
