@@ -33,11 +33,19 @@
 
   /* Border Radius */
   --border-radius-DEFAULT: 0.25rem;
-  --border-radius-lg: 0.5rem;
-  --border-radius-xl: 0.75rem;
+  --border-radius-lg: 0.75rem;
+  --radius-lg: 0.75rem;
+  --border-radius-xl: 16px;
+  --radius-xl: 16px;
+  --border-radius-2xl: 24px;
+  --radius-2xl: 24px;
+  --border-radius-3xl: 32px;
+  --radius-3xl: 32px;
   --border-radius-full: 9999px;
-  --border-radius-button: 10px;
-  --border-radius-card: 16px;
+  --border-radius-button: 14px;
+  --radius-button: 14px;
+  --border-radius-card: 28px;
+  --radius-card: 28px;
   --border-radius-pill: 999px;
 
   /* Spacing */
