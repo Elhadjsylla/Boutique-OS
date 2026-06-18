@@ -10,6 +10,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { ImagePicker } from '../components/ui/ImagePicker';
 import { getProductIconAndGradient } from '../lib/productHelper';
 
 interface StockProps {
@@ -172,7 +173,11 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             <Input label="Quantité" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="15" />
             <Input label="Seuil alerte" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="5" />
           </div>
-          <Input label="URL Photo (Optionnel)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <ImagePicker
+            label="Photo du Produit (Optionnel)"
+            value={newImageUrl}
+            onChange={setNewImageUrl}
+          />
           <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte), newImageUrl)} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-1">
             AJOUTER AU STOCK
           </Button>
@@ -189,7 +194,11 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             <Input label="Quantité" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
             <Input label="Seuil" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
           </div>
-          <Input label="URL Photo (Optionnel)" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <ImagePicker
+            label="Photo du Produit (Optionnel)"
+            value={editImageUrl}
+            onChange={setEditImageUrl}
+          />
           <div className="flex gap-3 mt-1">
             <Button variant="danger" onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)} className="flex-1">
               ARCHIVER
