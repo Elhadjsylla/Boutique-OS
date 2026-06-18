@@ -25,25 +25,24 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       />
 
       {/* Centered Panel */}
-      <div className="relative w-full max-w-md bg-card rounded-card shadow-2xl z-10 max-h-[90vh] flex flex-col animate-scale-in border border-border">
-        {/* Close Button / Top Area */}
-        <div className="w-full flex justify-end px-3 pt-3">
+      <div className="relative w-full max-w-md bg-card rounded-card shadow-2xl z-10 max-h-[90svh] flex flex-col animate-scale-in border border-border overflow-hidden">
+        {/* Header: titre + bouton close dans le même row */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-border flex-shrink-0">
+          {title ? (
+            <h2 className="font-bold text-on-surface text-base leading-tight">{title}</h2>
+          ) : (
+            <span />
+          )}
           <button
             onClick={onClose}
-            className="material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container/50 transition-all cursor-pointer"
+            className="material-symbols-outlined text-outline hover:text-on-surface w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all cursor-pointer flex-shrink-0 ml-2 text-[20px]"
           >
             close
           </button>
         </div>
 
-        {title && (
-          <div className="px-md pb-sm border-b border-border flex justify-between items-center -mt-6">
-            <h2 className="font-headline-sm text-on-surface text-base">{title}</h2>
-          </div>
-        )}
-
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-md pb-md">
+        <div className="flex-1 overflow-y-auto p-4 pb-5">
           {children}
         </div>
       </div>

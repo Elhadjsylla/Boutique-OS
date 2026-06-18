@@ -76,24 +76,35 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           const isOutOfStock = p.quantite === 0;
           const isLowStock = p.quantite <= p.seuil_alerte && !isOutOfStock;
           const style = getProductIconAndGradient(p.nom);
+          const cartItem = cart.find(i => i.produitId === p.id);
           
           return (
             <div
               key={p.id}
               onClick={() => !isOutOfStock && addToCart(p.id, p.nom, p.prix, p.quantite)}
-              className={`bg-white rounded-2xl border border-outline-variant premium-shadow-sm flex flex-col overflow-hidden relative transition-all duration-200 ${
-                isOutOfStock ? 'opacity-40 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02] cursor-pointer hover:border-primary/30 hover:shadow-md'
+              className={`bg-white rounded-2xl border premium-shadow-sm flex flex-col overflow-hidden relative transition-all duration-200 ${
+                isOutOfStock
+                  ? 'opacity-40 cursor-not-allowed border-outline-variant'
+                  : cartItem
+                    ? 'border-primary/50 ring-2 ring-primary/20 cursor-pointer hover:shadow-md active:scale-95'
+                    : 'border-outline-variant cursor-pointer hover:border-primary/30 hover:shadow-md hover:scale-[1.02] active:scale-95'
               }`}
             >
+              {/* Badge quantité en panier */}
+              {cartItem && (
+                <div className="absolute top-2 left-2 z-10 bg-primary text-white text-[10px] font-black min-w-[22px] h-[22px] rounded-full flex items-center justify-center shadow-md border-2 border-white px-1">
+                  {cartItem.quantite}
+                </div>
+              )}
+
               {/* Product Visual Container (Image or Apple-style gradient emoji) */}
               <div className="h-24 flex items-center justify-center relative overflow-hidden bg-primary-container">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
                 ) : (
                   <div className={`w-full h-full bg-gradient-to-br ${style.bg} flex items-center justify-center relative`}>
-                    {/* Apple Glossy Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
-                    <span className="text-4xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)] select-none transform group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-4xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)] select-none">
                       {style.emoji}
                     </span>
                   </div>
@@ -111,9 +122,21 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                     <Badge variant="success">OK</Badge>
                   )}
                 </div>
-                <div className="mt-auto flex justify-between items-baseline pt-1">
+                <div className="mt-auto flex justify-between items-center pt-1">
                   <MoneyText value={p.prix} className="text-base text-primary font-bold" />
-                  <span className="text-[10px] text-outline font-bold">Stock: {p.quantite}</span>
+                  <div className="flex items-center gap-1.5">
+                    {/* Bouton retirer du panier — visible seulement si en panier */}
+                    {cartItem && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); updateQuantity(p.id, -1); }}
+                        className="w-6 h-6 rounded-full bg-error/10 text-error flex items-center justify-center font-black text-sm hover:bg-error/20 active:scale-90 transition-all leading-none"
+                        title="Retirer un du panier"
+                      >
+                        −
+                      </button>
+                    )}
+                    <span className="text-[10px] text-outline font-bold">Stock: {p.quantite}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -150,8 +173,8 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
       {/* Cart Bottom Sheet */}
       <BottomSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} title="Détails de l'encaissement">
         <div className="flex flex-col gap-3 text-left">
-          {/* Cart Items List */}
-          <div className="flex flex-col gap-2 max-h-28 overflow-y-auto custom-scrollbar pr-1">
+          {/* Cart Items List — scroll uniquement si > 3 articles */}
+          <div className="flex flex-col gap-2 max-h-[34svh] overflow-y-auto custom-scrollbar pr-1">
             {cart.map((item) => (
               <div 
                 key={item.produitId} 

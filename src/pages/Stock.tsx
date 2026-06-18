@@ -164,27 +164,33 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
 
       {/* MODAL: Create Product */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ajouter un nouveau produit">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <Input label="Nom du Produit" value={newNom} onChange={(e) => setNewNom(e.target.value)} placeholder="Ex: Sac de Riz 5kg" />
-          <Input label="Prix de Vente (FCFA)" type="number" value={newPrix} onChange={(e) => setNewPrix(e.target.value)} placeholder="Ex: 6750" />
-          <Input label="Quantité Initiale" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="Ex: 15" />
-          <Input label="Seuil d'Alerte de Stock" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="Ex: 5" />
-          <Input label="URL de la Photo (Optionnel)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
-          <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte), newImageUrl)} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-2">
+          {/* Champs numériques en grille compacte */}
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Prix (FCFA)" type="number" value={newPrix} onChange={(e) => setNewPrix(e.target.value)} placeholder="6750" />
+            <Input label="Quantité" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="15" />
+            <Input label="Seuil alerte" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="5" />
+          </div>
+          <Input label="URL Photo (Optionnel)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte), newImageUrl)} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-1">
             AJOUTER AU STOCK
           </Button>
         </div>
       </Modal>
 
       {/* BOTTOM SHEET: Edit & Archive */}
-      <BottomSheet isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={selectedProduct ? `Fiche Produit : ${selectedProduct.nom}` : ''}>
-        <div className="flex flex-col gap-4 text-left">
+      <BottomSheet isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={selectedProduct ? `Fiche : ${selectedProduct.nom}` : ''}>
+        <div className="flex flex-col gap-3 text-left">
           <Input label="Nom du Produit" value={editNom} onChange={(e) => setEditNom(e.target.value)} />
-          <Input label="Prix de Vente (FCFA)" type="number" value={editPrix} onChange={(e) => setEditPrix(e.target.value)} />
-          <Input label="Quantité en Stock" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
-          <Input label="Seuil d'Alerte" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
-          <Input label="URL de la Photo (Optionnel)" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
-          <div className="flex gap-3 mt-2">
+          {/* Champs numériques en grille compacte */}
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Prix (FCFA)" type="number" value={editPrix} onChange={(e) => setEditPrix(e.target.value)} />
+            <Input label="Quantité" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
+            <Input label="Seuil" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
+          </div>
+          <Input label="URL Photo (Optionnel)" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <div className="flex gap-3 mt-1">
             <Button variant="danger" onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)} className="flex-1">
               ARCHIVER
             </Button>
