@@ -58,16 +58,11 @@
   --border-radius-card: 16px;
   --border-radius-pill: 999px;
 
-  /* Spacing */
+  /* Spacing - only non-conflicting keys in @theme */
   --spacing-base: 4px;
-  --spacing-xs: 4px;
   --spacing-gutter: 16px;
-  --spacing-margin-desktop: 48px;
-  --spacing-md: 16px;
-  --spacing-xl: 32px;
-  --spacing-lg: 24px;
-  --spacing-sm: 8px;
   --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 48px;
 
   /* Container Max-Widths (T-shirt sizes for max-w-*) */
   --container-xs: 20rem;
@@ -93,7 +88,117 @@
   --font-headline-md: "DM Sans", sans-serif;
 }
 
-/* Typography Custom utility styles / base settings */
+/* T-shirt spacing aliases as plain CSS custom properties (not in @theme)
+   This prevents Tailwind v4 from mapping max-w-sm/md/lg/xl to these values */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+/* Explicit spacing utility overrides for T-shirt sizes
+   Since --spacing-sm/md/lg/xl are no longer in @theme, we define
+   every spacing utility class explicitly with hardcoded values */
+@layer utilities {
+  /* XS = 4px */
+  .p-xs  { padding: 4px; }
+  .px-xs { padding-left: 4px; padding-right: 4px; }
+  .py-xs { padding-top: 4px; padding-bottom: 4px; }
+  .pt-xs { padding-top: 4px; }
+  .pb-xs { padding-bottom: 4px; }
+  .pl-xs { padding-left: 4px; }
+  .pr-xs { padding-right: 4px; }
+  .m-xs  { margin: 4px; }
+  .mx-xs { margin-left: 4px; margin-right: 4px; }
+  .my-xs { margin-top: 4px; margin-bottom: 4px; }
+  .mt-xs { margin-top: 4px; }
+  .mb-xs { margin-bottom: 4px; }
+  .ml-xs { margin-left: 4px; }
+  .mr-xs { margin-right: 4px; }
+  .gap-xs { gap: 4px; }
+  .w-xs { width: 4px; }
+  .h-xs { height: 4px; }
+
+  /* SM = 8px */
+  .p-sm  { padding: 8px; }
+  .px-sm { padding-left: 8px; padding-right: 8px; }
+  .py-sm { padding-top: 8px; padding-bottom: 8px; }
+  .pt-sm { padding-top: 8px; }
+  .pb-sm { padding-bottom: 8px; }
+  .pl-sm { padding-left: 8px; }
+  .pr-sm { padding-right: 8px; }
+  .m-sm  { margin: 8px; }
+  .mx-sm { margin-left: 8px; margin-right: 8px; }
+  .my-sm { margin-top: 8px; margin-bottom: 8px; }
+  .mt-sm { margin-top: 8px; }
+  .mb-sm { margin-bottom: 8px; }
+  .ml-sm { margin-left: 8px; }
+  .mr-sm { margin-right: 8px; }
+  .gap-sm { gap: 8px; }
+  .space-y-sm > * + * { margin-top: 8px; }
+
+  /* MD = 16px */
+  .p-md  { padding: 16px; }
+  .px-md { padding-left: 16px; padding-right: 16px; }
+  .py-md { padding-top: 16px; padding-bottom: 16px; }
+  .pt-md { padding-top: 16px; }
+  .pb-md { padding-bottom: 16px; }
+  .pl-md { padding-left: 16px; }
+  .pr-md { padding-right: 16px; }
+  .m-md  { margin: 16px; }
+  .mx-md { margin-left: 16px; margin-right: 16px; }
+  .my-md { margin-top: 16px; margin-bottom: 16px; }
+  .mt-md { margin-top: 16px; }
+  .mb-md { margin-bottom: 16px; }
+  .ml-md { margin-left: 16px; }
+  .mr-md { margin-right: 16px; }
+  .gap-md { gap: 16px; }
+  .space-y-md > * + * { margin-top: 16px; }
+
+  /* LG = 24px */
+  .p-lg  { padding: 24px; }
+  .px-lg { padding-left: 24px; padding-right: 24px; }
+  .py-lg { padding-top: 24px; padding-bottom: 24px; }
+  .pt-lg { padding-top: 24px; }
+  .pb-lg { padding-bottom: 24px; }
+  .pl-lg { padding-left: 24px; }
+  .pr-lg { padding-right: 24px; }
+  .m-lg  { margin: 24px; }
+  .mx-lg { margin-left: 24px; margin-right: 24px; }
+  .my-lg { margin-top: 24px; margin-bottom: 24px; }
+  .mt-lg { margin-top: 24px; }
+  .mb-lg { margin-bottom: 24px; }
+  .ml-lg { margin-left: 24px; }
+  .mr-lg { margin-right: 24px; }
+  .gap-lg { gap: 24px; }
+  .space-y-lg > * + * { margin-top: 24px; }
+
+  /* XL = 32px */
+  .p-xl  { padding: 32px; }
+  .px-xl { padding-left: 32px; padding-right: 32px; }
+  .py-xl { padding-top: 32px; padding-bottom: 32px; }
+  .pt-xl { padding-top: 32px; }
+  .pb-xl { padding-bottom: 32px; }
+  .pl-xl { padding-left: 32px; }
+  .pr-xl { padding-right: 32px; }
+  .m-xl  { margin: 32px; }
+  .mx-xl { margin-left: 32px; margin-right: 32px; }
+  .my-xl { margin-top: 32px; margin-bottom: 32px; }
+  .mt-xl { margin-top: 32px; }
+  .mb-xl { margin-bottom: 32px; }
+  .ml-xl { margin-left: 32px; }
+  .mr-xl { margin-right: 32px; }
+  .gap-xl { gap: 32px; }
+  .space-y-xl > * + * { margin-top: 32px; }
+
+  /* Margin-mobile / margin-desktop */
+  .px-margin-mobile { padding-left: 16px; padding-right: 16px; }
+  .px-margin-desktop { padding-left: 48px; padding-right: 48px; }
+}
+
+
 @layer base {
   body {
     @apply font-body-md bg-background text-on-background antialiased;
