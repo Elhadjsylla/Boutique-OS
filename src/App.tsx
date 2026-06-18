@@ -15,6 +15,7 @@ function App() {
       user_metadata: {
         boutique_id: 'boutique-dev',
         boutique_name: 'BoutikOS Dev',
+        role: 'admin',
       }
     }
   };
@@ -79,6 +80,15 @@ function App() {
   const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
   const boutiqueName = user.user_metadata?.boutique_name || 'BoutikOS';
   const caissierId = user.id;
+  const userRole = user.user_metadata?.role || 'caissier';
+
+  // Role badge config — couleurs sur fond sombre (top bar bg-primary)
+  const roleConfig: Record<string, { label: string; bg: string; text: string; icon: string }> = {
+    admin:    { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
+    gerant:   { label: 'Gérant',   bg: 'bg-sky-400/20',     text: 'text-sky-200',     icon: 'manage_accounts' },
+    caissier: { label: 'Caissier', bg: 'bg-emerald-400/20', text: 'text-emerald-200', icon: 'point_of_sale' },
+  };
+  const role = roleConfig[userRole] ?? { label: userRole, bg: 'bg-white/10', text: 'text-white/70', icon: 'person' };
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -91,7 +101,14 @@ function App() {
             </span>
           </div>
           <div className="flex flex-col text-left">
-            <h1 className="text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
+              {/* Role Badge */}
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${role.bg} ${role.text} border border-current/20`}>
+                <span className="material-symbols-outlined" style={{ fontSize: '9px' }}>{role.icon}</span>
+                {role.label}
+              </span>
+            </div>
             <span className="text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
               {user.email}
             </span>
