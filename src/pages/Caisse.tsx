@@ -147,41 +147,41 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
 
       {/* Cart Bottom Sheet */}
       <BottomSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} title="Détails de l'encaissement">
-        <div className="flex flex-col gap-5 text-left">
+        <div className="flex flex-col gap-3 text-left">
           {/* Cart Items List */}
-          <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+          <div className="flex flex-col gap-2 max-h-28 overflow-y-auto custom-scrollbar pr-1">
             {cart.map((item) => (
               <div 
                 key={item.produitId} 
-                className="flex justify-between items-center bg-primary-container/30 border border-primary-container/60 p-3 rounded-2xl transition-all hover:bg-primary-container/40"
+                className="flex justify-between items-center bg-primary-container/20 border border-primary-container/60 p-2 rounded-xl transition-all hover:bg-primary-container/30"
               >
-                <div className="flex flex-col text-left gap-0.5">
-                  <span className="font-extrabold text-on-surface text-sm">{item.nom}</span>
+                <div className="flex flex-col text-left gap-0.5 min-w-0 flex-1">
+                  <span className="font-extrabold text-on-surface text-xs truncate">{item.nom}</span>
                   <div className="flex items-center gap-1.5">
-                    <MoneyText value={item.prix} className="text-xs text-texte-2 font-bold" />
+                    <MoneyText value={item.prix} className="text-[10px] text-texte-2 font-bold" />
                     <span className="text-[10px] text-outline">•</span>
-                    <span className="text-xs text-outline font-semibold">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
+                    <span className="text-[10px] text-outline font-semibold truncate">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-white border border-outline-variant rounded-xl p-0.5 shadow-sm">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center bg-white border border-outline-variant rounded-lg p-0.5 shadow-sm">
                     <button 
                       onClick={() => updateQuantity(item.produitId, -1)} 
-                      className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer"
+                      className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
                     >
                       -
                     </button>
-                    <span className="font-extrabold w-7 text-center text-xs text-on-surface">{item.quantite}</span>
+                    <span className="font-extrabold w-5 text-center text-xs text-on-surface">{item.quantite}</span>
                     <button 
                       onClick={() => updateQuantity(item.produitId, 1)} 
-                      className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer"
+                      className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
                     >
                       +
                     </button>
                   </div>
                   <button 
                     onClick={() => removeItem(item.produitId)} 
-                    className="material-symbols-outlined text-error/80 hover:text-error hover:bg-error-container/60 p-1.5 rounded-xl transition-all cursor-pointer"
+                    className="material-symbols-outlined text-error/80 hover:text-error hover:bg-error-container/60 p-1 rounded-lg transition-all cursor-pointer text-base"
                     title="Supprimer du panier"
                   >
                     delete
@@ -192,16 +192,16 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           </div>
 
           {/* Premium Total Card */}
-          <div className="bg-gradient-to-r from-primary to-primary/90 text-on-primary rounded-2xl p-4 flex justify-between items-center premium-shadow-md border border-white/5">
-            <div className="flex flex-col text-left gap-0.5">
-              <span className="text-[10px] opacity-75 font-bold uppercase tracking-widest">Montant Total</span>
-              <span className="text-xs opacity-90 font-semibold">{cart.reduce((s, i) => s + i.quantite, 0)} article(s) au panier</span>
+          <div className="bg-gradient-to-r from-primary to-primary/90 text-on-primary rounded-xl p-2.5 flex justify-between items-center premium-shadow-sm border border-white/5">
+            <div className="flex flex-col text-left">
+              <span className="text-[9px] opacity-75 font-bold uppercase tracking-widest leading-none">Montant Total</span>
+              <span className="text-[10px] opacity-90 font-semibold mt-0.5">{cart.reduce((s, i) => s + i.quantite, 0)} article(s) au panier</span>
             </div>
-            <MoneyText value={cartTotal} className="text-white font-black text-2xl tracking-tight" />
+            <MoneyText value={cartTotal} className="text-white font-black text-lg tracking-tight" />
           </div>
 
           {/* Payment Input & Quick Bills */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <div className="relative">
               <Input
                 label="Montant Reçu (FCFA)"
@@ -209,12 +209,12 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                 value={amountReceived}
                 onChange={(e) => setAmountReceived(e.target.value)}
                 placeholder="Saisir la somme reçue..."
-                className="pr-16 text-lg font-bold text-primary"
+                className="pr-16 text-base font-bold text-primary h-11"
               />
               {amountReceived && (
                 <button 
                   onClick={() => setAmountReceived('')}
-                  className="absolute right-3 bottom-2.5 material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-all"
+                  className="absolute right-3 bottom-2 material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-all text-sm"
                 >
                   clear
                 </button>
@@ -222,15 +222,15 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
             </div>
 
             {/* Quick Suggestions for Senegal (Dakar Bills) */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] text-outline font-bold uppercase tracking-wider">Billets courants</span>
-              <div className="grid grid-cols-4 gap-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] text-outline font-bold uppercase tracking-wider">Billets courants</span>
+              <div className="grid grid-cols-4 gap-1.5">
                 {[1000, 2000, 5000, 10000].map((bill) => (
                   <button
                     key={bill}
                     type="button"
                     onClick={() => setAmountReceived(bill.toString())}
-                    className={`h-9 border text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                    className={`h-8 border text-[10px] font-extrabold rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                       Number(amountReceived) === bill 
                         ? 'bg-secondary border-secondary text-white shadow-sm scale-95' 
                         : 'border-outline-variant bg-white text-texte-2 hover:border-primary/30 hover:bg-primary-container/20'
@@ -246,22 +246,22 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
             {amountReceived && (
               <div className="animate-fade-in">
                 {changeDue >= 0 ? (
-                  <div className="flex justify-between items-center bg-secondary-container/60 border border-secondary-container p-3 rounded-2xl">
-                    <div className="flex items-center gap-2 text-secondary">
-                      <span className="material-symbols-outlined text-xl animate-pulse">payments</span>
-                      <span className="text-xs font-extrabold uppercase tracking-wide">Rendu Monnaie :</span>
+                  <div className="flex justify-between items-center bg-secondary-container/60 border border-secondary-container p-2 rounded-xl">
+                    <div className="flex items-center gap-1.5 text-secondary">
+                      <span className="material-symbols-outlined text-lg animate-pulse">payments</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide">Rendu Monnaie :</span>
                     </div>
-                    <span className="font-black text-secondary text-lg">
+                    <span className="font-black text-secondary text-sm">
                       {new Intl.NumberFormat('fr-FR').format(changeDue)} FCFA
                     </span>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center bg-error-container/60 border border-error-container p-3 rounded-2xl">
-                    <div className="flex items-center gap-2 text-error">
-                      <span className="material-symbols-outlined text-xl">warning</span>
-                      <span className="text-xs font-extrabold uppercase tracking-wide">Reste à payer :</span>
+                  <div className="flex justify-between items-center bg-error-container/60 border border-error-container p-2 rounded-xl">
+                    <div className="flex items-center gap-1.5 text-error">
+                      <span className="material-symbols-outlined text-lg">warning</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide">Reste à payer :</span>
                     </div>
-                    <span className="font-black text-error text-lg">
+                    <span className="font-black text-error text-sm">
                       {new Intl.NumberFormat('fr-FR').format(Math.abs(changeDue))} FCFA
                     </span>
                   </div>
@@ -274,9 +274,9 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           <Button
             onClick={() => validateAndCheckout(boutiqueId, caissierId)}
             disabled={!amountReceived || changeDue < 0}
-            className="w-full h-13 rounded-2xl flex items-center justify-center gap-2 font-black tracking-wider text-sm transition-all premium-shadow-md disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-98"
+            className="w-full h-11 rounded-xl flex items-center justify-center gap-1.5 font-black tracking-wider text-xs transition-all premium-shadow-sm disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-md active:scale-98"
           >
-            <span className="material-symbols-outlined">check_circle</span>
+            <span className="material-symbols-outlined text-sm">check_circle</span>
             VALIDER LA VENTE
           </Button>
         </div>
