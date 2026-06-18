@@ -58,13 +58,12 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
         return;
       }
 
-      // Compute current total paid so far
       const payments = await db.ardoise_paiements.where('ardoise_id').equals(ardoiseId).toArray();
       const currentPaid = payments.reduce((sum, p) => sum + p.montant, 0);
       const remaining = ardoise.montant_total - currentPaid;
 
       if (montantPaiement > remaining) {
-        onError(`Le paiement dépasse le solde restant (${remaining} FCFA).`);
+        onError(`Le versement dépasse le solde restant (${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA).`);
         return;
       }
 
@@ -80,11 +79,9 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
           updated_at: timestamp,
         };
 
-        // Save payment
         await db.ardoise_paiements.add(paymentData);
         await queueMutation('ardoise_paiements', 'INSERT', paymentId, paymentData);
 
-        // Update ardoise status if fully paid
         const isFullyPaid = (currentPaid + montantPaiement) >= ardoise.montant_total;
         const updatedArdoise = {
           ...ardoise,
@@ -96,13 +93,51 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
         await queueMutation('ardoises', 'UPDATE', ardoiseId, updatedArdoise);
       });
 
-      onSuccess("Paiement enregistré avec succès.");
+      onSuccess("Versement enregistré ✓");
     } catch (err) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Erreur de validation");
       } else {
         console.error(err);
-        onError("Une erreur est survenue lors de l'enregistrement du paiement.");
+        onError("Une erreur est survenue lors de l'enregistrement du versement.");
+      }
+    }
+  }, [onSuccess, onError]);
+
+  /**
+   * Ajoute un montant supplémentaire à la dette du client (nouvel achat à crédit).
+   * Si l'ardoise était soldée, elle est réouverte automatiquement.
+   */
+  const addDebt = useCallback(async (ardoiseId: string, montantDebt: number) => {
+    try {
+      paymentSchema.parse({ montant: montantDebt });
+
+      const ardoise = await db.ardoises.get(ardoiseId);
+      if (!ardoise) {
+        onError("Ardoise introuvable.");
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      const updatedArdoise = {
+        ...ardoise,
+        montant_total: ardoise.montant_total + montantDebt,
+        statut: 'en_cours' as const,
+        updated_at: timestamp,
+      };
+
+      await db.transaction('rw', [db.ardoises, db.outbox], async () => {
+        await db.ardoises.put(updatedArdoise);
+        await queueMutation('ardoises', 'UPDATE', ardoiseId, updatedArdoise);
+      });
+
+      onSuccess(`${new Intl.NumberFormat('fr-FR').format(montantDebt)} FCFA ajoutés à l'ardoise.`);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        onError(err.issues[0]?.message || "Montant invalide.");
+      } else {
+        console.error(err);
+        onError("Une erreur est survenue.");
       }
     }
   }, [onSuccess, onError]);
@@ -110,5 +145,6 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
   return {
     createArdoise,
     addPayment,
+    addDebt,
   };
 }
