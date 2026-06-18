@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/dexie';
+import { db, queueMutation } from '../db/dexie';
 import { useStock } from '../features/stock/useStock';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -53,23 +53,51 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     setRetraitQty(''); setShowCustomRetrait(false);
   };
 
-  // Succès sans fermer la fiche (retrait restant dans le sheet)
-  const handleRetraitSuccess = (msg: string) => {
-    setToast({ message: msg, type: 'success' });
-    setRetraitQty('');
-    setShowCustomRetrait(false);
-  };
-
-  const { createProduit, updateProduit, archiveProduit, retirerStock, deleteProduit } = useStock(
+  // create/update/archive passent par le hook
+  const { createProduit, updateProduit, archiveProduit } = useStock(
     handleSuccess,
     (msg) => setToast({ message: msg, type: 'error' })
   );
 
-  // Retrait avec callback spécifique (reste dans le sheet)
+  // ── Retrait de stock (inline pour garder la fiche ouverte) ──────────────
   const handleRetrait = async (qty: number) => {
+    if (!selectedProductId || qty <= 0) return;
+    try {
+      const produit = await db.produits.get(selectedProductId);
+      if (!produit) { setToast({ message: 'Produit introuvable.', type: 'error' }); return; }
+      if (qty > produit.quantite) {
+        setToast({ message: `Stock insuffisant — ${produit.quantite} unité(s) disponible(s).`, type: 'error' });
+        return;
+      }
+      const timestamp = new Date().toISOString();
+      const updated = { ...produit, quantite: produit.quantite - qty, updated_at: timestamp };
+      await db.transaction('rw', [db.produits, db.outbox], async () => {
+        await db.produits.put(updated);
+        await queueMutation('produits', 'UPDATE', selectedProductId, updated);
+      });
+      setToast({ message: `${qty} unité(s) retirée(s) du stock ✓`, type: 'success' });
+      setRetraitQty('');
+      setShowCustomRetrait(false);
+      // La fiche reste ouverte : l'utilisateur voit le stock se mettre à jour
+    } catch {
+      setToast({ message: 'Erreur lors du retrait.', type: 'error' });
+    }
+  };
+
+  // ── Suppression définitive (inline pour contrôle complet du flux) ───────
+  const handleDeleteProduct = async () => {
     if (!selectedProductId) return;
-    const ok = await retirerStock(selectedProductId, qty);
-    if (ok) handleRetraitSuccess(`${qty} unité(s) retirée(s) du stock.`);
+    if (!window.confirm('Supprimer définitivement ce produit ?\nCette action est irréversible.')) return;
+    try {
+      await db.transaction('rw', [db.produits, db.outbox], async () => {
+        await db.produits.delete(selectedProductId);
+        await queueMutation('produits', 'DELETE', selectedProductId, {});
+      });
+      setIsEditOpen(false);
+      setToast({ message: 'Produit supprimé définitivement.', type: 'success' });
+    } catch {
+      setToast({ message: 'Erreur lors de la suppression.', type: 'error' });
+    }
   };
 
   const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
@@ -315,11 +343,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <div className="border-t border-outline-variant pt-3">
             <button
               type="button"
-              onClick={() => {
-                if (selectedProductId && window.confirm("⚠️ Supprimer définitivement ce produit ?\nCette action est irréversible.")) {
-                  deleteProduit(selectedProductId);
-                }
-              }}
+              onClick={handleDeleteProduct}
               className="flex items-center gap-1.5 text-[11px] text-error/70 hover:text-error font-bold active:scale-95 transition-all"
             >
               <span className="material-symbols-outlined text-base">delete_forever</span>
