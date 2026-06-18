@@ -25,18 +25,23 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  // Forms
+  // Forms création
   const [newNom, setNewNom] = useState('');
   const [newPrix, setNewPrix] = useState('');
   const [newQuantite, setNewQuantite] = useState('');
   const [newSeuilAlerte, setNewSeuilAlerte] = useState('5');
   const [newImageUrl, setNewImageUrl] = useState('');
 
+  // Forms édition
   const [editNom, setEditNom] = useState('');
   const [editPrix, setEditPrix] = useState('');
   const [editQuantite, setEditQuantite] = useState('');
   const [editSeuilAlerte, setEditSeuilAlerte] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
+
+  // États retrait de stock
+  const [retraitQty, setRetraitQty] = useState('');
+  const [showCustomRetrait, setShowCustomRetrait] = useState(false);
 
   const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
 
@@ -45,9 +50,27 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     setIsCreateOpen(false);
     setIsEditOpen(false);
     setNewNom(''); setNewPrix(''); setNewQuantite(''); setNewSeuilAlerte('5'); setNewImageUrl('');
+    setRetraitQty(''); setShowCustomRetrait(false);
   };
 
-  const { createProduit, updateProduit, archiveProduit } = useStock(handleSuccess, (msg) => setToast({ message: msg, type: 'error' }));
+  // Succès sans fermer la fiche (retrait restant dans le sheet)
+  const handleRetraitSuccess = (msg: string) => {
+    setToast({ message: msg, type: 'success' });
+    setRetraitQty('');
+    setShowCustomRetrait(false);
+  };
+
+  const { createProduit, updateProduit, archiveProduit, retirerStock, deleteProduit } = useStock(
+    handleSuccess,
+    (msg) => setToast({ message: msg, type: 'error' })
+  );
+
+  // Retrait avec callback spécifique (reste dans le sheet)
+  const handleRetrait = async (qty: number) => {
+    if (!selectedProductId) return;
+    const ok = await retirerStock(selectedProductId, qty);
+    if (ok) handleRetraitSuccess(`${qty} unité(s) retirée(s) du stock.`);
+  };
 
   const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
   const selectedProduct = products.find(p => p.id === selectedProductId);
@@ -59,6 +82,8 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     setEditQuantite(product.quantite.toString());
     setEditSeuilAlerte(product.seuil_alerte.toString());
     setEditImageUrl(product.image_url || '');
+    setRetraitQty('');
+    setShowCustomRetrait(false);
     setIsEditOpen(true);
   };
 
@@ -184,7 +209,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
         </div>
       </Modal>
 
-      {/* BOTTOM SHEET: Edit & Archive */}
+      {/* BOTTOM SHEET: Edit, Retrait & Archive */}
       <BottomSheet isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={selectedProduct ? `Fiche : ${selectedProduct.nom}` : ''}>
         <div className="flex flex-col gap-3 text-left">
           <Input label="Nom du Produit" value={editNom} onChange={(e) => setEditNom(e.target.value)} />
@@ -199,13 +224,107 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             value={editImageUrl}
             onChange={setEditImageUrl}
           />
-          <div className="flex gap-3 mt-1">
-            <Button variant="danger" onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)} className="flex-1">
-              ARCHIVER
+
+          {/* ── Section Retrait de stock ── */}
+          <div className="border-t border-outline-variant pt-3">
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="material-symbols-outlined text-error text-lg">remove_circle</span>
+              <h4 className="text-xs text-error font-extrabold uppercase tracking-wider">Retrait de stock</h4>
+              {selectedProduct && (
+                <span className="ml-auto text-[10px] text-outline font-semibold">
+                  {selectedProduct.quantite} unité(s) disponible(s)
+                </span>
+              )}
+            </div>
+
+            {selectedProduct && selectedProduct.quantite > 0 ? (
+              <div className="flex flex-col gap-2">
+                {/* Boutons rapides */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[1, 5, 10].map((qty) => (
+                    <button
+                      key={qty}
+                      type="button"
+                      onClick={() => handleRetrait(qty)}
+                      disabled={selectedProduct.quantite < qty}
+                      className="h-9 border text-xs font-extrabold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-error-container/50 border-error-container text-error hover:bg-error-container active:scale-90"
+                    >
+                      -{qty}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomRetrait(!showCustomRetrait)}
+                    className={`h-9 border text-[10px] font-extrabold rounded-xl transition-all active:scale-90 ${
+                      showCustomRetrait
+                        ? 'bg-error border-error text-white'
+                        : 'border-outline-variant bg-white text-texte-2 hover:border-error/40'
+                    }`}
+                  >
+                    Autre
+                  </button>
+                </div>
+
+                {/* Saisie personnalisée */}
+                {showCustomRetrait && (
+                  <div className="flex gap-2 items-end animate-fade-in">
+                    <div className="flex-1">
+                      <Input
+                        label={`Qté à retirer (max ${selectedProduct.quantite})`}
+                        type="number"
+                        value={retraitQty}
+                        onChange={(e) => setRetraitQty(e.target.value)}
+                        placeholder="Ex: 3"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRetrait(parseInt(retraitQty))}
+                      disabled={!retraitQty || parseInt(retraitQty) <= 0 || parseInt(retraitQty) > selectedProduct.quantite}
+                      className="h-12 px-4 bg-error text-white rounded-xl font-bold text-sm active:scale-95 transition-all disabled:opacity-40 flex-shrink-0 mb-0"
+                    >
+                      OK
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-outline italic">Stock à zéro — aucun retrait possible.</p>
+            )}
+          </div>
+
+          {/* ── Actions principales ── */}
+          <div className="flex gap-2 mt-1">
+            <Button
+              variant="danger"
+              onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)}
+              className="flex-1 text-xs"
+            >
+              Archiver
             </Button>
-            <Button onClick={() => selectedProductId && updateProduit(selectedProductId, editNom, parseFloat(editPrix), parseInt(editQuantite), parseInt(editSeuilAlerte), editImageUrl)} className="flex-[2]" disabled={!editNom || !editPrix || !editQuantite || !editSeuilAlerte}>
+            <Button
+              onClick={() => selectedProductId && updateProduit(selectedProductId, editNom, parseFloat(editPrix), parseInt(editQuantite), parseInt(editSeuilAlerte), editImageUrl)}
+              className="flex-[2]"
+              disabled={!editNom || !editPrix || !editQuantite || !editSeuilAlerte}
+            >
               SAUVEGARDER
             </Button>
+          </div>
+
+          {/* Supprimer définitivement — action destructive discrète */}
+          <div className="border-t border-outline-variant pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedProductId && window.confirm("⚠️ Supprimer définitivement ce produit ?\nCette action est irréversible.")) {
+                  deleteProduit(selectedProductId);
+                }
+              }}
+              className="flex items-center gap-1.5 text-[11px] text-error/70 hover:text-error font-bold active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-base">delete_forever</span>
+              Supprimer définitivement ce produit
+            </button>
           </div>
         </div>
       </BottomSheet>
