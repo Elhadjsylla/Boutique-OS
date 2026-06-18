@@ -23,11 +23,26 @@ const SEED_PAYMENTS = [
   { id: 'p3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3', ardoise_id: 'a3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3', montant: 15000, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() },
 ];
 
-export const Ardoise: React.FC = () => {
+const getAvatarGradient = (name: string) => {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const gradients = [
+    'from-blue-500 to-indigo-600',
+    'from-amber-400 to-orange-500',
+    'from-emerald-400 to-teal-600',
+    'from-purple-500 to-pink-600',
+  ];
+  return gradients[hash % gradients.length];
+};
+
+interface ArdoiseProps {
+  boutiqueId: string;
+}
+
+export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   const [filter, setFilter] = useState<'all' | 'en_cours' | 'soldee'>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Modals state
+  // Modal / Sheet states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -38,11 +53,9 @@ export const Ardoise: React.FC = () => {
   const [newInitialAmount, setNewInitialAmount] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  // Seed DB if empty
   useEffect(() => {
     const seed = async () => {
-      const count = await db.ardoises.count();
-      if (count === 0) {
+      if ((await db.ardoises.count()) === 0) {
         await db.ardoises.bulkAdd(SEED_ARDOISES);
         await db.ardoise_paiements.bulkAdd(SEED_PAYMENTS);
       }
@@ -50,11 +63,9 @@ export const Ardoise: React.FC = () => {
     seed();
   }, []);
 
-  // Fetch ardoises & payments
   const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
   const payments = useLiveQuery(() => db.ardoise_paiements.toArray(), []) || [];
 
-  // SUCCESS / ERROR callbacks
   const handleSuccess = (msg: string) => {
     setToast({ message: msg, type: 'success' });
     setIsCreateOpen(false);
@@ -64,99 +75,60 @@ export const Ardoise: React.FC = () => {
     setPaymentAmount('');
   };
 
-  const handleError = (msg: string) => {
-    setToast({ message: msg, type: 'error' });
-  };
+  const { createArdoise, addPayment } = useArdoise(handleSuccess, (msg) => setToast({ message: msg, type: 'error' }));
 
-  const { createArdoise, addPayment } = useArdoise(handleSuccess, handleError);
+  const getPaidTotal = (ardoiseId: string) => payments.filter((p) => p.ardoise_id === ardoiseId).reduce((sum, p) => sum + p.montant, 0);
 
-  // Helper: Get payments total for an ardoise
-  const getPaidTotal = (ardoiseId: string) => {
-    return payments
-      .filter((p) => p.ardoise_id === ardoiseId)
-      .reduce((sum, p) => sum + p.montant, 0);
-  };
-
-  // Helper: Deterministic avatar color (tertiary/teal/ochre - never red)
-  const getAvatarColor = (name: string) => {
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const colors = ['bg-primary', 'bg-tertiary-container', 'bg-secondary', 'bg-[#007239]'];
-    return colors[hash % colors.length];
-  };
-
-  // Process data for rendering
   const processedArdoises = ardoises.map((a) => {
     const paid = getPaidTotal(a.id);
     const remaining = Math.max(0, a.montant_total - paid);
-    const percent = a.montant_total > 0 ? Math.round((paid / a.montant_total) * 100) : 0;
-    return {
-      ...a,
-      paid,
-      remaining,
-      percent,
-    };
+    return { ...a, paid, remaining, percent: a.montant_total > 0 ? Math.round((paid / a.montant_total) * 100) : 0 };
   });
 
-  // Filter & Sort
   const filteredArdoises = processedArdoises.filter((a) => {
     if (filter === 'en_cours') return a.statut === 'en_cours';
     if (filter === 'soldee') return a.statut === 'soldee';
     return true;
   });
 
-  // Stats
-  const activeAccountsCount = processedArdoises.filter(a => a.statut === 'en_cours').length;
   const totalRemainingCredit = processedArdoises.reduce((sum, a) => sum + a.remaining, 0);
+  const activeAccountsCount = processedArdoises.filter(a => a.statut === 'en_cours').length;
 
   const selectedArdoise = processedArdoises.find(a => a.id === selectedArdoiseId);
   const selectedPayments = payments.filter(p => p.ardoise_id === selectedArdoiseId);
 
   return (
-    <div className="pb-40 pt-16 px-margin-mobile max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-md">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="pb-40 pt-20 px-4 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Screen Title */}
-      <div className="text-left mt-sm">
-        <h1 className="font-headline-lg-mobile text-on-surface">Gestion de l'Ardoise</h1>
-        <p className="font-body-md text-on-surface-variant">Suivi des crédits clients en temps réel.</p>
+      <div className="text-left mt-2">
+        <h1 className="font-headline-lg-mobile text-on-surface">Carnet d'Ardoise</h1>
+        <p className="font-body-md text-on-surface-variant">Suivez et encaissez les crédits clients en toute simplicité.</p>
       </div>
 
       {/* Filter Chips */}
-      <div className="flex gap-sm overflow-x-auto pb-1">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-lg h-10 rounded-full font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all ${
-            filter === 'all' ? 'bg-primary-container text-on-primary-container' : 'border border-outline text-on-surface-variant'
-          }`}
-        >
-          Toutes
-        </button>
-        <button
-          onClick={() => setFilter('en_cours')}
-          className={`px-lg h-10 rounded-full font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all ${
-            filter === 'en_cours' ? 'bg-primary-container text-on-primary-container' : 'border border-outline text-on-surface-variant'
-          }`}
-        >
-          En cours
-        </button>
-        <button
-          onClick={() => setFilter('soldee')}
-          className={`px-lg h-10 rounded-full font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all ${
-            filter === 'soldee' ? 'bg-primary-container text-on-primary-container' : 'border border-outline text-on-surface-variant'
-          }`}
-        >
-          Soldées
-        </button>
+      <div className="flex gap-2 overflow-x-auto pb-1 scroll-hide">
+        {([
+          { id: 'all', label: 'Toutes' },
+          { id: 'en_cours', label: 'En cours' },
+          { id: 'soldee', label: 'Soldées' }
+        ] as const).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilter(tab.id)}
+            className={`px-5 h-9 rounded-full font-label-md text-xs whitespace-nowrap active:scale-95 transition-all ${
+              filter === tab.id
+                ? 'bg-primary text-white shadow-sm'
+                : 'bg-white border border-outline-variant text-texte-2 hover:bg-surface-container-low'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Ardoise Cards List */}
-      <div className="flex flex-col gap-md">
+      {/* List */}
+      <div className="flex flex-col gap-3">
         {filteredArdoises.map((a) => {
           const initials = a.client_nom.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
           const isSold = a.statut === 'soldee';
@@ -165,37 +137,37 @@ export const Ardoise: React.FC = () => {
             <Card
               key={a.id}
               elevation={1}
-              className={`flex flex-col gap-sm relative ${isSold ? 'opacity-70 bg-surface-container-low' : ''}`}
+              className={`flex flex-col gap-3 relative transition-all duration-200 hover:shadow-md hover:border-primary/20 ${isSold ? 'opacity-60 bg-surface-container-low/50' : ''}`}
             >
               {isSold && (
-                <div className="absolute top-md right-md">
-                  <Badge variant="success">SOLDÉE</Badge>
+                <div className="absolute top-4 right-4">
+                  <Badge variant="success">REGLE</Badge>
                 </div>
               )}
               
               <div className="flex justify-between items-start">
-                <div className="flex items-center gap-md">
-                  <div className={`w-[44px] h-[44px] rounded-full ${getAvatarColor(a.client_nom)} flex items-center justify-center text-white font-headline-sm`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getAvatarGradient(a.client_nom)} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
                     {initials}
                   </div>
                   <div className="text-left">
-                    <h3 className="font-headline-sm text-on-surface leading-tight">{a.client_nom}</h3>
-                    <span className="font-label-md text-label-md text-on-surface-variant">
-                      {isSold ? 'Solde réglé' : `Remboursé à ${a.percent}%`}
+                    <h3 className="font-headline-sm text-sm text-on-surface leading-tight font-bold">{a.client_nom}</h3>
+                    <span className="text-xs text-outline font-semibold">
+                      {isSold ? 'Solde entièrement réglé' : `Remboursé à ${a.percent}%`}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <MoneyText value={a.remaining} className={`text-lg font-bold ${isSold ? 'text-secondary' : 'text-error'}`} />
-                  <p className="font-label-md text-label-md text-on-surface-variant">Reste à payer</p>
+                  <MoneyText value={a.remaining} className={`text-base font-bold ${isSold ? 'text-secondary' : 'text-error'}`} />
+                  <p className="text-[10px] text-outline font-bold uppercase">Reste</p>
                 </div>
               </div>
 
               {!isSold && (
-                <div className="mt-xs">
-                  <div className="h-1 bg-surface-container rounded-full overflow-hidden">
+                <div className="mt-1">
+                  <div className="h-2 bg-surface-container rounded-full overflow-hidden">
                     <div
-                      className={`h-full progress-bar-fill ${a.percent < 30 ? 'bg-error' : 'bg-secondary'}`}
+                      className={`h-full rounded-full transition-all duration-500 ${a.percent < 30 ? 'bg-error' : 'bg-secondary'}`}
                       style={{ width: `${a.percent}%` }}
                     />
                   </div>
@@ -205,98 +177,74 @@ export const Ardoise: React.FC = () => {
               <Button
                 variant="ghost"
                 size="md"
-                className="mt-xs w-full"
+                className="mt-1 w-full bg-surface-container/30 hover:bg-surface-container border border-outline-variant hover:border-outline text-xs"
                 onClick={() => {
                   setSelectedArdoiseId(a.id);
                   setIsDetailOpen(true);
                 }}
               >
-                Détails du compte
+                Gérer le compte client
               </Button>
             </Card>
           );
         })}
       </div>
 
-      {/* Mini Stats Summary */}
-      <div className="grid grid-cols-2 gap-md">
-        <div className="bg-surface-container p-md rounded-xl text-left">
-          <p className="font-label-md text-label-md text-on-surface-variant uppercase">Total Crédits</p>
-          <MoneyText value={totalRemainingCredit} className="text-lg font-bold text-error" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+          <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Crédits En Cours</p>
+          <MoneyText value={totalRemainingCredit} className="text-lg font-extrabold text-error" />
         </div>
-        <div className="bg-surface-container p-md rounded-xl text-left">
-          <p className="font-label-md text-label-md text-on-surface-variant uppercase">Comptes Actifs</p>
-          <p className="font-headline-sm text-headline-sm text-primary">{activeAccountsCount}</p>
+        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+          <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Fiches Actives</p>
+          <p className="text-lg font-extrabold text-primary font-numeric-display">{activeAccountsCount}</p>
         </div>
       </div>
 
-      {/* Add New Credit FAB */}
+      {/* FAB */}
       <button
         onClick={() => setIsCreateOpen(true)}
-        className="fixed bottom-20 right-margin-mobile w-14 h-14 bg-primary-container text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all z-40"
+        className="fixed bottom-22 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40"
       >
         <span className="material-symbols-outlined text-[28px]">person_add</span>
       </button>
 
-      {/* MODAL: Create New Ardoise */}
-      <Modal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        title="Créer un compte Ardoise"
-      >
-        <div className="flex flex-col gap-md">
-          <Input
-            label="Nom du Client"
-            value={newClientName}
-            onChange={(e) => setNewClientName(e.target.value)}
-            placeholder="Nom complet..."
-          />
-          <Input
-            label="Montant Initial Dû (FCFA)"
-            type="number"
-            value={newInitialAmount}
-            onChange={(e) => setNewInitialAmount(e.target.value)}
-            placeholder="Ex: 5000"
-          />
-          <Button
-            onClick={() => createArdoise('boutique-1', newClientName, parseFloat(newInitialAmount))}
-            disabled={!newClientName || !newInitialAmount}
-            className="w-full mt-sm"
-          >
-            CRÉER L'ARDOISE
+      {/* MODAL: Create Ardoise */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouveau compte Ardoise">
+        <div className="flex flex-col gap-4">
+          <Input label="Nom du Client" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Nom complet..." />
+          <Input label="Montant Initial Dû (FCFA)" type="number" value={newInitialAmount} onChange={(e) => setNewInitialAmount(e.target.value)} placeholder="Ex: 5000" />
+          <Button onClick={() => createArdoise(boutiqueId, newClientName, parseFloat(newInitialAmount))} disabled={!newClientName || !newInitialAmount} className="w-full mt-2">
+            CRÉER LA FICHE
           </Button>
         </div>
       </Modal>
 
       {/* BOTTOM SHEET: Details & Payment History */}
-      <BottomSheet
-        isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-        title={selectedArdoise ? `Compte de ${selectedArdoise.client_nom}` : ''}
-      >
+      <BottomSheet isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} title={selectedArdoise ? `Détails : ${selectedArdoise.client_nom}` : ''}>
         {selectedArdoise && (
-          <div className="flex flex-col gap-md text-left">
-            <div className="flex justify-between items-center bg-surface-container p-md rounded-xl">
+          <div className="flex flex-col gap-4 text-left">
+            <div className="flex justify-between items-center bg-surface-container/50 p-4 rounded-2xl border border-outline-variant">
               <div>
-                <span className="text-[10px] text-outline font-bold">CRÉDIT TOTAL</span>
-                <p className="font-headline-sm"><MoneyText value={selectedArdoise.montant_total} /></p>
+                <span className="text-[10px] text-outline font-bold uppercase">Crédit Initial</span>
+                <p className="text-base font-bold text-on-surface"><MoneyText value={selectedArdoise.montant_total} /></p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-outline font-bold">RESTE À PAYER</span>
-                <p className="font-headline-sm text-error"><MoneyText value={selectedArdoise.remaining} /></p>
+                <span className="text-[10px] text-outline font-bold uppercase">Reste Dû</span>
+                <p className="text-base font-bold text-error"><MoneyText value={selectedArdoise.remaining} /></p>
               </div>
             </div>
 
-            {/* Payments History */}
             <div>
-              <h4 className="font-label-md text-label-md text-outline mb-sm uppercase">Historique des Paiements</h4>
+              <h4 className="text-xs text-outline mb-2 font-bold uppercase tracking-wider">Historique de remboursement</h4>
               {selectedPayments.length === 0 ? (
-                <p className="text-sm text-outline">Aucun paiement enregistré.</p>
+                <p className="text-sm text-outline italic">Aucun paiement enregistré.</p>
               ) : (
-                <div className="flex flex-col gap-sm max-h-40 overflow-y-auto">
+                <div className="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                   {selectedPayments.map((p) => (
-                    <div key={p.id} className="flex justify-between items-center border-b border-border pb-xs">
-                      <span className="text-xs text-outline">{new Date(p.paid_at).toLocaleDateString('fr-FR')}</span>
+                    <div key={p.id} className="flex justify-between items-center border-b border-outline-variant pb-2">
+                      <span className="text-xs text-outline font-medium">{new Date(p.paid_at).toLocaleDateString('fr-FR')}</span>
                       <MoneyText value={p.montant} className="text-sm font-bold text-secondary" />
                     </div>
                   ))}
@@ -305,14 +253,8 @@ export const Ardoise: React.FC = () => {
             </div>
 
             {selectedArdoise.statut !== 'soldee' && (
-              <Button
-                onClick={() => {
-                  setIsDetailOpen(false);
-                  setIsPaymentOpen(true);
-                }}
-                className="w-full mt-sm"
-              >
-                ENREGISTRER UN PAIEMENT
+              <Button onClick={() => { setIsDetailOpen(false); setIsPaymentOpen(true); }} className="w-full mt-2">
+                ENREGISTRER UN REMBOURSEMENT
               </Button>
             )}
           </div>
@@ -320,29 +262,15 @@ export const Ardoise: React.FC = () => {
       </BottomSheet>
 
       {/* MODAL: Record Payment */}
-      <Modal
-        isOpen={isPaymentOpen}
-        onClose={() => setIsPaymentOpen(false)}
-        title="Enregistrer un paiement"
-      >
+      <Modal isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} title="Enregistrer un remboursement">
         {selectedArdoise && (
-          <div className="flex flex-col gap-md text-left">
-            <div className="mb-sm">
-              <span className="text-xs text-outline">Solde restant :</span>
-              <p className="text-lg font-bold text-error"><MoneyText value={selectedArdoise.remaining} /></p>
+          <div className="flex flex-col gap-4 text-left">
+            <div className="bg-red-50 p-3.5 rounded-xl border border-red-100">
+              <span className="text-xs text-error font-bold uppercase">Solde restant à régler :</span>
+              <p className="text-xl font-extrabold text-error"><MoneyText value={selectedArdoise.remaining} /></p>
             </div>
-            <Input
-              label="Montant du Paiement (FCFA)"
-              type="number"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              placeholder="Ex: 2000"
-            />
-            <Button
-              onClick={() => addPayment(selectedArdoise.id, parseFloat(paymentAmount))}
-              disabled={!paymentAmount}
-              className="w-full mt-sm"
-            >
+            <Input label="Montant du remboursement (FCFA)" type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="Ex: 2000" />
+            <Button onClick={() => addPayment(selectedArdoise.id, parseFloat(paymentAmount))} disabled={!paymentAmount} className="w-full mt-2">
               CONFIRMER LE PAIEMENT
             </Button>
           </div>

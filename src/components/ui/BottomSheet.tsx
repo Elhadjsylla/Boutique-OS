@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -15,8 +16,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end justify-center">
       {/* Backdrop Overlay */}
       <div
         className="fixed inset-0 bg-black/40 transition-opacity"
@@ -24,7 +25,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       />
 
       {/* Bottom Sheet Panel */}
-      <div className="relative w-full max-w-lg bg-card rounded-t-card shadow-lg z-10 max-h-[85vh] flex flex-col animate-slide-up border-t border-border">
+      <div className="relative w-full max-w-lg bg-card rounded-t-card shadow-lg z-10 max-h-[85vh] flex flex-col animate-slide-up border-t border-border pb-safe">
         {/* Drag Handle Indicator */}
         <div 
           className="w-full flex justify-center py-3 cursor-pointer"
@@ -50,6 +51,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

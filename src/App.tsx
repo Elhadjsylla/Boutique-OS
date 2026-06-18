@@ -1,48 +1,121 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
+import { Login } from './components/Login';
 import { Caisse } from './pages/Caisse';
+import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 
 function App() {
+  const devAdminSession = {
+    user: {
+      id: 'dev-admin-id',
+      email: 'admin@boutikos.dev',
+      user_metadata: {
+        boutique_id: 'boutique-dev',
+        boutique_name: 'BoutikOS Dev',
+      }
+    }
+  };
+
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('caisse');
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+      } else if (import.meta.env.DEV) {
+        setSession(devAdminSession);
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    }).catch(() => {
+      if (import.meta.env.DEV) {
+        setSession(devAdminSession);
+      }
+      setLoading(false);
+    });
+
+    // Listen to changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setSession(session);
+      } else if (import.meta.env.DEV && _event !== 'SIGNED_OUT') {
+        // Only set dev session if the user didn't explicitly log out
+        setSession(devAdminSession);
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-outline font-bold text-xs uppercase tracking-wider">Chargement de la session...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
+
+  // Extract metadata safely with fallbacks if needed
+  const user = session.user;
+  const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
+  const boutiqueName = user.user_metadata?.boutique_name || 'BoutikOS';
+  const caissierId = user.id;
 
   return (
     <div className="min-h-screen bg-background text-on-background">
       {/* Top App Bar */}
-      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-14 flex justify-between items-center px-margin-mobile">
-        <div className="flex items-center gap-sm">
-          <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
-            <span className="font-headline-md text-sm font-bold text-on-secondary-container">JS</span>
+      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-45 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
+            <span className="text-white text-xs font-black">
+              {boutiqueName.slice(0, 2).toUpperCase()}
+            </span>
           </div>
           <div className="flex flex-col text-left">
-            <h1 className="font-headline-md text-base leading-none">BoutikOS</h1>
-            <span className="text-[10px] opacity-70 tracking-wider">MARCHÉ CENTRAL</span>
+            <h1 className="text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
+            <span className="text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
+              {user.email}
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-md">
-          <button className="material-symbols-outlined text-on-primary hover:bg-primary-container/20 p-2 rounded-full transition-transform active:scale-95">
+        <div className="flex items-center gap-1">
+          <button className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95">
             notifications
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="material-symbols-outlined text-on-primary/80 hover:text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95"
+            title="Se déconnecter"
+          >
+            logout
           </button>
         </div>
       </header>
 
       {/* Pages Switcher */}
       <main className="w-full">
-        {activeTab === 'caisse' && <Caisse />}
-        
-        {activeTab === 'stock' && (
-          <div className="pt-24 px-margin-mobile text-center">
-            <div className="bg-card border border-border p-lg rounded-card shadow-sm max-w-sm mx-auto">
-              <span className="material-symbols-outlined text-5xl text-outline mb-sm">inventory_2</span>
-              <p className="font-headline-sm text-on-surface mb-xs">Inventaire & Stock</p>
-              <p className="text-body-md text-outline">Ce module est en cours de développement par Le Big EL.</p>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'ardoise' && <Ardoise />}
-        
+        {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
+        {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
+        {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard />}
       </main>
 
