@@ -7,13 +7,14 @@ export const produitSchema = z.object({
   prix: z.number().positive("Le prix doit être supérieur à 0."),
   quantite: z.number().int("La quantité doit être un nombre entier.").nonnegative("La quantité ne peut pas être négative."),
   seuilAlerte: z.number().int("Le seuil d'alerte doit être un nombre entier.").nonnegative("Le seuil d'alerte ne peut pas être négatif."),
+  imageUrl: z.string().optional(),
 });
 
 export function useStock(onSuccess: (msg: string) => void, onError: (msg: string) => void) {
   
-  const createProduit = useCallback(async (boutiqueId: string, nom: string, prix: number, quantite: number, seuilAlerte: number) => {
+  const createProduit = useCallback(async (boutiqueId: string, nom: string, prix: number, quantite: number, seuilAlerte: number, imageUrl?: string) => {
     try {
-      produitSchema.parse({ nom, prix, quantite, seuilAlerte });
+      produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
 
       const produitId = crypto.randomUUID();
       const timestamp = new Date().toISOString();
@@ -27,6 +28,7 @@ export function useStock(onSuccess: (msg: string) => void, onError: (msg: string
         seuil_alerte: seuilAlerte,
         archive: 0,
         updated_at: timestamp,
+        image_url: imageUrl?.trim() || undefined,
       };
 
       await db.transaction('rw', [db.produits, db.outbox], async () => {
@@ -45,9 +47,9 @@ export function useStock(onSuccess: (msg: string) => void, onError: (msg: string
     }
   }, [onSuccess, onError]);
 
-  const updateProduit = useCallback(async (produitId: string, nom: string, prix: number, quantite: number, seuilAlerte: number) => {
+  const updateProduit = useCallback(async (produitId: string, nom: string, prix: number, quantite: number, seuilAlerte: number, imageUrl?: string) => {
     try {
-      produitSchema.parse({ nom, prix, quantite, seuilAlerte });
+      produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
 
       const current = await db.produits.get(produitId);
       if (!current) {
@@ -64,6 +66,7 @@ export function useStock(onSuccess: (msg: string) => void, onError: (msg: string
         quantite,
         seuil_alerte: seuilAlerte,
         updated_at: timestamp,
+        image_url: imageUrl?.trim() || undefined,
       };
 
       await db.transaction('rw', [db.produits, db.outbox], async () => {

@@ -10,6 +10,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { getProductIconAndGradient } from '../lib/productHelper';
 
 interface StockProps {
   boutiqueId: string;
@@ -28,11 +29,13 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [newPrix, setNewPrix] = useState('');
   const [newQuantite, setNewQuantite] = useState('');
   const [newSeuilAlerte, setNewSeuilAlerte] = useState('5');
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   const [editNom, setEditNom] = useState('');
   const [editPrix, setEditPrix] = useState('');
   const [editQuantite, setEditQuantite] = useState('');
   const [editSeuilAlerte, setEditSeuilAlerte] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
 
   const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
 
@@ -40,7 +43,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     setToast({ message: msg, type: 'success' });
     setIsCreateOpen(false);
     setIsEditOpen(false);
-    setNewNom(''); setNewPrix(''); setNewQuantite(''); setNewSeuilAlerte('5');
+    setNewNom(''); setNewPrix(''); setNewQuantite(''); setNewSeuilAlerte('5'); setNewImageUrl('');
   };
 
   const { createProduit, updateProduit, archiveProduit } = useStock(handleSuccess, (msg) => setToast({ message: msg, type: 'error' }));
@@ -54,6 +57,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     setEditPrix(product.prix.toString());
     setEditQuantite(product.quantite.toString());
     setEditSeuilAlerte(product.seuil_alerte.toString());
+    setEditImageUrl(product.image_url || '');
     setIsEditOpen(true);
   };
 
@@ -105,27 +109,42 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             const isOutOfStock = p.quantite === 0;
             const isLowStock = p.quantite <= p.seuil_alerte && !isOutOfStock;
 
+            const style = getProductIconAndGradient(p.nom);
             return (
               <Card
                 key={p.id}
                 elevation={1}
-                className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-surface-container-low hover:border-primary/20 active:scale-[0.99] transition-all"
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-surface-container-low hover:border-primary/20 active:scale-[0.99] transition-all gap-3"
                 onClick={() => openEdit(p)}
               >
-                <div className="text-left flex-1 min-w-0 pr-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-sm text-on-surface truncate">{p.nom}</h3>
-                    {isOutOfStock ? (
-                      <Badge variant="danger">Rupture</Badge>
-                    ) : isLowStock ? (
-                      <Badge variant="warning">Stock Bas</Badge>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* Thumbnail Image / Apple-style Icon */}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center relative bg-primary-container shadow-sm border border-outline-variant/30">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
                     ) : (
-                      <Badge variant="success">OK</Badge>
+                      <div className={`w-full h-full bg-gradient-to-br ${style.bg} flex items-center justify-center relative`}>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent" />
+                        <span className="text-xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)] select-none">{style.emoji}</span>
+                      </div>
                     )}
                   </div>
-                  <MoneyText value={p.prix} className="text-sm font-semibold text-primary" />
+                  
+                  <div className="text-left flex-1 min-w-0 pr-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-sm text-on-surface truncate">{p.nom}</h3>
+                      {isOutOfStock ? (
+                        <Badge variant="danger">Rupture</Badge>
+                      ) : isLowStock ? (
+                        <Badge variant="warning">Stock Bas</Badge>
+                      ) : (
+                        <Badge variant="success">OK</Badge>
+                      )}
+                    </div>
+                    <MoneyText value={p.prix} className="text-sm font-semibold text-primary" />
+                  </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <p className="text-lg font-bold font-numeric-display text-on-surface">{p.quantite}</p>
                   <p className="text-[10px] text-outline font-bold uppercase">En Stock</p>
                 </div>
@@ -150,7 +169,8 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <Input label="Prix de Vente (FCFA)" type="number" value={newPrix} onChange={(e) => setNewPrix(e.target.value)} placeholder="Ex: 6750" />
           <Input label="Quantité Initiale" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="Ex: 15" />
           <Input label="Seuil d'Alerte de Stock" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="Ex: 5" />
-          <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte))} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-2">
+          <Input label="URL de la Photo (Optionnel)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte), newImageUrl)} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-2">
             AJOUTER AU STOCK
           </Button>
         </div>
@@ -163,11 +183,12 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <Input label="Prix de Vente (FCFA)" type="number" value={editPrix} onChange={(e) => setEditPrix(e.target.value)} />
           <Input label="Quantité en Stock" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
           <Input label="Seuil d'Alerte" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
+          <Input label="URL de la Photo (Optionnel)" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
           <div className="flex gap-3 mt-2">
             <Button variant="danger" onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)} className="flex-1">
               ARCHIVER
             </Button>
-            <Button onClick={() => selectedProductId && updateProduit(selectedProductId, editNom, parseFloat(editPrix), parseInt(editQuantite), parseInt(editSeuilAlerte))} className="flex-[2]" disabled={!editNom || !editPrix || !editQuantite || !editSeuilAlerte}>
+            <Button onClick={() => selectedProductId && updateProduit(selectedProductId, editNom, parseFloat(editPrix), parseInt(editQuantite), parseInt(editSeuilAlerte), editImageUrl)} className="flex-[2]" disabled={!editNom || !editPrix || !editQuantite || !editSeuilAlerte}>
               SAUVEGARDER
             </Button>
           </div>

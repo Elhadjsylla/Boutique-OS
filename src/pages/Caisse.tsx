@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input';
 import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { getProductIconAndGradient } from '../lib/productHelper';
 
 const SEED_PRODUCTS = [
   { id: '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed', boutique_id: 'boutique-1', nom: 'Huile de Palme', prix: 2500, quantite: 15, seuil_alerte: 5, archive: 0, updated_at: new Date().toISOString() },
@@ -16,17 +17,6 @@ const SEED_PRODUCTS = [
   { id: '3b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bef', boutique_id: 'boutique-1', nom: 'Eau Minérale 1.5L', prix: 500, quantite: 24, seuil_alerte: 10, archive: 0, updated_at: new Date().toISOString() },
   { id: '4b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bf0', boutique_id: 'boutique-1', nom: 'Savon Corporel', prix: 1200, quantite: 0, seuil_alerte: 5, archive: 0, updated_at: new Date().toISOString() },
 ];
-
-const getProductCardStyle = (name: string) => {
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const styles = [
-    { bg: 'from-blue-500/10 to-indigo-500/10 text-primary', icon: 'shopping_bag' },
-    { bg: 'from-emerald-500/10 to-teal-500/10 text-secondary', icon: 'restaurant_menu' },
-    { bg: 'from-amber-500/10 to-orange-500/10 text-tertiary', icon: 'storefront' },
-    { bg: 'from-purple-500/10 to-pink-500/10 text-purple-700', icon: 'category' },
-  ];
-  return styles[hash % styles.length];
-};
 
 interface CaisseProps {
   boutiqueId: string;
@@ -85,7 +75,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
         {filteredProducts.map((p) => {
           const isOutOfStock = p.quantite === 0;
           const isLowStock = p.quantite <= p.seuil_alerte && !isOutOfStock;
-          const cardStyle = getProductCardStyle(p.nom);
+          const style = getProductIconAndGradient(p.nom);
           
           return (
             <div
@@ -95,9 +85,21 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                 isOutOfStock ? 'opacity-40 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02] cursor-pointer hover:border-primary/30 hover:shadow-md'
               }`}
             >
-              <div className={`h-24 bg-gradient-to-br ${cardStyle.bg} flex items-center justify-center`}>
-                <span className="material-symbols-outlined text-4xl">{cardStyle.icon}</span>
+              {/* Product Visual Container (Image or Apple-style gradient emoji) */}
+              <div className="h-24 flex items-center justify-center relative overflow-hidden bg-primary-container">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${style.bg} flex items-center justify-center relative`}>
+                    {/* Apple Glossy Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                    <span className="text-4xl filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)] select-none transform group-hover:scale-110 transition-transform duration-300">
+                      {style.emoji}
+                    </span>
+                  </div>
+                )}
               </div>
+              
               <div className="p-3.5 flex flex-col flex-grow text-left">
                 <div className="flex justify-between items-start mb-2 gap-1">
                   <h3 className="font-headline-sm text-sm text-on-surface leading-tight truncate flex-1 font-bold">{p.nom}</h3>

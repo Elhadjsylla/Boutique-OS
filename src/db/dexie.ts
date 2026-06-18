@@ -18,6 +18,7 @@ export interface Produit {
   seuil_alerte: number;
   archive: number; // 0 or 1 for indexing
   updated_at: string;
+  image_url?: string;
 }
 
 export interface Vente {
