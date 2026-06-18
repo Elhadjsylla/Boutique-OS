@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
+      // Disable Service Worker entirely in development to avoid CSS caching issues
+      devOptions: {
+        enabled: false,
+      },
       includeAssets: ['favicon.svg', 'icons.svg', 'pwa-icon-192.png', 'pwa-icon-512.png'],
       manifest: {
         name: 'BoutikOS',
@@ -72,3 +76,4 @@ export default defineConfig({
     port: 2000,
   },
 })
+
