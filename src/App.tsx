@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
-import Login from './components/Login'
+import { Login } from './components/Login'
 import { Caisse } from './pages/Caisse'
 import { Dashboard } from './pages/Dashboard'
 import { Stock } from './pages/Stock'

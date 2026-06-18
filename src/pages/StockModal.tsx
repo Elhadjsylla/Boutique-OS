@@ -3,7 +3,14 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import type { Produit } from '../db/dexie';
-import type { ProductFormInput } from '../features/stock/useStock';
+
+export interface ProductFormInput {
+  nom: string;
+  prix: number;
+  quantite: number;
+  seuil_alerte: number;
+  image_url?: string;
+}
 
 interface StockModalProps {
   isOpen: boolean;

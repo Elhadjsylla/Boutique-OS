@@ -16,11 +16,11 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
       if ('caches' in window) {
         caches.keys().then((keys) => {
           Promise.all(keys.map(key => caches.delete(key))).then(() => {
-            window.location.reload();
+            (window as any).location.reload();
           });
         });
       } else {
-        window.location.reload();
+        (window as any).location.reload();
       }
     }
   });
