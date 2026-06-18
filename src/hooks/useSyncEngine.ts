@@ -24,14 +24,12 @@ export function useSyncEngine() {
     }
   }, [isOnline, isSyncing]);
 
+  // Sync when coming back online
   useEffect(() => {
     if (isOnline) {
-      const timer = setTimeout(() => {
-        runSync();
-      }, 0);
-      return () => clearTimeout(timer);
+      runSync();
     }
-  }, [isOnline, runSync]);
+  }, [isOnline]);
 
   // Periodic sync every 60 seconds when online
   useEffect(() => {

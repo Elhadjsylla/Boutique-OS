@@ -8,7 +8,7 @@ export const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 60 * 24, // Keep garbage collected cache in memory for 24h
       refetchOnWindowFocus: false, // Don't refetch on window focus to save bandwidth/mobile battery
       refetchOnReconnect: 'always', // Always refetch when coming back online
-      retry: (failureCount) => {
+      retry: (failureCount, _error: any) => {
         // Do not retry queries if the device is offline
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           return false;

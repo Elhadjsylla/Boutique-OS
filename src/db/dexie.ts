@@ -4,7 +4,7 @@ export interface OutboxEntry {
   id: string; // client-generated UUID
   table: string; // e.g. 'produits', 'ventes', 'vente_items', 'ardoises', 'ardoise_paiements'
   op: 'INSERT' | 'UPDATE' | 'DELETE';
-  payload: Record<string, unknown>;
+  payload: any;
   updatedAt: string; // ISO String timestamp
   synced: number; // 0 = non synchro, 1 = synchro
 }
@@ -18,6 +18,7 @@ export interface Produit {
   seuil_alerte: number;
   archive: number; // 0 or 1 for indexing
   updated_at: string;
+  image_url?: string;
 }
 
 export interface Vente {
@@ -80,7 +81,7 @@ export class BoutikOSDatabase extends Dexie {
 export const db = new BoutikOSDatabase();
 
 // Helper to queue a mutation to the outbox
-export async function queueMutation(table: string, op: 'INSERT' | 'UPDATE' | 'DELETE', id: string, payload: Record<string, unknown>) {
+export async function queueMutation(table: string, op: 'INSERT' | 'UPDATE' | 'DELETE', id: string, payload: any) {
   const timestamp = new Date().toISOString();
   await db.outbox.put({
     id,

@@ -1,177 +1,152 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { useStock, type ProductFormInput } from '../features/stock/useStock';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/dexie';
+import { useStock } from '../features/stock/useStock';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/Input';
 import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
-import { StockModal } from './StockModal';
-import type { Produit } from '../db/dexie';
+import { BottomSheet } from '../components/ui/BottomSheet';
+import { getProductIconAndGradient } from '../lib/productHelper';
 
-export const Stock: React.FC = () => {
-  const { profile, boutique } = useAuth();
-  
-  // Role checks
-  const canEdit = profile?.role === 'gerant' || profile?.role === 'super_admin';
-  const boutiqueId = profile?.boutique_id || boutique?.id || 'boutique-1';
+interface StockProps {
+  boutiqueId: string;
+}
 
-  const {
-    filteredProducts,
-    search,
-    setSearch,
-    filterLowStock,
-    setFilterLowStock,
-    error,
-    setError,
-    saveProduct,
-    archiveProduct,
-  } = useStock(boutiqueId);
-
-  // UI States
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Produit | null>(null);
-  const [archiveId, setArchiveId] = useState<string | null>(null);
+export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
+  const [search, setSearch] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const handleSave = async (data: ProductFormInput): Promise<boolean> => {
-    const success = await saveProduct(data, editingProduct?.id);
-    if (success) {
-      setToast({
-        message: editingProduct ? "Produit mis à jour avec succès" : "Produit ajouté avec succès",
-        type: 'success'
-      });
-      setEditingProduct(null);
-    }
-    return success;
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  // Forms
+  const [newNom, setNewNom] = useState('');
+  const [newPrix, setNewPrix] = useState('');
+  const [newQuantite, setNewQuantite] = useState('');
+  const [newSeuilAlerte, setNewSeuilAlerte] = useState('5');
+  const [newImageUrl, setNewImageUrl] = useState('');
+
+  const [editNom, setEditNom] = useState('');
+  const [editPrix, setEditPrix] = useState('');
+  const [editQuantite, setEditQuantite] = useState('');
+  const [editSeuilAlerte, setEditSeuilAlerte] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+
+  const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
+
+  const handleSuccess = (msg: string) => {
+    setToast({ message: msg, type: 'success' });
+    setIsCreateOpen(false);
+    setIsEditOpen(false);
+    setNewNom(''); setNewPrix(''); setNewQuantite(''); setNewSeuilAlerte('5'); setNewImageUrl('');
   };
 
-  const handleArchiveConfirm = async () => {
-    if (!archiveId) return;
-    const success = await archiveProduct(archiveId);
-    if (success) {
-      setToast({ message: "Produit archivé avec succès", type: 'success' });
-    } else if (error) {
-      setToast({ message: error, type: 'error' });
-    }
-    setArchiveId(null);
+  const { createProduit, updateProduit, archiveProduit } = useStock(handleSuccess, (msg) => setToast({ message: msg, type: 'error' }));
+
+  const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+
+  const openEdit = (product: typeof products[0]) => {
+    setSelectedProductId(product.id);
+    setEditNom(product.nom);
+    setEditPrix(product.prix.toString());
+    setEditQuantite(product.quantite.toString());
+    setEditSeuilAlerte(product.seuil_alerte.toString());
+    setEditImageUrl(product.image_url || '');
+    setIsEditOpen(true);
   };
 
-  const handleOpenEdit = (product: Produit) => {
-    setEditingProduct(product);
-    setIsFormOpen(true);
-  };
-
-  const handleOpenAdd = () => {
-    setEditingProduct(null);
-    setIsFormOpen(true);
-  };
+  const totalProducts = products.length;
+  const outOfStock = products.filter(p => p.quantite === 0).length;
+  const lowStock = products.filter(p => p.quantite > 0 && p.quantite <= p.seuil_alerte).length;
 
   return (
-    <div className="pb-40 pt-16 px-margin-mobile max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-md text-left">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="pb-40 pt-20 px-4 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Header Section */}
-      <div className="flex justify-between items-center mt-sm">
-        <div>
-          <h2 className="font-headline-md text-on-surface">Gestion de Stock</h2>
-          <p className="text-xs text-outline">{filteredProducts.length} produit(s) trouvé(s)</p>
-        </div>
-        {canEdit && (
-          <Button onClick={handleOpenAdd} size="md" className="flex items-center gap-xs">
-            <span className="material-symbols-outlined text-base">add</span>
-            Ajouter
-          </Button>
-        )}
+      <div className="text-left mt-2">
+        <h1 className="font-headline-lg-mobile text-on-surface">Gestion des Stocks</h1>
+        <p className="font-body-md text-on-surface-variant">Surveillez vos produits et ajustez vos prix et quantités en un instant.</p>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-sm">
-        <div className="relative flex items-center">
-          <span className="material-symbols-outlined absolute left-4 text-outline">search</span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 h-12 bg-surface-container-lowest border-outline-variant border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-body-lg text-body-lg text-on-surface"
-            placeholder="Rechercher par nom..."
-          />
-        </div>
-        
-        <div className="flex gap-sm">
-          <button
-            onClick={() => setFilterLowStock(!filterLowStock)}
-            className={`flex-1 h-10 px-4 rounded-xl border flex items-center justify-center gap-xs font-semibold text-xs transition-all ${
-              filterLowStock
-                ? 'bg-tertiary-container/20 border-on-tertiary-container text-on-tertiary-container'
-                : 'bg-surface-container-lowest border-outline-variant text-outline'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">warning</span>
-            Stock Faible
-          </button>
-        </div>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Articles', count: totalProducts, color: 'text-primary' },
+          { label: 'Ruptures', count: outOfStock, color: 'text-error' },
+          { label: 'Alerte Stock', count: lowStock, color: 'text-tertiary' }
+        ].map((metric, i) => (
+          <div key={i} className="bg-white border border-outline-variant p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm">
+            <span className="text-[9px] text-outline font-bold uppercase tracking-wider">{metric.label}</span>
+            <p className={`text-xl font-extrabold ${metric.color} font-numeric-display`}>{metric.count}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="relative flex items-center group">
+        <span className="material-symbols-outlined absolute left-4 text-outline group-focus-within:text-primary transition-colors">search</span>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-12 pr-4 h-13 bg-white border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-body-lg text-body-lg text-on-surface premium-shadow-sm"
+          placeholder="Rechercher un produit..."
+        />
       </div>
 
       {/* Products List */}
-      <div className="flex flex-col gap-sm">
+      <div className="flex flex-col gap-2">
         {filteredProducts.length === 0 ? (
-          <div className="bg-card border border-border p-lg rounded-card shadow-sm text-center">
-            <span className="material-symbols-outlined text-4xl text-outline mb-xs">inventory_2</span>
-            <p className="text-body-md text-outline">Aucun produit en stock.</p>
-          </div>
+          <p className="text-sm text-outline text-center py-10 bg-white rounded-2xl border border-outline-variant">Aucun produit en stock.</p>
         ) : (
           filteredProducts.map((p) => {
             const isOutOfStock = p.quantite === 0;
             const isLowStock = p.quantite <= p.seuil_alerte && !isOutOfStock;
 
+            const style = getProductIconAndGradient(p.nom);
             return (
-              <Card key={p.id} className="p-sm flex justify-between items-center bg-surface-container-lowest border border-outline-variant">
-                <div className="flex flex-col gap-xs min-w-0 flex-1 mr-sm">
-                  <div className="flex items-center gap-xs min-w-0">
-                    <span className="font-semibold text-on-surface truncate">{p.nom}</span>
-                    {isOutOfStock ? (
-                      <Badge variant="danger">Rupture</Badge>
-                    ) : isLowStock ? (
-                      <Badge variant="warning">Alerte</Badge>
+              <Card
+                key={p.id}
+                elevation={1}
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-surface-container-low hover:border-primary/20 active:scale-[0.99] transition-all gap-3"
+                onClick={() => openEdit(p)}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* Thumbnail Image / Apple-style Icon */}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center relative bg-primary-container shadow-sm border border-outline-variant/30">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
                     ) : (
-                      <Badge variant="success">OK</Badge>
+                      <div className={`w-full h-full bg-gradient-to-br ${style.bg} flex items-center justify-center relative`}>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent" />
+                        <span className="text-xl filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)] select-none">{style.emoji}</span>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-md text-xs text-outline font-medium">
-                    <span>Stock: <strong className={isOutOfStock ? 'text-error' : isLowStock ? 'text-on-tertiary-container' : 'text-on-surface'}>{p.quantite}</strong></span>
-                    <span>Seuil: {p.seuil_alerte}</span>
+                  
+                  <div className="text-left flex-1 min-w-0 pr-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-sm text-on-surface truncate">{p.nom}</h3>
+                      {isOutOfStock ? (
+                        <Badge variant="danger">Rupture</Badge>
+                      ) : isLowStock ? (
+                        <Badge variant="warning">Stock Bas</Badge>
+                      ) : (
+                        <Badge variant="success">OK</Badge>
+                      )}
+                    </div>
+                    <MoneyText value={p.prix} className="text-sm font-semibold text-primary" />
                   </div>
                 </div>
-
-                <div className="flex items-center gap-md">
-                  <MoneyText value={p.prix} className="text-base text-primary font-bold" />
-                  
-                  {canEdit && (
-                    <div className="flex gap-xs border-l border-border pl-md">
-                      <button
-                        onClick={() => handleOpenEdit(p)}
-                        className="material-symbols-outlined text-outline hover:text-primary active:scale-90 transition-transform p-1"
-                        title="Modifier"
-                      >
-                        edit
-                      </button>
-                      <button
-                        onClick={() => setArchiveId(p.id)}
-                        className="material-symbols-outlined text-outline hover:text-error active:scale-90 transition-transform p-1"
-                        title="Archiver"
-                      >
-                        archive
-                      </button>
-                    </div>
-                  )}
+                <div className="text-right flex-shrink-0">
+                  <p className="text-lg font-bold font-numeric-display text-on-surface">{p.quantite}</p>
+                  <p className="text-[10px] text-outline font-bold uppercase">En Stock</p>
                 </div>
               </Card>
             );
@@ -179,37 +154,52 @@ export const Stock: React.FC = () => {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
-      {isFormOpen && (
-        <StockModal
-          key={editingProduct?.id || 'new'}
-          isOpen={isFormOpen}
-          onClose={() => {
-            setIsFormOpen(false);
-            setError(null);
-          }}
-          onSave={handleSave}
-          product={editingProduct}
-          validationError={error}
-        />
-      )}
+      {/* FAB */}
+      <button
+        onClick={() => setIsCreateOpen(true)}
+        className="fixed bottom-22 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40"
+      >
+        <span className="material-symbols-outlined text-[28px]">add_box</span>
+      </button>
 
-      {/* Archive Confirmation Modal */}
-      <Modal isOpen={!!archiveId} onClose={() => setArchiveId(null)} title="Archiver le produit">
-        <div className="flex flex-col gap-md text-left">
-          <p className="text-body-md text-outline">
-            Êtes-vous sûr de vouloir archiver ce produit ? Il ne sera plus visible lors de l'encaissement, mais l'historique des ventes sera conservé.
-          </p>
-          <div className="flex gap-sm">
-            <Button variant="ghost" onClick={() => setArchiveId(null)} className="flex-1">
-              Annuler
+      {/* MODAL: Create Product */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ajouter un nouveau produit">
+        <div className="flex flex-col gap-3">
+          <Input label="Nom du Produit" value={newNom} onChange={(e) => setNewNom(e.target.value)} placeholder="Ex: Sac de Riz 5kg" />
+          {/* Champs numériques en grille compacte */}
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Prix (FCFA)" type="number" value={newPrix} onChange={(e) => setNewPrix(e.target.value)} placeholder="6750" />
+            <Input label="Quantité" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="15" />
+            <Input label="Seuil alerte" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="5" />
+          </div>
+          <Input label="URL Photo (Optionnel)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <Button onClick={() => createProduit(boutiqueId, newNom, parseFloat(newPrix), parseInt(newQuantite), parseInt(newSeuilAlerte), newImageUrl)} disabled={!newNom || !newPrix || !newQuantite || !newSeuilAlerte} className="w-full mt-1">
+            AJOUTER AU STOCK
+          </Button>
+        </div>
+      </Modal>
+
+      {/* BOTTOM SHEET: Edit & Archive */}
+      <BottomSheet isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={selectedProduct ? `Fiche : ${selectedProduct.nom}` : ''}>
+        <div className="flex flex-col gap-3 text-left">
+          <Input label="Nom du Produit" value={editNom} onChange={(e) => setEditNom(e.target.value)} />
+          {/* Champs numériques en grille compacte */}
+          <div className="grid grid-cols-3 gap-2">
+            <Input label="Prix (FCFA)" type="number" value={editPrix} onChange={(e) => setEditPrix(e.target.value)} />
+            <Input label="Quantité" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
+            <Input label="Seuil" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
+          </div>
+          <Input label="URL Photo (Optionnel)" value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} placeholder="https://example.com/photo.jpg" />
+          <div className="flex gap-3 mt-1">
+            <Button variant="danger" onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)} className="flex-1">
+              ARCHIVER
             </Button>
-            <Button variant="danger" onClick={handleArchiveConfirm} className="flex-1">
-              Archiver
+            <Button onClick={() => selectedProductId && updateProduit(selectedProductId, editNom, parseFloat(editPrix), parseInt(editQuantite), parseInt(editSeuilAlerte), editImageUrl)} className="flex-[2]" disabled={!editNom || !editPrix || !editQuantite || !editSeuilAlerte}>
+              SAUVEGARDER
             </Button>
           </div>
         </div>
-      </Modal>
+      </BottomSheet>
     </div>
   );
 };

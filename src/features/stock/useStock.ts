@@ -1,112 +1,121 @@
-import { useState, useCallback } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useCallback } from 'react';
 import { z } from 'zod';
-import { db, queueMutation, type Produit } from '../../db/dexie';
+import { db, queueMutation } from '../../db/dexie';
 
-export const productSchema = z.object({
-  nom: z.string().min(1, "Le nom est requis"),
-  prix: z.number({ message: "Le prix doit être un nombre" }).positive("Le prix doit être supérieur à 0"),
-  quantite: z.number({ message: "La quantité doit être un nombre" }).int().nonnegative("La quantité doit être positive ou nulle"),
-  seuil_alerte: z.number({ message: "Le seuil d'alerte doit être un nombre" }).int().nonnegative("Le seuil d'alerte doit être positif ou nul"),
+export const produitSchema = z.object({
+  nom: z.string().min(1, "Le nom du produit est obligatoire."),
+  prix: z.number().positive("Le prix doit être supérieur à 0."),
+  quantite: z.number().int("La quantité doit être un nombre entier.").nonnegative("La quantité ne peut pas être négative."),
+  seuilAlerte: z.number().int("Le seuil d'alerte doit être un nombre entier.").nonnegative("Le seuil d'alerte ne peut pas être négatif."),
+  imageUrl: z.string().optional(),
 });
 
-export type ProductFormInput = z.infer<typeof productSchema>;
-
-export function useStock(boutiqueId: string) {
-  const [search, setSearch] = useState('');
-  const [filterLowStock, setFilterLowStock] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Live query of active products (archive = 0)
-  const products = useLiveQuery(
-    async () => {
-      return await db.produits.where('archive').equals(0).toArray();
-    },
-    []
-  ) || [];
-
-  // Filter products by search and low stock threshold
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.nom.toLowerCase().includes(search.toLowerCase());
-    const matchesLowStock = !filterLowStock || p.quantite <= p.seuil_alerte;
-    return matchesSearch && matchesLowStock;
-  });
-
-  const saveProduct = useCallback(async (data: ProductFormInput, productId?: string) => {
+export function useStock(onSuccess: (msg: string) => void, onError: (msg: string) => void) {
+  
+  const createProduit = useCallback(async (boutiqueId: string, nom: string, prix: number, quantite: number, seuilAlerte: number, imageUrl?: string) => {
     try {
-      setError(null);
-      const parsed = productSchema.parse(data);
-      const timestamp = new Date().toISOString();
-      const id = productId || crypto.randomUUID();
-      const isNew = !productId;
+      produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
 
-      const productData: Produit = {
-        id,
+      const produitId = crypto.randomUUID();
+      const timestamp = new Date().toISOString();
+
+      const produitData = {
+        id: produitId,
         boutique_id: boutiqueId,
-        nom: parsed.nom,
-        prix: parsed.prix,
-        quantite: parsed.quantite,
-        seuil_alerte: parsed.seuil_alerte,
+        nom: nom.trim(),
+        prix,
+        quantite,
+        seuil_alerte: seuilAlerte,
         archive: 0,
         updated_at: timestamp,
+        image_url: imageUrl?.trim() || undefined,
       };
 
       await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(productData);
-        await queueMutation('produits', isNew ? 'INSERT' : 'UPDATE', id, productData as unknown as Record<string, unknown>);
+        await db.produits.add(produitData);
+        await queueMutation('produits', 'INSERT', produitId, produitData);
       });
 
-      return true;
+      onSuccess("Produit créé avec succès.");
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setError(err.issues[0]?.message || "Erreur de validation");
+        onError(err.issues[0]?.message || "Erreur de validation");
       } else {
         console.error(err);
-        setError("Erreur lors de l'enregistrement du produit");
+        onError("Une erreur est survenue lors de la création.");
       }
-      return false;
     }
-  }, [boutiqueId]);
+  }, [onSuccess, onError]);
 
-  const archiveProduct = useCallback(async (id: string) => {
+  const updateProduit = useCallback(async (produitId: string, nom: string, prix: number, quantite: number, seuilAlerte: number, imageUrl?: string) => {
     try {
-      setError(null);
-      const product = await db.produits.get(id);
-      if (!product) {
-        setError("Produit introuvable");
-        return false;
+      produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
+
+      const current = await db.produits.get(produitId);
+      if (!current) {
+        onError("Produit introuvable.");
+        return;
       }
 
       const timestamp = new Date().toISOString();
-      const updatedProduct: Produit = {
-        ...product,
+
+      const produitData = {
+        ...current,
+        nom: nom.trim(),
+        prix,
+        quantite,
+        seuil_alerte: seuilAlerte,
+        updated_at: timestamp,
+        image_url: imageUrl?.trim() || undefined,
+      };
+
+      await db.transaction('rw', [db.produits, db.outbox], async () => {
+        await db.produits.put(produitData);
+        await queueMutation('produits', 'UPDATE', produitId, produitData);
+      });
+
+      onSuccess("Produit mis à jour avec succès.");
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        onError(err.issues[0]?.message || "Erreur de validation");
+      } else {
+        console.error(err);
+        onError("Une erreur est survenue lors de la mise à jour.");
+      }
+    }
+  }, [onSuccess, onError]);
+
+  const archiveProduit = useCallback(async (produitId: string) => {
+    try {
+      const current = await db.produits.get(produitId);
+      if (!current) {
+        onError("Produit introuvable.");
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+
+      const produitData = {
+        ...current,
         archive: 1,
         updated_at: timestamp,
       };
 
       await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(updatedProduct);
-        await queueMutation('produits', 'UPDATE', id, updatedProduct as unknown as Record<string, unknown>);
+        await db.produits.put(produitData);
+        await queueMutation('produits', 'UPDATE', produitId, produitData);
       });
 
-      return true;
+      onSuccess("Produit archivé avec succès.");
     } catch (err) {
       console.error(err);
-      setError("Erreur lors de l'archivage du produit");
-      return false;
+      onError("Une erreur est survenue lors de l'archivage.");
     }
-  }, []);
+  }, [onSuccess, onError]);
 
   return {
-    products,
-    filteredProducts,
-    search,
-    setSearch,
-    filterLowStock,
-    setFilterLowStock,
-    error,
-    setError,
-    saveProduct,
-    archiveProduct,
+    createProduit,
+    updateProduit,
+    archiveProduit,
   };
 }

@@ -86,6 +86,13 @@
   --font-body-lg: "Inter", sans-serif;
   --font-label-md: "Inter", sans-serif;
   --font-headline-md: "DM Sans", sans-serif;
+
+  /* Micro-Animations & Transitions */
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-fade-in-down: fade-in-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-pulse-subtle: pulse-subtle 2s infinite ease-in-out;
 }
 
 /* T-shirt spacing aliases as plain CSS custom properties (not in @theme)
@@ -201,7 +208,7 @@
 
 @layer base {
   body {
-    @apply font-body-md bg-background text-on-background antialiased;
+    @apply font-body-md bg-background text-on-background antialiased selection:bg-primary-container selection:text-primary;
     font-size: 14px;
     line-height: 20px;
   }
@@ -263,10 +270,19 @@
   }
   
   .cart-shadow {
-    box-shadow: 0px -8px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px -8px 32px rgba(26, 60, 94, 0.12);
   }
   .product-card-shadow {
-    box-shadow: 0px 4px 12px rgba(26, 60, 94, 0.08);
+    box-shadow: 0px 4px 16px rgba(26, 60, 94, 0.06);
+  }
+  .premium-shadow-sm {
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .premium-shadow-md {
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.06);
+  }
+  .premium-shadow-lg {
+    box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.08);
   }
   .scroll-hide::-webkit-scrollbar {
     display: none;
@@ -289,4 +305,41 @@
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom premium scrollbar for lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}
+
+/* Keyframes for micro-animations */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.015); }
 }

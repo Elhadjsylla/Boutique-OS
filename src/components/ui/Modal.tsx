@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -15,8 +16,8 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-md">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-md">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/40 transition-opacity"
@@ -34,7 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
           )}
           <button
             onClick={onClose}
-            className="material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container/50"
+            className="material-symbols-outlined text-outline hover:text-on-surface w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all cursor-pointer flex-shrink-0 ml-2 text-[20px]"
           >
             close
           </button>
@@ -45,6 +46,7 @@ export const Modal: React.FC<ModalProps> = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
