@@ -147,52 +147,136 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
 
       {/* Cart Bottom Sheet */}
       <BottomSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} title="Détails de l'encaissement">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+        <div className="flex flex-col gap-5 text-left">
+          {/* Cart Items List */}
+          <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
             {cart.map((item) => (
-              <div key={item.produitId} className="flex justify-between items-center bg-surface-container/30 p-2.5 rounded-xl border border-outline-variant">
-                <div className="flex flex-col text-left">
-                  <span className="font-bold text-on-surface text-sm">{item.nom}</span>
-                  <MoneyText value={item.prix} className="text-xs text-outline font-semibold" />
+              <div 
+                key={item.produitId} 
+                className="flex justify-between items-center bg-primary-container/30 border border-primary-container/60 p-3 rounded-2xl transition-all hover:bg-primary-container/40"
+              >
+                <div className="flex flex-col text-left gap-0.5">
+                  <span className="font-extrabold text-on-surface text-sm">{item.nom}</span>
+                  <div className="flex items-center gap-1.5">
+                    <MoneyText value={item.prix} className="text-xs text-texte-2 font-bold" />
+                    <span className="text-[10px] text-outline">•</span>
+                    <span className="text-xs text-outline font-semibold">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(item.produitId, -1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center font-bold hover:bg-surface-container active:scale-90 transition-all">-</button>
-                  <span className="font-bold w-5 text-center text-sm">{item.quantite}</span>
-                  <button onClick={() => updateQuantity(item.produitId, 1)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center font-bold hover:bg-surface-container active:scale-90 transition-all">+</button>
-                  <button onClick={() => removeItem(item.produitId)} className="material-symbols-outlined text-error/85 hover:text-error ml-2 p-1 rounded-full hover:bg-error-container">close</button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-white border border-outline-variant rounded-xl p-0.5 shadow-sm">
+                    <button 
+                      onClick={() => updateQuantity(item.produitId, -1)} 
+                      className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="font-extrabold w-7 text-center text-xs text-on-surface">{item.quantite}</span>
+                    <button 
+                      onClick={() => updateQuantity(item.produitId, 1)} 
+                      className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => removeItem(item.produitId)} 
+                    className="material-symbols-outlined text-error/80 hover:text-error hover:bg-error-container/60 p-1.5 rounded-xl transition-all cursor-pointer"
+                    title="Supprimer du panier"
+                  >
+                    delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-between font-bold text-lg border-t border-border pt-4">
-            <span>TOTAL À PAYER :</span>
-            <MoneyText value={cartTotal} className="text-primary font-extrabold text-xl" />
+          {/* Premium Total Card */}
+          <div className="bg-gradient-to-r from-primary to-primary/90 text-on-primary rounded-2xl p-4 flex justify-between items-center premium-shadow-md border border-white/5">
+            <div className="flex flex-col text-left gap-0.5">
+              <span className="text-[10px] opacity-75 font-bold uppercase tracking-widest">Montant Total</span>
+              <span className="text-xs opacity-90 font-semibold">{cart.reduce((s, i) => s + i.quantite, 0)} article(s) au panier</span>
+            </div>
+            <MoneyText value={cartTotal} className="text-white font-black text-2xl tracking-tight" />
           </div>
 
-          <div className="flex flex-col gap-1 mt-2 text-left">
-            <Input
-              label="Montant Reçu (FCFA)"
-              type="number"
-              value={amountReceived}
-              onChange={(e) => setAmountReceived(e.target.value)}
-              placeholder="Saisir la somme reçue..."
-            />
+          {/* Payment Input & Quick Bills */}
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Input
+                label="Montant Reçu (FCFA)"
+                type="number"
+                value={amountReceived}
+                onChange={(e) => setAmountReceived(e.target.value)}
+                placeholder="Saisir la somme reçue..."
+                className="pr-16 text-lg font-bold text-primary"
+              />
+              {amountReceived && (
+                <button 
+                  onClick={() => setAmountReceived('')}
+                  className="absolute right-3 bottom-2.5 material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-all"
+                >
+                  clear
+                </button>
+              )}
+            </div>
+
+            {/* Quick Suggestions for Senegal (Dakar Bills) */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] text-outline font-bold uppercase tracking-wider">Billets courants</span>
+              <div className="grid grid-cols-4 gap-2">
+                {[1000, 2000, 5000, 10000].map((bill) => (
+                  <button
+                    key={bill}
+                    type="button"
+                    onClick={() => setAmountReceived(bill.toString())}
+                    className={`h-9 border text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                      Number(amountReceived) === bill 
+                        ? 'bg-secondary border-secondary text-white shadow-sm scale-95' 
+                        : 'border-outline-variant bg-white text-texte-2 hover:border-primary/30 hover:bg-primary-container/20'
+                    }`}
+                  >
+                    {new Intl.NumberFormat('fr-FR').format(bill)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Change Due Feedbacks */}
             {amountReceived && (
-              <div className="flex justify-between items-center mt-2 bg-surface-container/40 p-2.5 rounded-xl">
-                <span className="text-xs font-bold text-outline">Rendu monnaie :</span>
-                <span className={`font-extrabold text-base ${changeDue >= 0 ? 'text-secondary' : 'text-error'}`}>
-                  {changeDue >= 0 ? `${new Intl.NumberFormat('fr-FR').format(changeDue)} FCFA` : `Reste ${new Intl.NumberFormat('fr-FR').format(Math.abs(changeDue))} FCFA`}
-                </span>
+              <div className="animate-fade-in">
+                {changeDue >= 0 ? (
+                  <div className="flex justify-between items-center bg-secondary-container/60 border border-secondary-container p-3 rounded-2xl">
+                    <div className="flex items-center gap-2 text-secondary">
+                      <span className="material-symbols-outlined text-xl animate-pulse">payments</span>
+                      <span className="text-xs font-extrabold uppercase tracking-wide">Rendu Monnaie :</span>
+                    </div>
+                    <span className="font-black text-secondary text-lg">
+                      {new Intl.NumberFormat('fr-FR').format(changeDue)} FCFA
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center bg-error-container/60 border border-error-container p-3 rounded-2xl">
+                    <div className="flex items-center gap-2 text-error">
+                      <span className="material-symbols-outlined text-xl">warning</span>
+                      <span className="text-xs font-extrabold uppercase tracking-wide">Reste à payer :</span>
+                    </div>
+                    <span className="font-black text-error text-lg">
+                      {new Intl.NumberFormat('fr-FR').format(Math.abs(changeDue))} FCFA
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
+          {/* Validation Action Button */}
           <Button
             onClick={() => validateAndCheckout(boutiqueId, caissierId)}
             disabled={!amountReceived || changeDue < 0}
-            className="w-full mt-2"
+            className="w-full h-13 rounded-2xl flex items-center justify-center gap-2 font-black tracking-wider text-sm transition-all premium-shadow-md disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg active:scale-98"
           >
+            <span className="material-symbols-outlined">check_circle</span>
             VALIDER LA VENTE
           </Button>
         </div>
