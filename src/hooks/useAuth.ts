@@ -4,6 +4,35 @@ import { useAuthStore } from '../store/useAuthStore'
 import type { Profile, Boutique } from '../store/useAuthStore'
 import type { User } from '@supabase/supabase-js'
 
+// ─── DEV BYPASS ───────────────────────────────────────────────────────────────
+// In development mode, skip Supabase auth entirely and inject a mock super_admin
+// session so the team can access the full interface without credentials.
+// This flag is removed automatically when building for production.
+const DEV_BYPASS = import.meta.env.DEV
+
+const DEV_USER: User = {
+  id: 'dev-admin-000-0000-0000-000000000000',
+  email: 'admin@boutikos.dev',
+  app_metadata: {},
+  user_metadata: { full_name: 'Admin DEV' },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as User
+
+const DEV_PROFILE: Profile = {
+  id: 'dev-admin-000-0000-0000-000000000000',
+  role: 'super_admin',
+  boutique_id: 'dev-boutique-000-0000-0000-000000000',
+}
+
+const DEV_BOUTIQUE: Boutique = {
+  id: 'dev-boutique-000-0000-0000-000000000',
+  nom: 'Boutique DEV',
+  adresse: 'Mode développement local',
+  gerant_id: null,
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 export function useAuth() {
   const { setAuth, clearAuth, setLoading, user, profile, boutique, isLoading } = useAuthStore()
 
@@ -50,6 +79,12 @@ export function useAuth() {
   }, [setAuth, setLoading])
 
   useEffect(() => {
+    // ── DEV BYPASS: inject fake admin session immediately ──
+    if (DEV_BYPASS) {
+      setAuth(DEV_USER, DEV_PROFILE, DEV_BOUTIQUE)
+      return
+    }
+
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -73,7 +108,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [fetchProfileAndBoutique, clearAuth])
+  }, [fetchProfileAndBoutique, clearAuth, setAuth])
 
   return {
     user,
@@ -81,7 +116,9 @@ export function useAuth() {
     boutique,
     isLoading,
     signOut: async () => {
-      await supabase.auth.signOut()
+      if (!DEV_BYPASS) {
+        await supabase.auth.signOut()
+      }
       clearAuth()
     }
   }
