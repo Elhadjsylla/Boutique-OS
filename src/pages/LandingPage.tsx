@@ -88,9 +88,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </span>
         </h1>
 
-        <p className="text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-10">
+        <p className="text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-8">
           Gerez vos ventes, contrôlez vos stocks en temps réel et suivez le carnet d'ardoises clients avec une interface ultra-fluide conçue pour votre smartphone.
         </p>
+
+        {/* Floating Money/Retail Illustration */}
+        <div className="relative w-40 h-40 mb-10 select-none">
+          <img 
+            src="/retail_hero_3d.png" 
+            alt="Commerce et Argent Illustration" 
+            className="w-full h-full object-contain filter drop-shadow-[0_15px_30px_rgba(26,60,94,0.12)]"
+          />
+          {/* Floating extra emoji/icon badges with bounce animations */}
+          <span className="absolute -top-1 -left-2 text-2xl animate-bounce" style={{ animationDuration: '2.5s' }}>💸</span>
+          <span className="absolute top-1/3 -right-4 text-2xl animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.4s' }}>🪙</span>
+          <span className="absolute -bottom-2 left-4 text-2xl animate-bounce" style={{ animationDuration: '3s', animationDelay: '0.8s' }}>🛒</span>
+          <span className="absolute bottom-1/2 -left-6 text-2xl animate-bounce" style={{ animationDuration: '2.8s', animationDelay: '1.2s' }}>💳</span>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-20">
           {isLoggedIn ? (
