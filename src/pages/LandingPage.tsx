@@ -35,6 +35,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('opacity-100', 'translate-y-0');
+            entry.target.classList.remove('opacity-0', 'translate-y-12');
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    const revealElements = document.querySelectorAll('.reveal');
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      revealElements.forEach((el) => observer.unobserve(el));
+    };
+  }, []);
+
   // Mini simulator database simulation state
   const [simCart, setSimCart] = useState<{ id: string; nom: string; prix: number; qty: number }[]>([
     { id: '1', nom: 'Huile de Palme', prix: 2500, qty: 1 },
@@ -128,12 +149,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4 max-w-5xl mx-auto text-center flex flex-col items-center">
         {/* Shiny badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-outline-variant rounded-full text-xs text-texte-2 mb-8 backdrop-blur-sm shadow-sm">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 inline-flex items-center gap-2 px-3 py-1 bg-white border border-outline-variant rounded-full text-xs text-texte-2 mb-8 backdrop-blur-sm shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-ping" />
           <span className="font-semibold">BoutikOS v2.0 est disponible hors-ligne</span>
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-primary mb-6">
+        <h1 className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 text-4xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-primary mb-6">
           Ta caisse. Ton stock. <br />
           <span className="bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent">
             Tes Crédits Clients.
@@ -141,7 +162,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           Enfin tout au même endroit.
         </h1>
 
-        <p className="text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-8">
+        <p className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-200 text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-8">
           Fini les crédits oubliés. Fini les stocks flous. Tout dans ton téléphone.
         </p>
 
@@ -161,7 +182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         <div className="absolute bottom-1/3 right-4 text-4xl select-none animate-bounce opacity-75 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)]" style={{ animationDuration: '4.5s', animationDelay: '1.8s' }}>💎</div>
         <div className="absolute bottom-20 right-1/4 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '5s', animationDelay: '2.2s' }}>🔔</div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-lg mb-20 z-10">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-lg mb-20 z-10">
           {isLoggedIn ? (
             <button 
               onClick={onBackToApp}
@@ -186,7 +207,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         </div>
 
         {/* Dashboard Visual Mockup with Light Glassmorphism */}
-        <div className="w-full max-w-4xl border border-outline-variant bg-white/60 rounded-[28px] p-2 backdrop-blur-md shadow-xl relative overflow-hidden group">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 w-full max-w-4xl border border-outline-variant bg-white/60 rounded-[28px] p-2 backdrop-blur-md shadow-xl relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
           
           <div className="rounded-[20px] overflow-hidden border border-outline-variant/60 bg-white aspect-[16/9] flex items-center justify-center relative">
@@ -246,28 +267,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* SECTION: Le Problème (The Pain Points) */}
       <section id="problem" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center">
-        <div className="mb-12">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 mb-12">
           <span className="text-[10px] text-error font-extrabold uppercase tracking-widest bg-error-container/40 px-3 py-1 rounded-full">Le Constat</span>
           <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">Gérer une boutique sur papier, c'est l'enfer.</h2>
           <p className="text-sm text-texte-2 mt-2">Chaque jour, des centaines de commerçants perdent du temps et de l'argent à cause de processus obsolètes.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-error/20 transition-all duration-300">
             <span className="material-symbols-outlined text-error text-3xl">sms_failed</span>
             <h4 className="font-bold text-texte text-base">Crédits Clients oubliés</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
               Une ardoise notée sur un bout de carton qui se perd, un client de confiance qui oublie... Ce sont des milliers de FCFA perdus chaque mois.
             </p>
           </div>
-          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-225 bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-error/20 transition-all duration-300">
             <span className="material-symbols-outlined text-error text-3xl">inventory</span>
             <h4 className="font-bold text-texte text-base">Ruptures de stock surprises</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
               Ne pas savoir combien de bouteilles d'huile ou de sacs de riz il vous reste. Découvrir la rupture devant le client et rater la vente.
             </p>
           </div>
-          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-error/20 transition-all duration-300">
             <span className="material-symbols-outlined text-error text-3xl">calculate</span>
             <h4 className="font-bold text-texte text-base">Calculs manuels interminables</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
@@ -279,28 +300,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* SECTION: La Solution */}
       <section id="solution" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center bg-secondary-container/10 rounded-[32px] my-10 border border-secondary-container/20">
-        <div className="mb-12">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 mb-12">
           <span className="text-[10px] text-secondary font-extrabold uppercase tracking-widest bg-secondary-container px-3 py-1 rounded-full">La Solution</span>
           <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">BoutikOS : Tout dans ton téléphone.</h2>
           <p className="text-sm text-texte-2 mt-2">Une application rapide, moderne et intelligente conçue pour simplifier la vie des commerçants.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-secondary/20 transition-all duration-300">
             <span className="material-symbols-outlined text-secondary text-3xl">check_circle</span>
             <h4 className="font-bold text-texte text-base">Crédits tracés & sécurisés</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
               Enregistrez chaque dette en un clic au nom du client. Suivez les remboursements partiels en temps réel, sans risque de perte.
             </p>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-225 bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-secondary/20 transition-all duration-300">
             <span className="material-symbols-outlined text-secondary text-3xl">notifications_active</span>
             <h4 className="font-bold text-texte text-base">Alertes de stock bas</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
               BoutikOS vous alerte dès qu'un produit passe sous le seuil critique. Vous réapprovisionnez à temps et ne ratez plus aucune vente.
             </p>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-secondary/20 transition-all duration-300">
             <span className="material-symbols-outlined text-secondary text-3xl">analytics</span>
             <h4 className="font-bold text-texte text-base">Caisse & Bilans automatiques</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
@@ -312,16 +333,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* Bento Grid: Features Section */}
       <section id="features" className="py-24 px-4 max-w-5xl mx-auto border-t border-outline-variant">
-        <div className="text-center mb-16">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 text-center mb-16">
           <h2 className="text-2xl md:text-3xl font-black text-primary mb-3">Conçu pour la performance au quotidien</h2>
           <p className="text-sm text-texte-2">Tous les outils indispensables réunis au même endroit.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Box 1: Caisse */}
-          <div className="bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-primary/40 transition-all flex flex-col justify-between h-72 group shadow-sm hover:shadow-md">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-primary/40 flex flex-col justify-between h-72 group shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300">
             <div className="flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined">point_of_sale</span>
               </div>
               <h3 className="font-bold text-lg text-primary">Caisse Intelligente</h3>
@@ -333,9 +354,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </div>
 
           {/* Box 2: Stock */}
-          <div className="bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-secondary/40 transition-all flex flex-col justify-between h-72 group shadow-sm hover:shadow-md">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-225 bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-secondary/40 flex flex-col justify-between h-72 group shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300">
             <div className="flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-secondary group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined">inventory_2</span>
               </div>
               <h3 className="font-bold text-lg text-primary">Suivi des Stocks</h3>
@@ -347,9 +368,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </div>
 
           {/* Box 3: Slate / Ardoise */}
-          <div className="bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-tertiary/40 transition-all flex flex-col justify-between h-72 group shadow-sm hover:shadow-md">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 bg-white border border-outline-variant/60 p-6 rounded-[24px] hover:border-tertiary/40 flex flex-col justify-between h-72 group shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300">
             <div className="flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined">book</span>
               </div>
               <h3 className="font-bold text-lg text-primary">Crédits Clients</h3>
@@ -364,7 +385,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* SECTION: Comment ça marche (How It Works) */}
       <section id="how-it-works" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center">
-        <div className="mb-16">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 mb-16">
           <span className="text-[10px] text-primary font-extrabold uppercase tracking-widest bg-primary-container px-3 py-1 rounded-full">Guide</span>
           <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">Prêt en 3 étapes simples</h2>
           <p className="text-sm text-texte-2 mt-2">Démarrez votre transition numérique en moins de 2 minutes.</p>
@@ -372,7 +393,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           {/* Step 1 */}
-          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-300">
             <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               1
             </div>
@@ -385,7 +406,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </div>
 
           {/* Step 2 */}
-          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-225 flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-300">
             <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               2
             </div>
@@ -398,7 +419,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </div>
 
           {/* Step 3 */}
-          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-300 flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-300">
             <div className="w-12 h-12 rounded-2xl bg-secondary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               3
             </div>
@@ -414,7 +435,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* Simulator Section (Live interaction demo) */}
       <section id="demo" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant relative">
-        <div className="text-center mb-12">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-black text-primary mb-3">Démo interactive en un clic</h2>
           <p className="text-sm text-texte-2">Interagissez avec le simulateur BoutikOS ci-dessous pour tester l'interface.</p>
         </div>
@@ -422,7 +443,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Controls list (Left side on large screen) */}
-          <div className="lg:col-span-4 flex flex-col gap-3">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-150 lg:col-span-4 flex flex-col gap-3">
             {[
               { id: 'caisse', label: 'Caisse de Vente', icon: 'point_of_sale', desc: 'Ajout de produits et encaissement rapide.' },
               { id: 'stock', label: 'Gestion des Stocks', icon: 'inventory_2', desc: 'Suivi de l\'inventaire et alertes bas stock.' },
@@ -432,7 +453,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
               <button
                 key={tab.id}
                 onClick={() => setActiveSimTab(tab.id as any)}
-                className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] hover:shadow-sm duration-200 ${
                   activeSimTab === tab.id
                     ? 'bg-white border-primary shadow-md text-primary'
                     : 'bg-transparent border-outline-variant text-texte-2 hover:border-outline hover:text-texte'
@@ -450,8 +471,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </div>
 
           {/* Device Mockup containing interactive simulated screens (Right side) */}
-          <div className="lg:col-span-8 flex justify-center">
-            <div className="w-full max-w-[340px] aspect-[9/18.5] bg-slate-950 rounded-[44px] border-[10px] border-slate-900 shadow-2xl relative overflow-hidden flex flex-col ring-1 ring-slate-800">
+          <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-225 lg:col-span-8 flex justify-center">
+            <div className="w-full max-w-[340px] aspect-[9/18.5] bg-slate-950 rounded-[44px] border-[10px] border-slate-900 shadow-2xl relative overflow-hidden flex flex-col ring-1 ring-slate-800 hover:scale-[1.01] transition-transform duration-300">
               
               {/* Phone Speaker & Camera Notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-40 flex items-center justify-center">
@@ -673,8 +694,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
       {/* Security and Offline first section */}
       <section id="security" className="py-24 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center">
-        <div className="max-w-2xl mx-auto flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center text-secondary mb-2">
+        <div className="reveal transition-all duration-1000 ease-out transform opacity-0 translate-y-12 delay-75 max-w-2xl mx-auto flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center text-secondary mb-2 hover:scale-110 transition-transform duration-300">
             <span className="material-symbols-outlined text-2xl">offline_bolt</span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-primary">Technologie Locale Sécurisée</h2>
