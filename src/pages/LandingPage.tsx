@@ -92,19 +92,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           Gerez vos ventes, contrôlez vos stocks en temps réel et suivez le carnet d'ardoises clients avec une interface ultra-fluide conçue pour votre smartphone.
         </p>
 
-        {/* Floating Money/Retail Illustration */}
-        <div className="relative w-40 h-40 mb-10 select-none">
-          <img 
-            src="/retail_hero_3d.png" 
-            alt="Commerce et Argent Illustration" 
-            className="w-full h-full object-contain filter drop-shadow-[0_15px_30px_rgba(26,60,94,0.12)]"
-          />
-          {/* Floating extra emoji/icon badges with bounce animations */}
-          <span className="absolute -top-1 -left-2 text-2xl animate-bounce" style={{ animationDuration: '2.5s' }}>💸</span>
-          <span className="absolute top-1/3 -right-4 text-2xl animate-bounce" style={{ animationDuration: '2s', animationDelay: '0.4s' }}>🪙</span>
-          <span className="absolute -bottom-2 left-4 text-2xl animate-bounce" style={{ animationDuration: '3s', animationDelay: '0.8s' }}>🛒</span>
-          <span className="absolute bottom-1/2 -left-6 text-2xl animate-bounce" style={{ animationDuration: '2.8s', animationDelay: '1.2s' }}>💳</span>
-        </div>
+        {/* Scattered floating money and retail icons */}
+        <div className="absolute top-20 left-6 md:left-20 text-3xl select-none animate-bounce" style={{ animationDuration: '3.2s' }}>💸</div>
+        <div className="absolute top-28 right-6 md:right-20 text-3xl select-none animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.4s' }}>🪙</div>
+        <div className="absolute top-1/2 -left-2 md:left-8 text-3xl select-none animate-bounce" style={{ animationDuration: '3.6s', animationDelay: '0.8s' }}>🛒</div>
+        <div className="absolute top-1/2 -right-2 md:right-8 text-3xl select-none animate-bounce" style={{ animationDuration: '4.4s', animationDelay: '1.2s' }}>💳</div>
+        <div className="absolute bottom-6 left-8 md:left-24 text-3xl select-none animate-bounce" style={{ animationDuration: '4.8s', animationDelay: '1.6s' }}>💵</div>
+        <div className="absolute bottom-8 right-8 md:right-24 text-3xl select-none animate-bounce" style={{ animationDuration: '5.2s', animationDelay: '2s' }}>🛍️</div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-20">
           {isLoggedIn ? (
