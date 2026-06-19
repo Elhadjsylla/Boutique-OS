@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Login } from '../components/Login';
 
-export const LandingPage: React.FC = () => {
+interface LandingPageProps {
+  isLoggedIn?: boolean;
+  onBackToApp?: () => void;
+}
+
+export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, onBackToApp }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeSimTab, setActiveSimTab] = useState<'caisse' | 'stock' | 'ardoise' | 'dashboard'>('caisse');
 
@@ -40,18 +45,30 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowLoginModal(true)}
-              className="px-4 h-9.5 text-xs font-bold tracking-wider uppercase bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-slate-700 active:scale-95 transition-all text-slate-300"
-            >
-              Se Connecter
-            </button>
-            <button 
-              onClick={() => setShowLoginModal(true)}
-              className="px-4.5 h-9.5 text-xs font-black tracking-wider uppercase bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:scale-[1.03] active:scale-95 transition-all"
-            >
-              Créer un commerce
-            </button>
+            {isLoggedIn ? (
+              <button 
+                onClick={onBackToApp}
+                className="px-4.5 h-9.5 text-xs font-black tracking-wider uppercase bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>dashboard</span>
+                Accéder à l'App
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 h-9.5 text-xs font-bold tracking-wider uppercase bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-slate-700 active:scale-95 transition-all text-slate-300"
+                >
+                  Se Connecter
+                </button>
+                <button 
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4.5 h-9.5 text-xs font-black tracking-wider uppercase bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:scale-[1.03] active:scale-95 transition-all"
+                >
+                  Créer un commerce
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -76,12 +93,21 @@ export const LandingPage: React.FC = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-20">
-          <button 
-            onClick={() => setShowLoginModal(true)}
-            className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2"
-          >
-            Lancer l'application <span className="material-symbols-outlined text-lg">arrow_forward</span>
-          </button>
+          {isLoggedIn ? (
+            <button 
+              onClick={onBackToApp}
+              className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl shadow-xl shadow-emerald-600/30 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2"
+            >
+              Accéder à l'application <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+          ) : (
+            <button 
+              onClick={() => setShowLoginModal(true)}
+              className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2"
+            >
+              Lancer l'application <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+          )}
           <a
             href="#demo"
             className="w-full sm:w-auto px-8 h-13 text-sm font-bold tracking-wide uppercase bg-slate-900/60 hover:bg-slate-800/60 border border-slate-800 rounded-2xl text-slate-300 transition-all flex items-center justify-center gap-2"

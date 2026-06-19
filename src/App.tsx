@@ -23,6 +23,7 @@ function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('caisse');
+  const [showLandingOverride, setShowLandingOverride] = useState(false);
 
   useEffect(() => {
     // Check active session
@@ -71,8 +72,13 @@ function App() {
     );
   }
 
-  if (!session) {
-    return <LandingPage />;
+  if (!session || showLandingOverride) {
+    return (
+      <LandingPage 
+        isLoggedIn={!!session} 
+        onBackToApp={() => setShowLandingOverride(false)} 
+      />
+    );
   }
 
   // Extract metadata safely with fallbacks if needed
@@ -115,6 +121,14 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setShowLandingOverride(true)}
+            className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
+            title="Accéder au site vitrine"
+          >
+            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>public</span>
+            Site Vitrine
+          </button>
           <button className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95">
             notifications
           </button>
