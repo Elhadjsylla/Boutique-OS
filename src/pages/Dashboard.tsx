@@ -21,7 +21,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error'}`} />
           <span className="text-xs font-bold text-texte-2">
-            {isOnline ? 'EN LIGNE (SUPABASE)' : 'HORS LIGNE (STOCKÉ LOCAL)'}
+            {isOnline ? 'EN LIGNE' : 'HORS LIGNE'}
           </span>
         </div>
       </div>
