@@ -21,6 +21,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [stockFilter, setStockFilter] = useState<'all' | 'rupture' | 'alerte'>('all');
+  const [activeMetricMenu, setActiveMetricMenu] = useState<'articles' | 'ruptures' | 'alertes' | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -144,7 +145,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
         ].map((metric) => (
           <div 
             key={metric.id}
-            onClick={() => setStockFilter(metric.id as any)}
+            onClick={() => setActiveMetricMenu(metric.id as any)}
             className={`cursor-pointer border p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
               stockFilter === metric.id 
                 ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20' 
@@ -365,6 +366,117 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
               Supprimer définitivement ce produit
             </button>
           </div>
+        </div>
+      </BottomSheet>
+
+      {/* Metrics Menu Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeMetricMenu !== null}
+        onClose={() => setActiveMetricMenu(null)}
+        title={
+          activeMetricMenu === 'articles' ? 'Options - Articles' :
+          activeMetricMenu === 'ruptures' ? 'Options - Ruptures' : 'Options - Alertes Stock'
+        }
+      >
+        <div className="flex flex-col gap-3 text-left">
+          {activeMetricMenu === 'articles' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('all');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">list</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Afficher tous les produits</span>
+                  <span className="text-[10px] text-outline">Afficher la totalité des articles enregistrés en stock.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+            </>
+          )}
+
+          {activeMetricMenu === 'ruptures' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('rupture');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">error</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Filtrer par ruptures</span>
+                  <span className="text-[10px] text-outline">Voir uniquement les produits dont la quantité est à zéro.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+            </>
+          )}
+
+          {activeMetricMenu === 'alertes' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('alerte');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">warning</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Filtrer par alertes</span>
+                  <span className="text-[10px] text-outline">Afficher les produits sous le seuil critique d'alerte.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+            </>
+          )}
         </div>
       </BottomSheet>
     </div>
