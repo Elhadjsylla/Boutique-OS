@@ -12,7 +12,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
   const [activeSection, setActiveSection] = useState<string>('');
 
   useEffect(() => {
-    const sections = ['features', 'demo', 'security'];
+    const sections = ['problem', 'solution', 'features', 'how-it-works', 'demo', 'security'];
     
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200; // offset for navbar & screen layout
@@ -244,6 +244,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         </div>
       </section>
 
+      {/* SECTION: Le Problème (The Pain Points) */}
+      <section id="problem" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center">
+        <div className="mb-12">
+          <span className="text-[10px] text-error font-extrabold uppercase tracking-widest bg-error-container/40 px-3 py-1 rounded-full">Le Constat</span>
+          <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">Gérer une boutique sur papier, c'est l'enfer.</h2>
+          <p className="text-sm text-texte-2 mt-2">Chaque jour, des centaines de commerçants perdent du temps et de l'argent à cause de processus obsolètes.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-error text-3xl">sms_failed</span>
+            <h4 className="font-bold text-texte text-base">Crédits Clients oubliés</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              Une ardoise notée sur un bout de carton qui se perd, un client de confiance qui oublie... Ce sont des milliers de FCFA perdus chaque mois.
+            </p>
+          </div>
+          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-error text-3xl">inventory</span>
+            <h4 className="font-bold text-texte text-base">Ruptures de stock surprises</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              Ne pas savoir combien de bouteilles d'huile ou de sacs de riz il vous reste. Découvrir la rupture devant le client et rater la vente.
+            </p>
+          </div>
+          <div className="bg-white border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-error text-3xl">calculate</span>
+            <h4 className="font-bold text-texte text-base">Calculs manuels interminables</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              Passer des heures chaque soir avec une calculatrice pour faire les comptes, avec le risque constant d'une erreur de caisse.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: La Solution */}
+      <section id="solution" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center bg-secondary-container/10 rounded-[32px] my-10 border border-secondary-container/20">
+        <div className="mb-12">
+          <span className="text-[10px] text-secondary font-extrabold uppercase tracking-widest bg-secondary-container px-3 py-1 rounded-full">La Solution</span>
+          <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">BoutikOS : Tout dans ton téléphone.</h2>
+          <p className="text-sm text-texte-2 mt-2">Une application rapide, moderne et intelligente conçue pour simplifier la vie des commerçants.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-secondary text-3xl">check_circle</span>
+            <h4 className="font-bold text-texte text-base">Crédits tracés & sécurisés</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              Enregistrez chaque dette en un clic au nom du client. Suivez les remboursements partiels en temps réel, sans risque de perte.
+            </p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-secondary text-3xl">notifications_active</span>
+            <h4 className="font-bold text-texte text-base">Alertes de stock bas</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              BoutikOS vous alerte dès qu'un produit passe sous le seuil critique. Vous réapprovisionnez à temps et ne ratez plus aucune vente.
+            </p>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3">
+            <span className="material-symbols-outlined text-secondary text-3xl">analytics</span>
+            <h4 className="font-bold text-texte text-base">Caisse & Bilans automatiques</h4>
+            <p className="text-xs text-texte-2 leading-relaxed">
+              Ajoutez les articles au panier, encaissez et laissez BoutikOS faire la comptabilité. Vos rapports d'activité sont prêts instantanément.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Bento Grid: Features Section */}
       <section id="features" className="py-24 px-4 max-w-5xl mx-auto border-t border-outline-variant">
         <div className="text-center mb-16">
@@ -292,6 +358,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
               </p>
             </div>
             <span className="text-[10px] text-tertiary font-extrabold uppercase tracking-widest mt-4">Comptabilité Simplifiée</span>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION: Comment ça marche (How It Works) */}
+      <section id="how-it-works" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center">
+        <div className="mb-16">
+          <span className="text-[10px] text-primary font-extrabold uppercase tracking-widest bg-primary-container px-3 py-1 rounded-full">Guide</span>
+          <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">Prêt en 3 étapes simples</h2>
+          <p className="text-sm text-texte-2 mt-2">Démarrez votre transition numérique en moins de 2 minutes.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          {/* Step 1 */}
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+              1
+            </div>
+            <h4 className="font-bold text-texte text-base mt-2">Créez votre commerce</h4>
+            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
+              Renseignez le nom de votre boutique et créez votre compte gérant/caissier en 30 secondes.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+              2
+            </div>
+            <h4 className="font-bold text-texte text-base mt-2">Ajoutez vos stocks</h4>
+            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
+              Configurez vos prix et vos quantités initiales. L'application détecte automatiquement le bon emoji selon le nom du produit.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            <div className="w-14 h-14 rounded-full bg-secondary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+              3
+            </div>
+            <h4 className="font-bold text-texte text-base mt-2">Encaissez vos clients</h4>
+            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
+              Ajoutez les articles au panier, encaissez par cash ou enregistrez un crédit client. Tout s'actualise instantanément.
+            </p>
           </div>
         </div>
       </section>
