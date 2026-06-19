@@ -46,6 +46,24 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   }, []) || [];
   const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
 
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [isSaleDetailOpen, setIsSaleDetailOpen] = useState(false);
+
+  const selectedSaleItems = useLiveQuery(async () => {
+    if (!selectedSaleId) return [];
+    const items = await db.vente_items.where('vente_id').equals(selectedSaleId).toArray();
+    const itemsWithProduct = await Promise.all(items.map(async (item) => {
+      const prod = await db.produits.get(item.produit_id);
+      return {
+        ...item,
+        nom: prod ? prod.nom : 'Produit inconnu'
+      };
+    }));
+    return itemsWithProduct;
+  }, [selectedSaleId]) || [];
+
+  const selectedSale = todaySales.find(s => s.id === selectedSaleId);
+
   const {
     cart, cartTotal, amountReceived, setAmountReceived, changeDue,
     addToCart, updateQuantity, removeItem, validateAndCheckout
@@ -413,7 +431,14 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
         ) : (
           <div className="flex flex-col gap-2">
             {todaySales.map((sale) => (
-              <Card key={sale.id} className="flex justify-between items-center p-3.5 hover:shadow-md transition-all">
+              <Card
+                key={sale.id}
+                onClick={() => {
+                  setSelectedSaleId(sale.id);
+                  setIsSaleDetailOpen(true);
+                }}
+                className="flex justify-between items-center p-3.5 hover:shadow-md hover:border-primary/20 active:scale-[0.99] transition-all gap-3 cursor-pointer"
+              >
                 <div className="flex items-center gap-3">
                   <div className="bg-primary-container p-2 rounded-xl text-primary">
                     <span className="material-symbols-outlined text-xl">receipt_long</span>
@@ -429,6 +454,81 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           </div>
         )}
       </section>
+
+      {/* Sale Detail Bottom Sheet */}
+      <BottomSheet
+        isOpen={isSaleDetailOpen}
+        onClose={() => {
+          setIsSaleDetailOpen(false);
+          setSelectedSaleId(null);
+        }}
+        title={selectedSale ? `Ticket #${selectedSale.id.slice(0, 8).toUpperCase()}` : ''}
+      >
+        {selectedSale && (
+          <div className="flex flex-col gap-4 text-left">
+            <div className="flex justify-between items-center bg-primary-container/20 border border-primary-container/60 p-3 rounded-xl">
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] text-outline font-bold uppercase tracking-wider">Date & Heure</span>
+                <span className="text-xs font-bold text-on-surface">
+                  {new Date(selectedSale.created_at).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                  })} à {new Date(selectedSale.created_at).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-[10px] text-outline font-bold uppercase tracking-wider">Caissier</span>
+                <span className="text-xs font-bold text-on-surface">{selectedSale.caissier_id.slice(0, 8).toUpperCase()}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-outline font-extrabold uppercase tracking-wider">Articles vendus</span>
+              <div className="flex flex-col gap-2 max-h-[30svh] overflow-y-auto pr-1">
+                {selectedSaleItems.map((item) => {
+                  const style = getProductIconAndGradient(item.nom);
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center bg-white border border-outline-variant/60 p-2.5 rounded-xl"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                          <span className="text-base select-none">{style.emoji}</span>
+                        </div>
+                        <div className="flex flex-col text-left min-w-0 flex-1">
+                          <span className="font-extrabold text-on-surface text-xs truncate">{item.nom}</span>
+                          <span className="text-[10px] text-outline font-bold">
+                            {item.quantite} x {new Intl.NumberFormat('fr-FR').format(item.prix_unitaire)} FCFA
+                          </span>
+                        </div>
+                      </div>
+                      <MoneyText value={item.prix_unitaire * item.quantite} className="text-xs font-black text-on-surface flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-primary to-primary/90 text-on-primary rounded-xl p-3 flex justify-between items-center premium-shadow-sm border border-white/5 mt-2">
+              <span className="text-xs font-bold uppercase tracking-wider">Total Ticket</span>
+              <MoneyText value={selectedSale.total} className="text-white font-black text-base" />
+            </div>
+
+            <Button
+              onClick={() => setIsSaleDetailOpen(false)}
+              className="w-full h-11 rounded-xl font-bold text-xs mt-1"
+            >
+              FERMER
+            </Button>
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 };

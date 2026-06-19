@@ -159,11 +159,25 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+        <div 
+          onClick={() => setFilter('en_cours')}
+          className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+            filter === 'en_cours'
+              ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
+              : 'bg-white border-outline-variant'
+          }`}
+        >
           <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Crédits En Cours</p>
           <MoneyText value={totalRemainingCredit} className="text-lg font-extrabold text-error" />
         </div>
-        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+        <div 
+          onClick={() => setFilter('all')}
+          className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+            filter === 'all'
+              ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
+              : 'bg-white border-outline-variant'
+          }`}
+        >
           <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Fiches Actives</p>
           <p className="text-lg font-extrabold text-primary font-numeric-display">{activeAccountsCount}</p>
         </div>

@@ -4,8 +4,11 @@ import { useDashboardData } from '../features/dashboard/useDashboardData';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
 import { getProductIconAndGradient } from '../lib/productHelper';
+interface DashboardProps {
+  onNavigate?: (tab: 'caisse' | 'stock' | 'ardoise' | 'dashboard') => void;
+}
 
-export const Dashboard: React.FC = () => {
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
   const metrics = useDashboardData();
 
@@ -45,11 +48,16 @@ export const Dashboard: React.FC = () => {
         <h2 className="font-headline-sm text-sm border-b border-outline-variant pb-2 text-primary font-bold uppercase tracking-wider">Indicateurs d'Activité</h2>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: 'receipt_long', val: metrics.salesCountToday, label: 'Ventes Jour', color: 'text-primary' },
-            { icon: 'menu_book', val: metrics.openArdoisesCount, label: 'Ardoises', color: 'text-tertiary' },
-            { icon: 'warning', val: metrics.outOfStockCount, label: 'Ruptures', color: 'text-error' }
+            { id: 'caisse', icon: 'receipt_long', val: metrics.salesCountToday, label: 'Ventes Jour', color: 'text-primary' },
+            { id: 'ardoise', icon: 'menu_book', val: metrics.openArdoisesCount, label: 'Ardoises', color: 'text-tertiary' },
+            { id: 'stock', icon: 'warning', val: metrics.outOfStockCount, label: 'Ruptures', color: 'text-error' }
           ].map((ind, i) => (
-            <Card key={i} elevation={1} className="text-center p-4 flex flex-col items-center hover:border-primary/20 hover:shadow-md transition-all">
+            <Card 
+              key={i} 
+              elevation={1} 
+              onClick={() => onNavigate?.(ind.id as any)}
+              className="text-center p-4 flex flex-col items-center hover:border-primary/20 hover:shadow-md active:scale-95 transition-all cursor-pointer"
+            >
               <span className={`material-symbols-outlined ${ind.color} text-2xl mb-1`}>{ind.icon}</span>
               <span className="text-lg font-extrabold text-on-surface font-numeric-display">{ind.val}</span>
               <span className="text-[9px] text-outline font-bold uppercase mt-1 tracking-wider">{ind.label}</span>

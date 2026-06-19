@@ -133,7 +133,7 @@ function App() {
         {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
-        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
       </main>
 
       {/* Global Bottom Navigation */}

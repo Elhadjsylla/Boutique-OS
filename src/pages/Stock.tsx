@@ -20,6 +20,7 @@ interface StockProps {
 export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [stockFilter, setStockFilter] = useState<'all' | 'rupture' | 'alerte'>('all');
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -100,7 +101,13 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     }
   };
 
-  const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.nom.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+    if (stockFilter === 'rupture') return p.quantite === 0;
+    if (stockFilter === 'alerte') return p.quantite > 0 && p.quantite <= p.seuil_alerte;
+    return true;
+  });
   const selectedProduct = products.find(p => p.id === selectedProductId);
 
   const openEdit = (product: typeof products[0]) => {
@@ -131,11 +138,19 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
       {/* Metrics Row */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Articles', count: totalProducts, color: 'text-primary' },
-          { label: 'Ruptures', count: outOfStock, color: 'text-error' },
-          { label: 'Alerte Stock', count: lowStock, color: 'text-tertiary' }
-        ].map((metric, i) => (
-          <div key={i} className="bg-white border border-outline-variant p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm">
+          { id: 'all', label: 'Articles', count: totalProducts, color: 'text-primary' },
+          { id: 'rupture', label: 'Ruptures', count: outOfStock, color: 'text-error' },
+          { id: 'alerte', label: 'Alerte Stock', count: lowStock, color: 'text-tertiary' }
+        ].map((metric) => (
+          <div 
+            key={metric.id}
+            onClick={() => setStockFilter(metric.id as any)}
+            className={`cursor-pointer border p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+              stockFilter === metric.id 
+                ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20' 
+                : 'bg-white border-outline-variant'
+            }`}
+          >
             <span className="text-[9px] text-outline font-bold uppercase tracking-wider">{metric.label}</span>
             <p className={`text-xl font-extrabold ${metric.color} font-numeric-display`}>{metric.count}</p>
           </div>
