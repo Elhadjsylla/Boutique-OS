@@ -370,38 +370,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           <p className="text-sm text-texte-2 mt-2">Démarrez votre transition numérique en moins de 2 minutes.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
           {/* Step 1 */}
-          <div className="flex flex-col items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               1
             </div>
-            <h4 className="font-bold text-texte text-base mt-2">Créez votre commerce</h4>
-            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
-              Renseignez le nom de votre boutique et créez votre compte gérant/caissier en 30 secondes.
-            </p>
+            <div className="flex flex-col text-left">
+              <h4 className="font-bold text-texte text-base">Créez votre commerce</h4>
+              <p className="text-xs text-texte-2 leading-relaxed mt-1">
+                Renseignez le nom de votre boutique et créez votre compte gérant/caissier en 30 secondes.
+              </p>
+            </div>
           </div>
 
           {/* Step 2 */}
-          <div className="flex flex-col items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               2
             </div>
-            <h4 className="font-bold text-texte text-base mt-2">Ajoutez vos stocks</h4>
-            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
-              Configurez vos prix et vos quantités initiales. L'application détecte automatiquement le bon emoji selon le nom du produit.
-            </p>
+            <div className="flex flex-col text-left">
+              <h4 className="font-bold text-texte text-base">Ajoutez vos stocks</h4>
+              <p className="text-xs text-texte-2 leading-relaxed mt-1">
+                Configurez vos prix et vos quantités initiales. L'application détecte automatiquement le bon emoji selon le produit.
+              </p>
+            </div>
           </div>
 
           {/* Step 3 */}
-          <div className="flex flex-col items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-full bg-secondary text-white flex items-center justify-center font-black text-lg shadow-md ring-4 ring-white">
+          <div className="flex gap-4 items-start bg-white border border-outline-variant p-6 rounded-[24px] relative z-10 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-secondary text-white flex items-center justify-center font-black text-lg shadow-md flex-shrink-0">
               3
             </div>
-            <h4 className="font-bold text-texte text-base mt-2">Encaissez vos clients</h4>
-            <p className="text-xs text-texte-2 leading-relaxed max-w-xs">
-              Ajoutez les articles au panier, encaissez par cash ou enregistrez un crédit client. Tout s'actualise instantanément.
-            </p>
+            <div className="flex flex-col text-left">
+              <h4 className="font-bold text-texte text-base">Encaissez vos clients</h4>
+              <p className="text-xs text-texte-2 leading-relaxed mt-1">
+                Ajoutez les articles au panier, encaissez par cash ou enregistrez un crédit client. Tout s'actualise instantanément.
+              </p>
+            </div>
           </div>
         </div>
       </section>
