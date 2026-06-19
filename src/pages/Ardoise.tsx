@@ -186,12 +186,6 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                 elevation={1}
                 className={`flex flex-col gap-3 relative transition-all duration-200 hover:shadow-md hover:border-primary/20 ${isSold ? 'opacity-60 bg-surface-container-low/50' : ''}`}
               >
-                {isSold && (
-                  <div className="absolute top-4 right-4">
-                    <Badge variant="success">REGLÉ</Badge>
-                  </div>
-                )}
-
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${getAvatarGradient(a.client_nom)} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
@@ -204,7 +198,8 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                       </span>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-1">
+                    {isSold && <Badge variant="success">RÉGLÉ</Badge>}
                     <MoneyText value={a.remaining} className={`text-base font-bold ${isSold ? 'text-secondary' : 'text-error'}`} />
                     <p className="text-[10px] text-outline font-bold uppercase">Reste dû</p>
                   </div>

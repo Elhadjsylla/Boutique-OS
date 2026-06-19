@@ -3,6 +3,7 @@ import { useOnline } from '../hooks/useOnline';
 import { useDashboardData } from '../features/dashboard/useDashboardData';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
+import { getProductIconAndGradient } from '../lib/productHelper';
 
 export const Dashboard: React.FC = () => {
   const isOnline = useOnline();
@@ -66,11 +67,18 @@ export const Dashboard: React.FC = () => {
           ) : (
             metrics.topProducts.map((product, idx) => {
               const percentage = (product.qty / product.maxQty) * 100;
+              const productStyle = getProductIconAndGradient(product.nom);
               return (
-                <div key={idx} className="flex flex-col gap-1">
+                <div key={idx} className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-on-surface font-bold text-sm">{product.nom}</span>
-                    <span className="font-numeric-display text-primary font-bold">{product.qty} vendus</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`w-6 h-6 rounded bg-gradient-to-br ${productStyle.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                        <span className="text-[10px] select-none">{productStyle.emoji}</span>
+                      </div>
+                      <span className="text-on-surface font-bold text-sm truncate">{product.nom}</span>
+                    </div>
+                    <span className="font-numeric-display text-primary font-bold flex-shrink-0">{product.qty} vendus</span>
                   </div>
                   <div className="w-full h-3 bg-surface-container rounded-full overflow-hidden">
                     <div 
