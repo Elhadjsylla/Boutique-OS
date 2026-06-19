@@ -82,14 +82,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         </div>
 
         <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-primary mb-6">
-          Le système d'exploitation moderne <br />
+          Ta caisse. Ton stock. <br />
           <span className="bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent">
-            pour votre point de vente.
-          </span>
+            Tes Crédits Clients.
+          </span> <br />
+          Enfin tout au même endroit.
         </h1>
 
         <p className="text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-8">
-          Gerez vos ventes, contrôlez vos stocks en temps réel et suivez le carnet d'ardoises clients avec une interface ultra-fluide conçue pour votre smartphone.
+          Fini les crédits oubliés. Fini les stocks flous. Tout dans ton téléphone.
         </p>
 
         {/* Scattered floating money and retail icons */}
@@ -121,7 +122,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
               onClick={() => setShowLoginModal(true)}
               className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-primary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Faire tourner la boutique 🏪
+              Gérer ma boutique maintenant
             </button>
           )}
           <a
@@ -233,9 +234,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
               <div className="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
                 <span className="material-symbols-outlined">book</span>
               </div>
-              <h3 className="font-bold text-lg text-primary">Carnet de Dettes</h3>
+              <h3 className="font-bold text-lg text-primary">Crédits Clients</h3>
               <p className="text-xs text-texte-2 leading-relaxed">
-                Suivez les ardoises de vos clients fidèles. Enregistrez des paiements partiels et gérez les crédits en toute clarté.
+                Suivez les crédits de vos clients fidèles. Enregistrez des paiements partiels et gérez les dettes en toute clarté.
               </p>
             </div>
             <span className="text-[10px] text-tertiary font-extrabold uppercase tracking-widest mt-4">Comptabilité Simplifiée</span>
@@ -257,7 +258,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
             {[
               { id: 'caisse', label: 'Caisse de Vente', icon: 'point_of_sale', desc: 'Ajout de produits et encaissement rapide.' },
               { id: 'stock', label: 'Gestion des Stocks', icon: 'inventory_2', desc: 'Suivi de l\'inventaire et alertes bas stock.' },
-              { id: 'ardoise', label: 'Carnet d\'Ardoises', icon: 'book', desc: 'Gestion des ardoises et des dettes clients.' },
+              { id: 'ardoise', label: 'Crédits Clients', icon: 'book', desc: 'Gestion des crédits et des dettes clients.' },
               { id: 'dashboard', label: 'Analyses', icon: 'monitoring', desc: 'Aperçu des performances de la boutique.' }
             ].map(tab => (
               <button
@@ -400,7 +401,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                 {/* 3. ARDOISE SIMULATOR */}
                 {activeSimTab === 'ardoise' && (
                   <div className="flex flex-col gap-2">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Dettes en cours</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Crédits en cours</span>
 
                     <div className="bg-white border border-outline-variant p-2.5 rounded-xl flex justify-between items-center">
                       <div>
@@ -487,7 +488,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                   className={`flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:text-slate-300 ${activeSimTab === 'ardoise' ? 'text-emerald-400' : ''}`}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>book</span>
-                  <span>Ardoises</span>
+                  <span>Crédits</span>
                 </div>
                 <div 
                   onClick={() => setActiveSimTab('dashboard')}
