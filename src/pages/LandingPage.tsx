@@ -452,19 +452,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
 
               {/* Bottom Nav Mockup */}
               <div className="bg-slate-900 border-t border-slate-800/80 py-2.5 px-4 flex justify-between items-center text-slate-500 text-[9px] font-bold">
-                <div className={`flex flex-col items-center gap-0.5 ${activeSimTab === 'caisse' ? 'text-indigo-400' : ''}`}>
+                <div 
+                  onClick={() => setActiveSimTab('caisse')}
+                  className={`flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:text-slate-300 ${activeSimTab === 'caisse' ? 'text-emerald-400' : ''}`}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>point_of_sale</span>
                   <span>Caisse</span>
                 </div>
-                <div className={`flex flex-col items-center gap-0.5 ${activeSimTab === 'stock' ? 'text-indigo-400' : ''}`}>
+                <div 
+                  onClick={() => setActiveSimTab('stock')}
+                  className={`flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:text-slate-300 ${activeSimTab === 'stock' ? 'text-emerald-400' : ''}`}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>inventory_2</span>
                   <span>Stock</span>
                 </div>
-                <div className={`flex flex-col items-center gap-0.5 ${activeSimTab === 'ardoise' ? 'text-indigo-400' : ''}`}>
+                <div 
+                  onClick={() => setActiveSimTab('ardoise')}
+                  className={`flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:text-slate-300 ${activeSimTab === 'ardoise' ? 'text-emerald-400' : ''}`}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>book</span>
                   <span>Ardoises</span>
                 </div>
-                <div className={`flex flex-col items-center gap-0.5 ${activeSimTab === 'dashboard' ? 'text-indigo-400' : ''}`}>
+                <div 
+                  onClick={() => setActiveSimTab('dashboard')}
+                  className={`flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:text-slate-300 ${activeSimTab === 'dashboard' ? 'text-emerald-400' : ''}`}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>monitoring</span>
                   <span>Analyses</span>
                 </div>
