@@ -108,27 +108,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         <div className="absolute bottom-1/3 right-4 text-4xl select-none animate-bounce opacity-75 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)]" style={{ animationDuration: '4.5s', animationDelay: '1.8s' }}>💎</div>
         <div className="absolute bottom-20 right-1/4 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '5s', animationDelay: '2.2s' }}>🔔</div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-20">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-lg mb-20 z-10">
           {isLoggedIn ? (
             <button 
               onClick={onBackToApp}
               className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-secondary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Accéder à l'application <span className="material-symbols-outlined text-lg">arrow_forward</span>
+              Ouvrir ma caisse 🚀
             </button>
           ) : (
             <button 
               onClick={() => setShowLoginModal(true)}
               className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-primary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Lancer l'application <span className="material-symbols-outlined text-lg">arrow_forward</span>
+              Faire tourner la boutique 🏪
             </button>
           )}
           <a
             href="#demo"
             className="w-full sm:w-auto px-8 h-13 text-sm font-bold tracking-wide uppercase bg-white hover:bg-surface-container border border-outline-variant rounded-2xl text-texte transition-all flex items-center justify-center gap-2"
           >
-            Voir la démo
+            Tester sans compte (2s) ⚡
           </a>
         </div>
 
