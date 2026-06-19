@@ -165,7 +165,10 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
         ].map((metric) => (
           <div 
             key={metric.id}
-            onClick={() => setActiveMetricMenu(metric.id as any)}
+            onClick={() => setActiveMetricMenu(
+              metric.id === 'all' ? 'articles' : 
+              metric.id === 'rupture' ? 'ruptures' : 'alertes'
+            )}
             className={`cursor-pointer border p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
               stockFilter === metric.id 
                 ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20' 
