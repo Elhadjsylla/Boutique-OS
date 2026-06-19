@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { Login } from './components/Login';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
+import { LandingPage } from './pages/LandingPage';
 
 function App() {
   const devAdminSession = {
@@ -72,7 +72,7 @@ function App() {
   }
 
   if (!session) {
-    return <Login />;
+    return <LandingPage />;
   }
 
   // Extract metadata safely with fallbacks if needed
