@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Login } from '../components/Login';
 
 interface LandingPageProps {
@@ -9,6 +9,31 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, onBackToApp }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeSimTab, setActiveSimTab] = useState<'caisse' | 'stock' | 'ardoise' | 'dashboard'>('caisse');
+  const [activeSection, setActiveSection] = useState<string>('');
+
+  useEffect(() => {
+    const sections = ['features', 'demo', 'security'];
+    
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 200; // offset for navbar & screen layout
+      
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Mini simulator database simulation state
   const [simCart, setSimCart] = useState<{ id: string; nom: string; prix: number; qty: number }[]>([
@@ -38,10 +63,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
             <span className="text-lg font-black tracking-tight text-primary">BoutikOS</span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-texte-2">
-            <a href="#features" className="hover:text-primary transition-colors">Fonctionnalités</a>
-            <a href="#demo" className="hover:text-primary transition-colors">Démo Interactive</a>
-            <a href="#security" className="hover:text-primary transition-colors">Sécurité</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-texte-2">
+            <a 
+              href="#features" 
+              className={`pb-1 transition-all border-b-2 ${
+                activeSection === 'features' 
+                  ? 'text-primary border-primary font-black scale-105' 
+                  : 'border-transparent hover:text-primary hover:border-primary/20'
+              }`}
+            >
+              Fonctionnalités
+            </a>
+            <a 
+              href="#demo" 
+              className={`pb-1 transition-all border-b-2 ${
+                activeSection === 'demo' 
+                  ? 'text-primary border-primary font-black scale-105' 
+                  : 'border-transparent hover:text-primary hover:border-primary/20'
+              }`}
+            >
+              Démo Interactive
+            </a>
+            <a 
+              href="#security" 
+              className={`pb-1 transition-all border-b-2 ${
+                activeSection === 'security' 
+                  ? 'text-primary border-primary font-black scale-105' 
+                  : 'border-transparent hover:text-primary hover:border-primary/20'
+              }`}
+            >
+              Sécurité
+            </a>
           </nav>
 
           <div className="flex items-center gap-3">
