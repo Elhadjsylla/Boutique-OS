@@ -43,6 +43,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </div>
       </section>
 
+      {/* Bénéfice Estimé Grid */}
+      <section className="flex flex-col gap-3 text-left">
+        <h2 className="font-headline-sm text-sm border-b border-outline-variant pb-2 text-primary font-bold uppercase tracking-wider">Bénéfice Estimé (Est. 20%)</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Aujourd'hui", value: Math.round(metrics.caToday * 0.20) },
+            { label: "7 jours", value: Math.round(metrics.caWeek * 0.20) },
+            { label: "30 jours", value: Math.round(metrics.caMonth * 0.20) }
+          ].map((item, i) => (
+            <Card key={i} elevation={1} className="flex flex-col gap-1 p-3.5 hover:border-secondary/20 hover:shadow-md transition-all bg-secondary-container/10 border-secondary-container/20">
+              <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">{item.label}</span>
+              <MoneyText value={item.value} className="text-base text-secondary font-extrabold" />
+            </Card>
+          ))}
+        </div>
+      </section>
+
       {/* Indicators */}
       <section className="flex flex-col gap-3 text-left">
         <h2 className="font-headline-sm text-sm border-b border-outline-variant pb-2 text-primary font-bold uppercase tracking-wider">Indicateurs d'Activité</h2>
@@ -65,6 +82,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           ))}
         </div>
       </section>
+
+      {/* Activity Graph Section */}
+      {(() => {
+        const maxVal = Math.max(...(metrics.dailySalesHistory || []), 1000);
+        const fillPath = `M0,20 ` + (metrics.dailySalesHistory || []).map((val, idx) => {
+          const x = (idx / 6) * 100;
+          const y = 20 - (val / maxVal) * 16;
+          return `L${x},${y}`;
+        }).join(' ') + ` L100,20 Z`;
+        
+        return (
+          <section className="flex flex-col gap-3 text-left">
+            <h2 className="font-headline-sm text-sm border-b border-outline-variant pb-2 text-primary font-bold uppercase tracking-wider">Courbe d'Activité (7 jours)</h2>
+            <Card elevation={1} className="p-4 flex flex-col justify-between relative overflow-hidden">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-outline font-bold uppercase tracking-wider">Chiffre d'Affaires journalier</span>
+                <span className="text-[10px] text-outline font-bold">Dernière semaine</span>
+              </div>
+              <div className="w-full h-24 mt-2 relative">
+                <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="glowGradDash" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1A3C5E" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#1A3C5E" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d={fillPath} fill="url(#glowGradDash)" />
+                  <path d={`M0,${20 - ((metrics.dailySalesHistory?.[0] || 0) / maxVal) * 16} ` + (metrics.dailySalesHistory || []).map((val, idx) => `L${(idx / 6) * 100},${20 - (val / maxVal) * 16}`).join(' ')} fill="none" stroke="#1A3C5E" strokeWidth="1.5" />
+                </svg>
+              </div>
+              <div className="flex justify-between items-center text-[9px] text-outline font-bold mt-2 px-1">
+                <span>Il y a 6 jours</span>
+                <span>Il y a 3 jours</span>
+                <span>Aujourd'hui</span>
+              </div>
+            </Card>
+          </section>
+        );
+      })()}
 
       {/* Analytics chart */}
       <section className="flex flex-col gap-3 text-left">
