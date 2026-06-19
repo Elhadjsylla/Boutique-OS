@@ -93,12 +93,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
         </p>
 
         {/* Scattered floating money and retail icons */}
-        <div className="absolute top-20 left-6 md:left-20 text-3xl select-none animate-bounce" style={{ animationDuration: '3.2s' }}>💸</div>
-        <div className="absolute top-28 right-6 md:right-20 text-3xl select-none animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.4s' }}>🪙</div>
-        <div className="absolute top-1/2 -left-2 md:left-8 text-3xl select-none animate-bounce" style={{ animationDuration: '3.6s', animationDelay: '0.8s' }}>🛒</div>
-        <div className="absolute top-1/2 -right-2 md:right-8 text-3xl select-none animate-bounce" style={{ animationDuration: '4.4s', animationDelay: '1.2s' }}>💳</div>
-        <div className="absolute bottom-6 left-8 md:left-24 text-3xl select-none animate-bounce" style={{ animationDuration: '4.8s', animationDelay: '1.6s' }}>💵</div>
-        <div className="absolute bottom-8 right-8 md:right-24 text-3xl select-none animate-bounce" style={{ animationDuration: '5.2s', animationDelay: '2s' }}>🛍️</div>
+        <div className="absolute top-20 left-6 md:left-20 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '3.2s' }}>💸</div>
+        <div className="absolute top-28 right-6 md:right-20 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '4s', animationDelay: '0.4s' }}>🪙</div>
+        <div className="absolute top-1/2 -left-2 md:left-8 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '3.6s', animationDelay: '0.8s' }}>🛒</div>
+        <div className="absolute top-1/2 -right-2 md:right-8 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '4.4s', animationDelay: '1.2s' }}>💳</div>
+        <div className="absolute bottom-6 left-8 md:left-24 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '4.8s', animationDelay: '1.6s' }}>💵</div>
+        <div className="absolute bottom-8 right-8 md:right-24 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '5.2s', animationDelay: '2s' }}>🛍️</div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-20">
           {isLoggedIn ? (
