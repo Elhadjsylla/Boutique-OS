@@ -61,6 +61,26 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     (msg) => setToast({ message: msg, type: 'error' })
   );
 
+  // ── Réapprovisionnement rapide (inline pour rester sur le menu) ──────────
+  const quickReplenish = async (productId: string, amount: number) => {
+    try {
+      const produit = await db.produits.get(productId);
+      if (!produit) {
+        setToast({ message: 'Produit introuvable.', type: 'error' });
+        return;
+      }
+      const timestamp = new Date().toISOString();
+      const updated = { ...produit, quantite: produit.quantite + amount, updated_at: timestamp };
+      await db.transaction('rw', [db.produits, db.outbox], async () => {
+        await db.produits.put(updated);
+        await queueMutation('produits', 'UPDATE', productId, updated);
+      });
+      setToast({ message: `${produit.nom} réapprovisionné (+${amount} unité(s)) ✓`, type: 'success' });
+    } catch {
+      setToast({ message: 'Erreur lors du réapprovisionnement.', type: 'error' });
+    }
+  };
+
   // ── Retrait de stock (inline pour garder la fiche ouverte) ──────────────
   const handleRetrait = async (qty: number) => {
     if (!selectedProductId || qty <= 0) return;
@@ -442,6 +462,56 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
                   <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
                 </div>
               </button>
+
+              {/* Real interactive out-of-stock data */}
+              {(() => {
+                const ruptureProducts = products.filter(p => p.quantite === 0);
+                return (
+                  <div className="flex flex-col gap-2 max-h-[35svh] overflow-y-auto pr-1 mt-2 border-t border-outline-variant/30 pt-3">
+                    <span className="text-[10px] text-outline font-bold uppercase tracking-wider block mb-1">Produits en rupture ({ruptureProducts.length})</span>
+                    {ruptureProducts.length === 0 ? (
+                      <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">Aucun produit en rupture.</p>
+                    ) : (
+                      ruptureProducts.map(p => {
+                        const style = getProductIconAndGradient(p.nom);
+                        return (
+                          <div key={p.id} className="flex justify-between items-center bg-error-container/10 border border-error-container/20 p-2.5 rounded-xl gap-3">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                <span className="text-base select-none">{style.emoji}</span>
+                              </div>
+                              <div className="flex flex-col text-left min-w-0 flex-1">
+                                <span className="text-xs font-bold text-on-surface truncate">{p.nom}</span>
+                                <span className="text-[9px] text-error font-extrabold uppercase">Rupture de Stock</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMetricMenu(null);
+                                  openEdit(p);
+                                }}
+                                className="px-2.5 h-7 rounded-lg bg-white border border-outline-variant text-[10px] font-bold text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickReplenish(p.id, 10)}
+                                className="px-2.5 h-7 rounded-lg bg-primary text-on-primary text-[10px] font-black hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
+                              >
+                                +10
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
 
@@ -475,6 +545,58 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
                   <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
                 </div>
               </button>
+
+              {/* Real interactive low-stock alert data */}
+              {(() => {
+                const alertProducts = products.filter(p => p.quantite > 0 && p.quantite <= p.seuil_alerte);
+                return (
+                  <div className="flex flex-col gap-2 max-h-[35svh] overflow-y-auto pr-1 mt-2 border-t border-outline-variant/30 pt-3">
+                    <span className="text-[10px] text-outline font-bold uppercase tracking-wider block mb-1">Produits en alerte ({alertProducts.length})</span>
+                    {alertProducts.length === 0 ? (
+                      <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">Aucun produit en alerte.</p>
+                    ) : (
+                      alertProducts.map(p => {
+                        const style = getProductIconAndGradient(p.nom);
+                        return (
+                          <div key={p.id} className="flex justify-between items-center bg-tertiary-container/10 border border-tertiary-container/30 p-2.5 rounded-xl gap-3">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                <span className="text-base select-none">{style.emoji}</span>
+                              </div>
+                              <div className="flex flex-col text-left min-w-0 flex-1">
+                                <span className="text-xs font-bold text-on-surface truncate">{p.nom}</span>
+                                <span className="text-[9px] text-outline font-bold">
+                                  Stock: <span className="text-tertiary font-extrabold">{p.quantite}</span> / Seuil: {p.seuil_alerte}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMetricMenu(null);
+                                  openEdit(p);
+                                }}
+                                className="px-2.5 h-7 rounded-lg bg-white border border-outline-variant text-[10px] font-bold text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickReplenish(p.id, 10)}
+                                className="px-2.5 h-7 rounded-lg bg-primary text-on-primary text-[10px] font-black hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
+                              >
+                                +10
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
