@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
-import { db, queueMutation } from '../../db/dexie';
+import { db, queueMutation, type Ardoise } from '../../db/dexie';
 import type { CartItem } from './types';
 
 // Zod Schema for Cart Validation
@@ -63,13 +63,22 @@ export function useCart(onSuccess: (change: number) => void, onError: (msg: stri
     setAmountReceived('');
   }, []);
 
-  const validateAndCheckout = async (boutiqueId: string, caissierId: string) => {
+  const validateAndCheckout = async (
+    boutiqueId: string,
+    caissierId: string,
+    clientNom?: string,
+    selectedArdoiseId?: string
+  ) => {
     try {
       // Validate cart structure using Zod
       cartSchema.parse(cart);
 
-      if (parseFloat(amountReceived) < cartTotal) {
-        onError("Le montant reçu est insuffisant.");
+      const received = amountReceived ? parseFloat(amountReceived) : 0;
+      const isPartial = received < cartTotal;
+      const debtAmount = cartTotal - received;
+
+      if (isPartial && (!clientNom || !clientNom.trim())) {
+        onError("Un nom de client est obligatoire pour enregistrer le reste à payer en dette.");
         return;
       }
 
@@ -77,7 +86,7 @@ export function useCart(onSuccess: (change: number) => void, onError: (msg: stri
       const timestamp = new Date().toISOString();
 
       // Execute all db changes in a single Dexie transaction for robustness
-      await db.transaction('rw', [db.ventes, db.vente_items, db.produits, db.outbox], async () => {
+      await db.transaction('rw', [db.ventes, db.vente_items, db.produits, db.ardoises, db.outbox], async () => {
         const venteData = {
           id: venteId,
           boutique_id: boutiqueId,
@@ -115,6 +124,52 @@ export function useCart(onSuccess: (change: number) => void, onError: (msg: stri
             };
             await db.produits.put(updatedProduct);
             await queueMutation('produits', 'UPDATE', item.produitId, updatedProduct);
+          }
+        }
+
+        // Handle partial payment (debt)
+        if (isPartial && clientNom) {
+          const trimmedClientNom = clientNom.trim();
+          let targetArdoiseId = selectedArdoiseId;
+          let ardoise = null;
+
+          if (targetArdoiseId) {
+            ardoise = await db.ardoises.get(targetArdoiseId);
+          }
+          if (!ardoise) {
+            const existing = await db.ardoises
+              .filter((a: Ardoise) => a.client_nom.toLowerCase() === trimmedClientNom.toLowerCase())
+              .first();
+            if (existing) {
+              ardoise = existing;
+              targetArdoiseId = existing.id;
+            }
+          }
+
+          if (ardoise && targetArdoiseId) {
+            // Add debt to existing ardoise
+            const updatedArdoise = {
+              ...ardoise,
+              montant_total: ardoise.montant_total + debtAmount,
+              statut: 'en_cours' as const,
+              updated_at: timestamp,
+            };
+            await db.ardoises.put(updatedArdoise);
+            await queueMutation('ardoises', 'UPDATE', targetArdoiseId, updatedArdoise);
+          } else {
+            // Create a new ardoise
+            const newArdoiseId = crypto.randomUUID();
+            const ardoiseData = {
+              id: newArdoiseId,
+              boutique_id: boutiqueId,
+              client_nom: trimmedClientNom,
+              montant_total: debtAmount,
+              statut: 'en_cours' as const,
+              created_at: timestamp,
+              updated_at: timestamp,
+            };
+            await db.ardoises.add(ardoiseData);
+            await queueMutation('ardoises', 'INSERT', newArdoiseId, ardoiseData);
           }
         }
       });

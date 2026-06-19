@@ -27,6 +27,10 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   const [search, setSearch] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  const [clientNom, setClientNom] = useState('');
+  const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
+  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
   useEffect(() => {
     const seed = async () => {
@@ -40,14 +44,21 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
     const today = new Date().toISOString().split('T')[0];
     return db.ventes.where('created_at').aboveOrEqual(today).reverse().toArray();
   }, []) || [];
+  const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
 
   const {
     cart, cartTotal, amountReceived, setAmountReceived, changeDue,
     addToCart, updateQuantity, removeItem, validateAndCheckout
   } = useCart(
     (change) => {
-      setToast({ message: `Vente validée. Rendu : ${new Intl.NumberFormat('fr-FR').format(change)} FCFA`, type: 'success' });
+      if (change >= 0) {
+        setToast({ message: `Vente validée. Rendu : ${new Intl.NumberFormat('fr-FR').format(change)} FCFA`, type: 'success' });
+      } else {
+        setToast({ message: `Vente enregistrée avec une dette de ${new Intl.NumberFormat('fr-FR').format(Math.abs(change))} FCFA pour ${clientNom}.`, type: 'success' });
+      }
       setIsCartOpen(false);
+      setClientNom('');
+      setSelectedArdoiseId(null);
     },
     (msg) => setToast({ message: msg, type: 'error' })
   );
@@ -171,49 +182,67 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
       )}
 
       {/* Cart Bottom Sheet */}
-      <BottomSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} title="Détails de l'encaissement">
+      <BottomSheet
+        isOpen={isCartOpen}
+        onClose={() => {
+          setIsCartOpen(false);
+          setClientNom('');
+          setSelectedArdoiseId(null);
+          setShowClientSuggestions(false);
+        }}
+        title="Détails de l'encaissement"
+      >
         <div className="flex flex-col gap-3 text-left">
           {/* Cart Items List — scroll uniquement si > 3 articles */}
           <div className="flex flex-col gap-2 max-h-[34svh] overflow-y-auto custom-scrollbar pr-1">
-            {cart.map((item) => (
-              <div 
-                key={item.produitId} 
-                className="flex justify-between items-center bg-primary-container/20 border border-primary-container/60 p-2 rounded-xl transition-all hover:bg-primary-container/30"
-              >
-                <div className="flex flex-col text-left gap-0.5 min-w-0 flex-1">
-                  <span className="font-extrabold text-on-surface text-xs truncate">{item.nom}</span>
-                  <div className="flex items-center gap-1.5">
-                    <MoneyText value={item.prix} className="text-[10px] text-texte-2 font-bold" />
-                    <span className="text-[10px] text-outline">•</span>
-                    <span className="text-[10px] text-outline font-semibold truncate">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
+            {cart.map((item) => {
+              const itemStyle = getProductIconAndGradient(item.nom);
+              return (
+                <div 
+                  key={item.produitId} 
+                  className="flex justify-between items-center bg-primary-container/20 border border-primary-container/60 p-2 rounded-xl transition-all hover:bg-primary-container/30"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${itemStyle.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                      <span className="text-base select-none">{itemStyle.emoji}</span>
+                    </div>
+                    <div className="flex flex-col text-left gap-0.5 min-w-0 flex-1">
+                      <span className="font-extrabold text-on-surface text-xs truncate">{item.nom}</span>
+                      <div className="flex items-center gap-1.5">
+                        <MoneyText value={item.prix} className="text-[10px] text-texte-2 font-bold" />
+                        <span className="text-[10px] text-outline">•</span>
+                        <span className="text-[10px] text-outline font-semibold truncate">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center bg-white border border-outline-variant rounded-lg p-0.5 shadow-sm">
+                      <button 
+                        onClick={() => updateQuantity(item.produitId, -1)} 
+                        className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
+                      >
+                        -
+                      </button>
+                      <span className="font-extrabold w-5 text-center text-xs text-on-surface">{item.quantite}</span>
+                      <button 
+                        onClick={() => updateQuantity(item.produitId, 1)} 
+                        className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button 
+                      onClick={() => removeItem(item.produitId)} 
+                      className="material-symbols-outlined text-error/80 hover:text-error hover:bg-error-container/60 p-1 rounded-lg transition-all cursor-pointer text-base"
+                      title="Supprimer du panier"
+                    >
+                      delete
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="flex items-center bg-white border border-outline-variant rounded-lg p-0.5 shadow-sm">
-                    <button 
-                      onClick={() => updateQuantity(item.produitId, -1)} 
-                      className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
-                    >
-                      -
-                    </button>
-                    <span className="font-extrabold w-5 text-center text-xs text-on-surface">{item.quantite}</span>
-                    <button 
-                      onClick={() => updateQuantity(item.produitId, 1)} 
-                      className="w-6 h-6 rounded flex items-center justify-center font-black text-texte-2 hover:bg-surface-container active:scale-90 transition-all cursor-pointer text-xs"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <button 
-                    onClick={() => removeItem(item.produitId)} 
-                    className="material-symbols-outlined text-error/80 hover:text-error hover:bg-error-container/60 p-1 rounded-lg transition-all cursor-pointer text-base"
-                    title="Supprimer du panier"
-                  >
-                    delete
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Premium Total Card */}
@@ -293,12 +322,81 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                 )}
               </div>
             )}
+
+            {/* Client Input for credit / debt */}
+            {amountReceived && changeDue < 0 && (
+              <div className="flex flex-col gap-2 p-3 bg-error-container/10 border border-error-container/20 rounded-xl animate-fade-in relative">
+                <span className="text-[10px] font-bold text-error uppercase tracking-wider">Vente à crédit : Client requis</span>
+                <div className="relative">
+                  <Input
+                    label="Nom & Prénom du Client"
+                    type="text"
+                    value={clientNom}
+                    onChange={(e) => {
+                      setClientNom(e.target.value);
+                      setSelectedArdoiseId(null);
+                      setShowClientSuggestions(true);
+                    }}
+                    onFocus={() => setShowClientSuggestions(true)}
+                    onBlur={() => {
+                      // Slight timeout to let the onClick on suggestions register
+                      setTimeout(() => setShowClientSuggestions(false), 200);
+                    }}
+                    placeholder="Saisir ou sélectionner un client..."
+                    className="pr-10 text-xs font-bold h-10"
+                  />
+                  {clientNom && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setClientNom('');
+                        setSelectedArdoiseId(null);
+                      }}
+                      className="absolute right-3 bottom-1.5 material-symbols-outlined text-outline hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-all text-xs"
+                    >
+                      clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Client Suggestions Dropdown */}
+                {showClientSuggestions && clientNom.trim().length > 0 && (
+                  (() => {
+                    const filtered = ardoises.filter(a => 
+                      a.client_nom.toLowerCase().includes(clientNom.toLowerCase())
+                    );
+                    if (filtered.length === 0) return null;
+                    return (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-outline-variant rounded-xl shadow-lg z-50 max-h-36 overflow-y-auto">
+                        {filtered.map(a => (
+                          <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => {
+                              setClientNom(a.client_nom);
+                              setSelectedArdoiseId(a.id);
+                              setShowClientSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-primary-container/20 text-[10px] font-bold text-on-surface border-b border-outline-variant/30 last:border-b-0 flex justify-between items-center"
+                          >
+                            <span>{a.client_nom}</span>
+                            <span className="text-[8px] text-outline font-normal">
+                              Compte existant
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            )}
           </div>
 
           {/* Validation Action Button */}
           <Button
-            onClick={() => validateAndCheckout(boutiqueId, caissierId)}
-            disabled={!amountReceived || changeDue < 0}
+            onClick={() => validateAndCheckout(boutiqueId, caissierId, clientNom, selectedArdoiseId || undefined)}
+            disabled={!amountReceived || (changeDue < 0 && !clientNom.trim())}
             className="w-full h-11 rounded-xl flex items-center justify-center gap-1.5 font-black tracking-wider text-xs transition-all premium-shadow-sm disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-md active:scale-98"
           >
             <span className="material-symbols-outlined text-sm">check_circle</span>
