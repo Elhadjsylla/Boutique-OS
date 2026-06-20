@@ -1,18 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
-import { Login } from './components/Login'
 import { Caisse } from './pages/Caisse'
 import { Dashboard } from './pages/Dashboard'
 import { Stock } from './pages/Stock'
 import { Ardoise } from './pages/Ardoise'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
+import { LandingPage } from './pages/LandingPage'
 import { Loader2, LogOut } from 'lucide-react'
 import { SyncIndicator } from './pwa/SyncIndicator'
 import { PwaPrompt } from './pwa/PwaPrompt'
+import { useOnline } from './hooks/useOnline'
 
 function App() {
   const { user, profile, boutique, isLoading, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<TabType>('caisse')
+  const [showLandingOverride, setShowLandingOverride] = useState(false)
+  const [liveTime, setLiveTime] = useState(new Date())
+
+  const isOnline = useOnline()
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // 1. LOADING SCREEN
   if (isLoading) {
@@ -24,9 +34,14 @@ function App() {
     )
   }
 
-  // 2. UNAUTHENTICATED SCREEN
-  if (!user) {
-    return <Login />
+  // 2. UNAUTHENTICATED or LANDING OVERRIDE
+  if (!user || showLandingOverride) {
+    return (
+      <LandingPage
+        isLoggedIn={!!user}
+        onBackToApp={() => setShowLandingOverride(false)}
+      />
+    )
   }
 
   const boutiqueId = boutique?.id || 'boutique-dev'
@@ -68,9 +83,54 @@ function App() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Live Date, Time & Connection indicator */}
+        <div className="hidden md:flex items-center gap-4 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-on-primary">
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: '14px' }}>calendar_month</span>
+            <span>
+              {liveTime.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+          </div>
+          <span className="w-px h-3 bg-white/20" />
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: '14px' }}>schedule</span>
+            <span className="font-mono">
+              {liveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+          <span className="w-px h-3 bg-white/20" />
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error animate-pulse'}`} />
+            <span className="text-[9px] tracking-wider uppercase font-black">
+              {isOnline ? 'En ligne' : 'Hors ligne'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
           <SyncIndicator />
-          <button 
+          <button
+            onClick={() => setShowLandingOverride(true)}
+            className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
+            title="Accéder au site vitrine"
+          >
+            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>public</span>
+            Site Vitrine
+          </button>
+
+          {/* Simple clock/indicator for mobile */}
+          <div className="flex md:hidden items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-on-primary mr-1">
+            <span className="font-mono">
+              {liveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error animate-pulse'}`} />
+          </div>
+
+          <button className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95">
+            notifications
+          </button>
+          <button
             onClick={signOut}
             title="Déconnexion"
             className="flex items-center justify-center text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
@@ -80,12 +140,20 @@ function App() {
         </div>
       </header>
 
+      {/* Offline Alert Banner */}
+      {!isOnline && (
+        <div className="bg-error text-white text-center py-2 px-4 text-[10px] font-extrabold tracking-wider uppercase flex items-center justify-center gap-2 fixed top-16 left-0 w-full z-40 shadow-md animate-fade-in border-b border-white/10">
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>wifi_off</span>
+          <span>Mode Hors ligne activé — Les ventes sont sauvegardées localement et se synchroniseront au retour d'Internet.</span>
+        </div>
+      )}
+
       {/* Pages Switcher */}
       <main className="w-full">
         {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
-        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
       </main>
 
       {/* Global Bottom Navigation */}

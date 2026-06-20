@@ -48,6 +48,7 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [activeMetricMenu, setActiveMetricMenu] = useState<'credits' | 'fiches' | null>(null);
 
   // Form states — création
   const [newClientName, setNewClientName] = useState('');
@@ -159,11 +160,25 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+        <div 
+          onClick={() => setActiveMetricMenu('credits')}
+          className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+            filter === 'en_cours'
+              ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
+              : 'bg-white border-outline-variant'
+          }`}
+        >
           <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Crédits En Cours</p>
           <MoneyText value={totalRemainingCredit} className="text-lg font-extrabold text-error" />
         </div>
-        <div className="bg-white border border-outline-variant p-4 rounded-2xl text-left premium-shadow-sm">
+        <div 
+          onClick={() => setActiveMetricMenu('fiches')}
+          className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+            filter === 'all'
+              ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
+              : 'bg-white border-outline-variant'
+          }`}
+        >
           <p className="text-[10px] text-outline font-bold uppercase tracking-wider">Fiches Actives</p>
           <p className="text-lg font-extrabold text-primary font-numeric-display">{activeAccountsCount}</p>
         </div>
@@ -459,6 +474,78 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
             </div>
           </div>
         )}
+      </BottomSheet>
+      {/* Metrics Menu Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeMetricMenu !== null}
+        onClose={() => setActiveMetricMenu(null)}
+        title={activeMetricMenu === 'credits' ? 'Options - Crédits En Cours' : 'Options - Fiches Actives'}
+      >
+        <div className="flex flex-col gap-3 text-left">
+          {activeMetricMenu === 'credits' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilter('en_cours');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">filter_alt</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Filtrer la liste</span>
+                  <span className="text-[10px] text-outline">Afficher uniquement les comptes avec des dettes en cours.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">person_add</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Nouveau compte Ardoise</span>
+                  <span className="text-[10px] text-outline">Ouvrir un nouveau carnet d'ardoise pour un client.</span>
+                </div>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilter('all');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">group</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Afficher tous les comptes</span>
+                  <span className="text-[10px] text-outline">Montrer toutes les fiches (en cours et soldées).</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">person_add</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Nouveau compte Ardoise</span>
+                  <span className="text-[10px] text-outline">Ouvrir un nouveau carnet d'ardoise pour un client.</span>
+                </div>
+              </button>
+            </>
+          )}
+        </div>
       </BottomSheet>
     </div>
   );

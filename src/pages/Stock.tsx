@@ -20,6 +20,8 @@ interface StockProps {
 export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [stockFilter, setStockFilter] = useState<'all' | 'rupture' | 'alerte'>('all');
+  const [activeMetricMenu, setActiveMetricMenu] = useState<'articles' | 'ruptures' | 'alertes' | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -58,6 +60,26 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     handleSuccess,
     (msg) => setToast({ message: msg, type: 'error' })
   );
+
+  // ── Réapprovisionnement rapide (inline pour rester sur le menu) ──────────
+  const quickReplenish = async (productId: string, amount: number) => {
+    try {
+      const produit = await db.produits.get(productId);
+      if (!produit) {
+        setToast({ message: 'Produit introuvable.', type: 'error' });
+        return;
+      }
+      const timestamp = new Date().toISOString();
+      const updated = { ...produit, quantite: produit.quantite + amount, updated_at: timestamp };
+      await db.transaction('rw', [db.produits, db.outbox], async () => {
+        await db.produits.put(updated);
+        await queueMutation('produits', 'UPDATE', productId, updated);
+      });
+      setToast({ message: `${produit.nom} réapprovisionné (+${amount} unité(s)) ✓`, type: 'success' });
+    } catch {
+      setToast({ message: 'Erreur lors du réapprovisionnement.', type: 'error' });
+    }
+  };
 
   // ── Retrait de stock (inline pour garder la fiche ouverte) ──────────────
   const handleRetrait = async (qty: number) => {
@@ -100,7 +122,13 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     }
   };
 
-  const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.nom.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+    if (stockFilter === 'rupture') return p.quantite === 0;
+    if (stockFilter === 'alerte') return p.quantite > 0 && p.quantite <= p.seuil_alerte;
+    return true;
+  });
   const selectedProduct = products.find(p => p.id === selectedProductId);
 
   const openEdit = (product: typeof products[0]) => {
@@ -131,11 +159,22 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
       {/* Metrics Row */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Articles', count: totalProducts, color: 'text-primary' },
-          { label: 'Ruptures', count: outOfStock, color: 'text-error' },
-          { label: 'Alerte Stock', count: lowStock, color: 'text-tertiary' }
-        ].map((metric, i) => (
-          <div key={i} className="bg-white border border-outline-variant p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm">
+          { id: 'all', label: 'Articles', count: totalProducts, color: 'text-primary' },
+          { id: 'rupture', label: 'Ruptures', count: outOfStock, color: 'text-error' },
+          { id: 'alerte', label: 'Alerte Stock', count: lowStock, color: 'text-tertiary' }
+        ].map((metric) => (
+          <div 
+            key={metric.id}
+            onClick={() => setActiveMetricMenu(
+              metric.id === 'all' ? 'articles' : 
+              metric.id === 'rupture' ? 'ruptures' : 'alertes'
+            )}
+            className={`cursor-pointer border p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
+              stockFilter === metric.id 
+                ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20' 
+                : 'bg-white border-outline-variant'
+            }`}
+          >
             <span className="text-[9px] text-outline font-bold uppercase tracking-wider">{metric.label}</span>
             <p className={`text-xl font-extrabold ${metric.color} font-numeric-display`}>{metric.count}</p>
           </div>
@@ -350,6 +389,219 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
               Supprimer définitivement ce produit
             </button>
           </div>
+        </div>
+      </BottomSheet>
+
+      {/* Metrics Menu Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeMetricMenu !== null}
+        onClose={() => setActiveMetricMenu(null)}
+        title={
+          activeMetricMenu === 'articles' ? 'Options - Articles' :
+          activeMetricMenu === 'ruptures' ? 'Options - Ruptures' : 'Options - Alertes Stock'
+        }
+      >
+        <div className="flex flex-col gap-3 text-left">
+          {activeMetricMenu === 'articles' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('all');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">list</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Afficher tous les produits</span>
+                  <span className="text-[10px] text-outline">Afficher la totalité des articles enregistrés en stock.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+            </>
+          )}
+
+          {activeMetricMenu === 'ruptures' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('rupture');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">error</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Filtrer par ruptures</span>
+                  <span className="text-[10px] text-outline">Voir uniquement les produits dont la quantité est à zéro.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+
+              {/* Real interactive out-of-stock data */}
+              {(() => {
+                const ruptureProducts = products.filter(p => p.quantite === 0);
+                return (
+                  <div className="flex flex-col gap-2 max-h-[35svh] overflow-y-auto pr-1 mt-2 border-t border-outline-variant/30 pt-3">
+                    <span className="text-[10px] text-outline font-bold uppercase tracking-wider block mb-1">Produits en rupture ({ruptureProducts.length})</span>
+                    {ruptureProducts.length === 0 ? (
+                      <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">Aucun produit en rupture.</p>
+                    ) : (
+                      ruptureProducts.map(p => {
+                        const style = getProductIconAndGradient(p.nom);
+                        return (
+                          <div key={p.id} className="flex justify-between items-center bg-error-container/10 border border-error-container/20 p-2.5 rounded-xl gap-3">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                <span className="text-base select-none">{style.emoji}</span>
+                              </div>
+                              <div className="flex flex-col text-left min-w-0 flex-1">
+                                <span className="text-xs font-bold text-on-surface truncate">{p.nom}</span>
+                                <span className="text-[9px] text-error font-extrabold uppercase">Rupture de Stock</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMetricMenu(null);
+                                  openEdit(p);
+                                }}
+                                className="px-2.5 h-7 rounded-lg bg-white border border-outline-variant text-[10px] font-bold text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickReplenish(p.id, 10)}
+                                className="px-2.5 h-7 rounded-lg bg-primary text-on-primary text-[10px] font-black hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
+                              >
+                                +10
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+
+          {activeMetricMenu === 'alertes' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockFilter('alerte');
+                  setActiveMetricMenu(null);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">warning</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Filtrer par alertes</span>
+                  <span className="text-[10px] text-outline">Afficher les produits sous le seuil critique d'alerte.</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMetricMenu(null);
+                  setIsCreateOpen(true);
+                }}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">add_box</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Ajouter un produit</span>
+                  <span className="text-[10px] text-outline">Créer une nouvelle fiche produit dans la base.</span>
+                </div>
+              </button>
+
+              {/* Real interactive low-stock alert data */}
+              {(() => {
+                const alertProducts = products.filter(p => p.quantite > 0 && p.quantite <= p.seuil_alerte);
+                return (
+                  <div className="flex flex-col gap-2 max-h-[35svh] overflow-y-auto pr-1 mt-2 border-t border-outline-variant/30 pt-3">
+                    <span className="text-[10px] text-outline font-bold uppercase tracking-wider block mb-1">Produits en alerte ({alertProducts.length})</span>
+                    {alertProducts.length === 0 ? (
+                      <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">Aucun produit en alerte.</p>
+                    ) : (
+                      alertProducts.map(p => {
+                        const style = getProductIconAndGradient(p.nom);
+                        return (
+                          <div key={p.id} className="flex justify-between items-center bg-tertiary-container/10 border border-tertiary-container/30 p-2.5 rounded-xl gap-3">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center flex-shrink-0 relative shadow-sm border border-outline-variant/30`}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                                <span className="text-base select-none">{style.emoji}</span>
+                              </div>
+                              <div className="flex flex-col text-left min-w-0 flex-1">
+                                <span className="text-xs font-bold text-on-surface truncate">{p.nom}</span>
+                                <span className="text-[9px] text-outline font-bold">
+                                  Stock: <span className="text-tertiary font-extrabold">{p.quantite}</span> / Seuil: {p.seuil_alerte}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMetricMenu(null);
+                                  openEdit(p);
+                                }}
+                                className="px-2.5 h-7 rounded-lg bg-white border border-outline-variant text-[10px] font-bold text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickReplenish(p.id, 10)}
+                                className="px-2.5 h-7 rounded-lg bg-primary text-on-primary text-[10px] font-black hover:bg-primary/90 active:scale-95 transition-all cursor-pointer"
+                              >
+                                +10
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
         </div>
       </BottomSheet>
     </div>

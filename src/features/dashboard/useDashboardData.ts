@@ -9,6 +9,7 @@ export interface DashboardMetrics {
   openArdoisesCount: number;
   outOfStockCount: number;
   topProducts: { nom: string; qty: number; maxQty: number }[];
+  dailySalesHistory: number[];
 }
 
 export function useDashboardData(): DashboardMetrics {
@@ -29,8 +30,13 @@ export function useDashboardData(): DashboardMetrics {
     let caMonth = 0;
     let salesCountToday = 0;
 
+    const dayMs = 24 * 60 * 60 * 1000;
+    const startOfTodayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dailySalesHistory = Array(7).fill(0);
+
     sales.forEach(sale => {
       const saleDate = sale.created_at;
+      
       if (saleDate >= startOfToday) {
         caToday += sale.total;
         salesCountToday++;
@@ -40,6 +46,12 @@ export function useDashboardData(): DashboardMetrics {
       }
       if (saleDate >= thirtyDaysAgo) {
         caMonth += sale.total;
+      }
+
+      // Calculate index for 7-day history: 0 is 6 days ago, 6 is today
+      const diffDays = Math.floor((startOfTodayMs - new Date(saleDate.slice(0, 10)).getTime()) / dayMs);
+      if (diffDays >= 0 && diffDays < 7) {
+        dailySalesHistory[6 - diffDays] += sale.total;
       }
     });
 
@@ -100,6 +112,7 @@ export function useDashboardData(): DashboardMetrics {
       openArdoisesCount,
       outOfStockCount,
       topProducts: finalTopProducts,
+      dailySalesHistory,
     };
   }, []) || {
     caToday: 0,
@@ -109,5 +122,6 @@ export function useDashboardData(): DashboardMetrics {
     openArdoisesCount: 0,
     outOfStockCount: 0,
     topProducts: [],
+    dailySalesHistory: Array(7).fill(0),
   };
 }
