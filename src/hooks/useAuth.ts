@@ -8,7 +8,7 @@ import type { User } from '@supabase/supabase-js'
 // In development mode, skip Supabase auth entirely and inject a mock super_admin
 // session so the team can access the full interface without credentials.
 // This flag is removed automatically when building for production.
-const DEV_BYPASS = import.meta.env.DEV
+const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false'
 
 const DEV_USER: User = {
   id: 'dev-admin-000-0000-0000-000000000000',
