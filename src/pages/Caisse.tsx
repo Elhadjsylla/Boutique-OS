@@ -114,19 +114,20 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
         </button>
       </div>
 
-      {/* Modern Search bar — caisse view only */}
-      {caisseView === 'caisse' && <div className="relative flex items-center group">
-        <span className="material-symbols-outlined absolute left-4 text-outline group-focus-within:text-primary transition-colors">search</span>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 h-13 bg-white border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-body-lg text-body-lg text-on-surface premium-shadow-sm"
-          placeholder="Rechercher un produit..."
-        />
-      </div>
+      {/* Caisse view: search + product grid */}
+      {caisseView === 'caisse' && (
+        <div className="relative flex items-center group">
+          <span className="material-symbols-outlined absolute left-4 text-outline group-focus-within:text-primary transition-colors">search</span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 h-13 bg-white border border-outline-variant rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-body-lg text-body-lg text-on-surface premium-shadow-sm"
+            placeholder="Rechercher un produit..."
+          />
+        </div>
+      )}
 
-      {/* Grid produits — caisse view */}
       {caisseView === 'caisse' && <div className="grid grid-cols-2 gap-4">
         {filteredProducts.map((p) => {
           const isOutOfStock = p.quantite === 0;
