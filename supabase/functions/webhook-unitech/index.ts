@@ -33,34 +33,59 @@ serve(async (req) => {
   });
 
   if (payload.event === "payment_completed") {
-    const { data: subscription } = await supabase
+    const { data: newSub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("unitech_reference", payload.reference)
       .single();
 
-    if (!subscription) {
+    if (!newSub) {
       return new Response("Subscription introuvable", { status: 404 });
     }
 
     const now = new Date();
-    const days = PLAN_DURATIONS[subscription.plan] ?? 30;
-    const expires = new Date(now);
-    expires.setDate(expires.getDate() + days);
+    const days = PLAN_DURATIONS[newSub.plan] ?? 30;
 
+    // Chercher un abonnement actif existant (renouvellement anticipé)
+    const { data: activeSub } = await supabase
+      .from("subscriptions")
+      .select("id, expires_at")
+      .eq("user_id", newSub.user_id)
+      .eq("status", "active")
+      .neq("payment_method", "admin")
+      .gt("expires_at", now.toISOString())
+      .order("expires_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Renouvellement anticipé → prolonger depuis expires_at actuel
+    // Après expiration → démarrer depuis maintenant
+    const baseDate = activeSub ? new Date(activeSub.expires_at) : now;
+    const expiresAt = new Date(baseDate);
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    // Activer le nouvel abonnement
     await supabase
       .from("subscriptions")
       .update({
         status: "active",
         net_amount: payload.net_amount,
         starts_at: now.toISOString(),
-        expires_at: expires.toISOString(),
+        expires_at: expiresAt.toISOString(),
       })
-      .eq("id", subscription.id);
+      .eq("id", newSub.id);
+
+    // Expirer proprement l'ancien si renouvellement anticipé
+    if (activeSub) {
+      await supabase
+        .from("subscriptions")
+        .update({ status: "expired" })
+        .eq("id", activeSub.id);
+    }
 
     await supabase
       .from("payment_logs")
-      .update({ subscription_id: subscription.id })
+      .update({ subscription_id: newSub.id })
       .eq("unitech_reference", payload.reference);
   }
 
