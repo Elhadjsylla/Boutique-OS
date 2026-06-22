@@ -1,16 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
 import { Settings } from './pages/Settings';
+import { Subscription } from './pages/Subscription';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
 import { BottomSheet } from './components/ui/BottomSheet';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/dexie';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'monospace', background: '#1a1a2e', color: '#ff6b6b', minHeight: '100vh' }}>
+          <h1 style={{ fontSize: 24, marginBottom: 16 }}>⚠️ BoutikOS — Erreur Runtime</h1>
+          <p style={{ color: '#fff', marginBottom: 8 }}>L'application a planté. Voici l'erreur :</p>
+          <pre style={{ background: '#2d2d44', padding: 16, borderRadius: 8, overflow: 'auto', fontSize: 12, color: '#ffa07a' }}>
+            {this.state.error?.message}
+            {'\n\n'}
+            {this.state.error?.stack}
+          </pre>
+          <button 
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            style={{ marginTop: 16, padding: '10px 20px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Recharger l'application
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
   const devAdminSession = {
@@ -46,11 +82,16 @@ function App() {
   const [session, setSession] = useState<any>(initialSession);
   const [loading, setLoading] = useState(!initialSession);
   const [activeTab, setActiveTab] = useState<TabType>('caisse');
+  const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
   const [liveTime, setLiveTime] = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const isOnline = useOnline();
+
+  const outOfStockCount = useLiveQuery(() => db.produits.where('archive').equals(0).filter(p => p.quantite === 0).count(), []) || 0;
+  const activeArdoises = useLiveQuery(() => db.ardoises.where('statut').equals('en_cours').toArray(), []) || [];
+  const activeArdoisesCount = activeArdoises?.length || 0;
 
   useEffect(() => {
     const timer = setInterval(() => setLiveTime(new Date()), 1000);
@@ -139,9 +180,6 @@ function App() {
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
 
-  const outOfStockCount = useLiveQuery(() => db.produits.where('archive').equals(0).filter(p => p.quantite === 0).count(), []) || 0;
-  const activeArdoises = useLiveQuery(() => db.ardoises.where('statut').equals('en_cours').toArray(), []) || [];
-  const activeArdoisesCount = activeArdoises.length;
 
   const appNotifications = [
     {
@@ -292,7 +330,24 @@ function App() {
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
-        {activeTab === 'settings' && <Settings session={session} onLogout={handleLogout} />}
+        {activeTab === 'settings' && (
+          <Settings 
+            session={session} 
+            onLogout={handleLogout} 
+            activePlan={activePlan}
+            onManageSubscription={() => setActiveTab('subscription')}
+          />
+        )}
+        {activeTab === 'subscription' && (
+          <Subscription 
+            currentPlan={activePlan}
+            onUpdatePlan={(plan) => {
+              setActivePlan(plan);
+              localStorage.setItem('active_subscription_plan', plan);
+            }}
+            onBack={() => setActiveTab('settings')}
+          />
+        )}
       </main>
 
       {/* Global Bottom Navigation */}
@@ -338,4 +393,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithErrorBoundary;

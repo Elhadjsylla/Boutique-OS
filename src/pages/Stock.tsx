@@ -868,6 +868,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             </>
           )}
         </div>
+      </BottomSheet>
       {/* Custom Confirm Modal */}
       {confirmConfig && (
         <Modal

@@ -8,9 +8,16 @@ import { db } from '../db/dexie';
 interface SettingsProps {
   session: any;
   onLogout: () => void;
+  activePlan?: string;
+  onManageSubscription?: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ session, onLogout }) => {
+export const Settings: React.FC<SettingsProps> = ({ 
+  session, 
+  onLogout,
+  activePlan = 'Starter',
+  onManageSubscription
+}) => {
   const user = session.user;
   const initialBoutiqueName = user.user_metadata?.boutique_name || 'Ma Boutique';
   const userRole = user.user_metadata?.role || 'caissier';
@@ -104,6 +111,27 @@ export const Settings: React.FC<SettingsProps> = ({ session, onLogout }) => {
             </span>
           </div>
         </div>
+      </Card>
+
+      {/* Subscription Card */}
+      <Card elevation={1} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden bg-gradient-to-r from-secondary-container/10 to-transparent border border-secondary-container/20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+            <span className="material-symbols-outlined text-lg">workspace_premium</span>
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] text-outline font-black uppercase tracking-wider">Abonnement Actuel</span>
+            <span className="text-sm font-black text-primary uppercase">{activePlan}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onManageSubscription}
+          className="h-9 px-4 bg-primary text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">credit_card</span>
+          Gérer / Mettre à niveau
+        </button>
       </Card>
 
       {/* Settings Form */}

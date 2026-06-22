@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type TabType = 'caisse' | 'stock' | 'ardoise' | 'dashboard' | 'settings';
+export type TabType = 'caisse' | 'stock' | 'ardoise' | 'dashboard' | 'settings' | 'subscription';
 
 interface BottomNavProps {
   activeTab: TabType;
