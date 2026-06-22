@@ -3,24 +3,6 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
 
-const WaveIcon = () => (
-  <svg viewBox="0 0 100 100" className="w-5 h-5 mr-1.5" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="20" fill="#1CC5F4"/>
-    <path d="M50 15 C30 15 22 35 22 65 C22 85 32 85 40 85 C45 85 48 78 50 78 C52 78 55 85 60 85 C68 85 78 85 78 65 C78 35 70 15 50 15 Z" fill="#1A1A1A"/>
-    <circle cx="38" cy="42" r="5" fill="#FFF"/>
-    <circle cx="62" cy="42" r="5" fill="#FFF"/>
-    <path d="M42 50 L58 50 L50 58 Z" fill="#FF7900"/>
-    <ellipse cx="50" cy="70" rx="12" ry="15" fill="#FFF"/>
-  </svg>
-);
-
-const OrangeMoneyIcon = () => (
-  <svg viewBox="0 0 100 100" className="w-5 h-5 mr-1.5" xmlns="http://www.w3.org/2000/svg">
-    <path d="M15,65 L45,35 L25,35 L25,10 L85,10 L85,70 L60,70 L60,45 L30,75 Z" fill="#000000"/>
-    <path d="M85,35 L55,65 L75,65 L75,90 L15,90 L15,30 L40,30 L40,55 L70,25 Z" fill="#FF7900"/>
-  </svg>
-);
-
 interface SubscriptionProps {
   onBack: () => void;
   currentPlan?: string;
@@ -292,102 +274,102 @@ export const Subscription: React.FC<SubscriptionProps> = ({
 
       {/* Simulated Mobile Money Payment Modal */}
       {selectedPlanForPayment && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-card rounded-card border border-border w-full max-w-md p-5 relative z-10 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[32px] w-full max-w-md p-7 relative z-10 shadow-2xl animate-scale-in">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4 text-left">
+            <div className="flex justify-between items-start mb-6 text-left">
               <div>
-                <h2 className="font-headline-sm text-on-surface">Paiement Mobile Money</h2>
-                <p className="text-[10px] text-outline mt-0.5">Simulateur de passerelle locale sécurisée</p>
+                <h2 className="font-bold text-[22px] text-slate-900 tracking-tight leading-none">Paiement Mobile Money</h2>
+                <p className="text-[13px] text-slate-500 mt-1.5">Simulateur de passerelle locale sécurisée</p>
               </div>
               <button
                 onClick={() => setSelectedPlanForPayment(null)}
-                className="material-symbols-outlined text-outline hover:text-on-surface w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all cursor-pointer text-[20px]"
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center"
               >
-                close
+                <span className="material-symbols-outlined text-[28px] font-light">close</span>
               </button>
             </div>
 
             {/* Content */}
-            <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-4 text-left">
+            <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-7 text-left">
               {/* Plan Recap */}
-              <div className="bg-primary-container/20 border border-primary/10 rounded-xl p-3 flex justify-between items-center">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 flex justify-between items-center shadow-sm">
                 <div className="flex flex-col">
-                  <span className="text-xs font-black text-primary">{selectedPlanForPayment.name}</span>
-                  <span className="text-[10px] text-outline">Paiement récurrent</span>
+                  <span className="text-[16px] font-bold text-slate-900">{selectedPlanForPayment.name}</span>
+                  <span className="text-[13px] font-medium text-slate-400 mt-0.5">Paiement récurrent</span>
                 </div>
-                <span className="text-base font-black text-on-surface">{selectedPlanForPayment.price}</span>
+                <span className="text-[22px] font-black text-slate-900 tracking-tight">{selectedPlanForPayment.price}</span>
               </div>
 
               {/* Provider Selection */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-bold text-outline uppercase tracking-wider">Sélectionnez le réseau</span>
+              <div className="flex flex-col gap-3">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sélectionnez le réseau</span>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setProvider('wave')}
-                    className={`h-12 border rounded-xl flex items-center justify-center font-black uppercase text-[11px] transition-all cursor-pointer ${
+                    className={`h-[60px] border rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[13px] transition-all cursor-pointer ${
                       provider === 'wave'
-                        ? 'border-[#1CC5F4] bg-[#1CC5F4]/10 text-[#1CC5F4] scale-95 ring-2 ring-[#1CC5F4]/20'
-                        : 'border-outline-variant hover:border-outline bg-white text-texte-2'
+                        ? 'border-[#1CC5F4] bg-[#E8FAFF] text-[#1CC5F4]'
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-600'
                     }`}
                   >
-                    <WaveIcon />
-                    Wave
+                    <img src="/wave.png" alt="Wave" className="w-6 h-6 object-contain rounded-md" />
+                    WAVE
                   </button>
                   <button
                     type="button"
                     onClick={() => setProvider('orange')}
-                    className={`h-12 border rounded-xl flex items-center justify-center font-black uppercase text-[11px] transition-all cursor-pointer ${
+                    className={`h-[60px] border rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[13px] transition-all cursor-pointer ${
                       provider === 'orange'
-                        ? 'border-[#FF7900] bg-[#FF7900]/10 text-[#FF7900] scale-95 ring-2 ring-[#FF7900]/20'
-                        : 'border-outline-variant hover:border-outline bg-white text-texte-2'
+                        ? 'border-[#FF7900] bg-[#FFF3E5] text-[#FF7900]'
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-600'
                     }`}
                   >
-                    <OrangeMoneyIcon />
-                    Orange Money
+                    <img src="/om.png" alt="Orange Money" className="w-6 h-6 object-contain rounded-md" />
+                    ORANGE MONEY
                   </button>
                 </div>
               </div>
 
               {/* Phone number Input */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-outline uppercase tracking-wider">Numéro de téléphone mobile</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-outline font-bold">+221</span>
+              <div className="flex flex-col gap-3">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Numéro de téléphone mobile</label>
+                <div className="border border-slate-200 rounded-2xl h-[60px] flex items-center px-5 bg-white focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all shadow-sm">
+                  <span className="text-[16px] font-bold text-slate-400 mr-2">+221</span>
                   <input
                     type="tel"
                     required
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="77 000 00 00"
-                    className="w-full h-11 pl-12 pr-4 bg-white border border-outline-variant rounded-xl text-xs font-bold focus:outline-none focus:border-primary placeholder:text-outline/50"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 placeholder-slate-300"
                   />
                 </div>
-                <span className="text-[9px] text-outline italic">Saisissez votre numéro pour initier la demande de débit USSD/OTP.</span>
+                <span className="text-[11px] text-slate-400 italic mt-1 font-medium">Saisissez votre numéro pour initier la demande de débit USSD/OTP.</span>
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 justify-end mt-2 pt-2 border-t border-outline-variant/30">
+              <div className="flex justify-end gap-3 mt-4">
                 <button
                   type="button"
                   onClick={() => setSelectedPlanForPayment(null)}
-                  className="px-4 h-10 rounded-xl border border-outline-variant text-[10px] font-black uppercase text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+                  className="px-6 h-[48px] rounded-2xl border border-slate-200 text-[13px] font-bold uppercase text-slate-600 hover:bg-slate-50 hover:text-slate-900 active:scale-95 transition-all cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={isPaying}
-                  className="px-5 h-10 rounded-xl bg-primary hover:bg-primary/95 text-white text-[10px] font-black uppercase active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-7 h-[48px] rounded-2xl bg-[#1A3C5E] hover:bg-[#132B44] text-white text-[13px] font-bold uppercase active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 shadow-md"
                 >
                   {isPaying ? (
                     <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       TRAITEMENT...
                     </>
                   ) : (
-                    `Payer ${selectedPlanForPayment.price}`
+                    `PAYER ${selectedPlanForPayment.price}`
                   )}
                 </button>
               </div>
