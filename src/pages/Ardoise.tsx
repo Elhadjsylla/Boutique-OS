@@ -267,7 +267,7 @@ const ArdoiseInteractiveChart: React.FC<{
                 if (onShowToast) {
                   onShowToast("Message de relance copié !", "success");
                 } else {
-                  alert("Message de relance copié !");
+                  console.log("Message de relance copié !");
                 }
               }}
               className="px-2.5 h-8 rounded-lg border border-outline-variant text-[10px] font-black text-texte-2 hover:bg-surface-container active:scale-95 transition-all"

@@ -251,6 +251,14 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [retraitQty, setRetraitQty] = useState('');
   const [showCustomRetrait, setShowCustomRetrait] = useState(false);
 
+  // État de confirmation personnalisé
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
 
   const handleSuccess = (msg: string) => {
@@ -315,17 +323,23 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   // ── Suppression définitive (inline pour contrôle complet du flux) ───────
   const handleDeleteProduct = async () => {
     if (!selectedProductId) return;
-    if (!window.confirm('Supprimer définitivement ce produit ?\nCette action est irréversible.')) return;
-    try {
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.delete(selectedProductId);
-        await queueMutation('produits', 'DELETE', selectedProductId, {});
-      });
-      setIsEditOpen(false);
-      setToast({ message: 'Produit supprimé définitivement.', type: 'success' });
-    } catch {
-      setToast({ message: 'Erreur lors de la suppression.', type: 'error' });
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Suppression définitive',
+      message: 'Voulez-vous vraiment supprimer définitivement ce produit ? Cette action est irréversible.',
+      onConfirm: async () => {
+        try {
+          await db.transaction('rw', [db.produits, db.outbox], async () => {
+            await db.produits.delete(selectedProductId);
+            await queueMutation('produits', 'DELETE', selectedProductId, {});
+          });
+          setIsEditOpen(false);
+          setToast({ message: 'Produit supprimé définitivement.', type: 'success' });
+        } catch {
+          setToast({ message: 'Erreur lors de la suppression.', type: 'error' });
+        }
+      }
+    });
   };
 
   const filteredProducts = products.filter(p => {
@@ -573,7 +587,16 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <div className="flex gap-2 mt-1">
             <Button
               variant="danger"
-              onClick={() => selectedProductId && window.confirm("Archiver ce produit ? Il n'apparaîtra plus en vente.") && archiveProduit(selectedProductId)}
+              onClick={() => {
+                if (selectedProductId) {
+                  setConfirmConfig({
+                    isOpen: true,
+                    title: 'Archiver le produit',
+                    message: "Voulez-vous vraiment archiver ce produit ? Il n'apparaîtra plus en vente.",
+                    onConfirm: () => archiveProduit(selectedProductId)
+                  });
+                }
+              }}
               className="flex-1 text-xs"
             >
               Archiver
@@ -845,7 +868,39 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
             </>
           )}
         </div>
-      </BottomSheet>
+      {/* Custom Confirm Modal */}
+      {confirmConfig && (
+        <Modal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(null)}
+          title={confirmConfig.title}
+        >
+          <div className="flex flex-col gap-4 text-left">
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              {confirmConfig.message}
+            </p>
+            <div className="flex gap-3 justify-end mt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmConfig(null)}
+                className="px-4 h-9 rounded-xl border border-outline-variant text-[10px] font-black uppercase text-texte-2 hover:bg-surface-container active:scale-95 transition-all cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  confirmConfig.onConfirm();
+                  setConfirmConfig(null);
+                }}
+                className="px-4 h-9 rounded-xl bg-error hover:bg-error/90 text-white text-[10px] font-black uppercase active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

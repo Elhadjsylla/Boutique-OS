@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Login } from '../components/Login';
+import { Toast } from '../components/ui/Toast';
 
 interface LandingPageProps {
   isLoggedIn?: boolean;
@@ -10,6 +11,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeSimTab, setActiveSimTab] = useState<'caisse' | 'stock' | 'ardoise' | 'dashboard'>('caisse');
   const [activeSection, setActiveSection] = useState<string>('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     const sections = ['problem', 'solution', 'features', 'how-it-works', 'demo', 'security'];
@@ -537,7 +539,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                       </div>
                       <button
                         onClick={() => {
-                          alert(`Simulé : Vente encaissée pour un montant total de ${simTotal} FCFA !`);
+                          setToast({ message: `Simulé : Vente encaissée pour un montant total de ${simTotal} FCFA !`, type: 'success' });
                           setSimCart([
                             { id: '1', nom: 'Huile de Palme', prix: 2500, qty: 1 },
                             { id: '2', nom: 'Riz Long Grain 5kg', prix: 6750, qty: 1 }
@@ -562,7 +564,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                         <p className="text-[9px] text-[#E69200]/80">Rupture imminente : 1 restant</p>
                       </div>
                       <button
-                        onClick={() => alert("Simulé : 10 unités de Sucre en Poudre ajoutées !")}
+                        onClick={() => setToast({ message: "Simulé : 10 unités de Sucre en Poudre ajoutées !", type: 'success' })}
                         className="px-2 h-6 bg-tertiary text-white hover:bg-tertiary/90 text-[10px] font-black rounded-lg active:scale-90 transition-all cursor-pointer"
                       >
                         RÉAPPRO (+10)
@@ -600,7 +602,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                       <div className="text-right">
                         <p className="font-bold text-error text-[11px]">12 500 FCFA</p>
                         <button 
-                          onClick={() => alert("Simulé : Remboursement de 5 000 FCFA reçu de Mamadou Diallo")}
+                          onClick={() => setToast({ message: "Simulé : Remboursement de 5 000 FCFA reçu de Mamadou Diallo", type: 'success' })}
                           className="text-[9px] text-primary font-bold hover:underline cursor-pointer"
                         >
                           Régler
@@ -616,7 +618,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
                       <div className="text-right">
                         <p className="font-bold text-error text-[11px]">8 000 FCFA</p>
                         <button 
-                          onClick={() => alert("Simulé : Remboursement de 8 000 FCFA reçu de Fatou Sow")}
+                          onClick={() => setToast({ message: "Simulé : Remboursement de 8 000 FCFA reçu de Fatou Sow", type: 'success' })}
                           className="text-[9px] text-primary font-bold hover:underline cursor-pointer"
                         >
                           Régler
@@ -738,6 +740,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
             </div>
           </div>
         </div>
+      )}
+      
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
       )}
     </div>
   );

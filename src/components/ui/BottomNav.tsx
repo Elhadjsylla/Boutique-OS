@@ -31,15 +31,21 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               isActive ? 'text-white scale-105' : 'text-white/60 hover:text-white/80'
             }`}
           >
-            {/* Soft background pill indicator on active */}
+            {/* Soft background pill indicator on active with glow */}
             {isActive && (
-              <span className="absolute inset-x-2 inset-y-2.5 bg-white/10 rounded-xl -z-10 animate-fade-in" />
+              <>
+                <span className="absolute inset-x-2 inset-y-2 bg-white/5 rounded-xl -z-10 border border-white/10 shadow-[0_0_15px_rgba(39,174,96,0.25)] animate-fade-in" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-secondary rounded-full shadow-[0_0_8px_#27AE60] animate-fade-in" />
+              </>
             )}
             
-            <span className="material-symbols-outlined text-2.5xl mb-0.5">
+            <span 
+              className={`material-symbols-outlined text-2.5xl mb-0.5 transition-all duration-200 ${isActive ? 'text-secondary' : ''}`}
+              style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : undefined}
+            >
               {tab.icon}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+            <span className={`text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${isActive ? 'text-white' : ''}`}>
               {tab.label}
             </span>
           </button>

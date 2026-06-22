@@ -204,14 +204,14 @@ function App() {
           </div>
           <div className="flex flex-col text-left">
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
+              <h1 className="text-sm sm:text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
               {/* Role Badge */}
-              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${role.bg} ${role.text} border border-current/20`}>
+              <span className={`hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${role.bg} ${role.text} border border-current/20`}>
                 <span className="material-symbols-outlined" style={{ fontSize: '9px' }}>{role.icon}</span>
                 {role.label}
               </span>
             </div>
-            <span className="text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
+            <span className="hidden sm:inline text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
               {user.email}
             </span>
           </div>
@@ -244,24 +244,16 @@ function App() {
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setShowLandingOverride(true)}
-            className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
+            className="hidden sm:flex items-center justify-center h-9 w-9 md:w-auto md:px-3 text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
             title="Accéder à l'accueil"
           >
-            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>home</span>
-            Accueil
+            <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>home</span>
+            <span className="hidden md:inline ml-1 text-[10px] uppercase font-black">Accueil</span>
           </button>
-          
-          {/* Simple clock/indicator for mobile */}
-          <div className="flex md:hidden items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-on-primary mr-1">
-            <span className="font-mono">
-              {liveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error animate-pulse'}`} />
-          </div>
 
           <button 
             onClick={() => setActiveTab('settings')}
-            className={`material-symbols-outlined hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 ${activeTab === 'settings' ? 'text-secondary bg-white/10' : 'text-on-primary'}`}
+            className={`hidden sm:inline-block material-symbols-outlined hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 ${activeTab === 'settings' ? 'text-secondary bg-white/10' : 'text-on-primary'}`}
             title="Paramètres de l'application"
           >
             settings
@@ -278,7 +270,7 @@ function App() {
           </button>
           <button 
             onClick={handleLogout}
-            className="material-symbols-outlined text-on-primary/80 hover:text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95"
+            className="hidden sm:inline-block material-symbols-outlined text-on-primary/80 hover:text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95"
             title="Se déconnecter"
           >
             logout
