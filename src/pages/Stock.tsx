@@ -13,6 +13,211 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { ImagePicker } from '../components/ui/ImagePicker';
 import { getProductIconAndGradient } from '../lib/productHelper';
 
+const InteractiveCurve: React.FC<{
+  items: any[];
+  type: 'articles' | 'ruptures' | 'alertes';
+  onSelectProduct: (p: any) => void;
+  onReplenish: (id: string, qty: number) => void;
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+}> = ({
+  items,
+  type,
+  onSelectProduct,
+  onReplenish,
+  selectedId,
+  setSelectedId
+}) => {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  
+  if (items.length === 0) return null;
+
+  const paddingX = 30;
+  const paddingY = 20;
+  const width = 450;
+  const height = 160;
+
+  // Sort items to make a nice curve (e.g., by quantity ascending)
+  const sortedItems = [...items].sort((a, b) => a.quantite - b.quantite);
+  
+  const getVal = (item: any) => {
+    if (type === 'ruptures') return item.prix; // value of product
+    return item.quantite;
+  };
+
+  const maxVal = Math.max(...sortedItems.map(getVal), 1);
+
+  const points = sortedItems.map((item, index) => {
+    const x = paddingX + (sortedItems.length > 1 ? (index / (sortedItems.length - 1)) * (width - 2 * paddingX) : (width / 2));
+    const val = getVal(item);
+    const y = height - paddingY - (val / maxVal) * (height - 2 * paddingY);
+    return { x, y, item };
+  });
+
+  let pathD = '';
+  let areaD = '';
+  if (points.length > 1) {
+    pathD = `M ${points[0].x} ${points[0].y}`;
+    areaD = `M ${points[0].x} ${height - paddingY} L ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      pathD += ` L ${points[i].x} ${points[i].y}`;
+      areaD += ` L ${points[i].x} ${points[i].y}`;
+    }
+    areaD += ` L ${points[points.length - 1].x} ${height - paddingY} Z`;
+  }
+
+  const selectedPoint = points.find(p => p.item.id === selectedId);
+  const hoveredPoint = points.find(p => p.item.id === hoveredId);
+
+  return (
+    <div className="bg-gradient-to-b from-primary-container/20 to-transparent border border-outline-variant/40 rounded-2xl p-4 flex flex-col gap-3 relative shadow-inner">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] text-outline font-extrabold uppercase tracking-wider">
+          {type === 'articles' ? 'Répartition des quantités' :
+           type === 'ruptures' ? 'Valeur des produits à risque (FCFA)' : 'Niveau de stock vs Seuil critique'}
+        </span>
+        <Badge variant={type === 'articles' ? 'success' : type === 'ruptures' ? 'danger' : 'warning'} className="text-[9px] font-black uppercase">
+          Interactif
+        </Badge>
+      </div>
+
+      <div className="relative w-full overflow-visible">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+          <defs>
+            <linearGradient id="curveGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#27AE60" />
+              <stop offset="100%" stopColor="#1A3C5E" />
+            </linearGradient>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#1A3C5E" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#1A3C5E" stopOpacity="0.00" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          <line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke="#E5E7EB" strokeWidth="1.5" />
+          <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3,3" />
+
+          {/* Area fill */}
+          {areaD && <path d={areaD} fill="url(#areaGradient)" />}
+
+          {/* Line path */}
+          {pathD && <path d={pathD} fill="none" stroke="url(#curveGradient)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+
+          {/* Interactive dots */}
+          {points.map((p) => {
+            const isHovered = hoveredId === p.item.id;
+            const isSelected = selectedId === p.item.id;
+
+            return (
+              <g
+                key={p.item.id}
+                onMouseEnter={() => setHoveredId(p.item.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => setSelectedId(isSelected ? null : p.item.id)}
+                className="cursor-pointer"
+              >
+                {/* Glow ring */}
+                {(isHovered || isSelected) && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isSelected ? 9 : 7}
+                    fill={type === 'ruptures' ? '#BA1A1A' : type === 'alertes' ? '#E69200' : '#27AE60'}
+                    opacity="0.3"
+                    className="transition-all duration-200"
+                  />
+                )}
+                {/* Core dot */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r="4.5"
+                  fill={isSelected ? '#1A3C5E' : (type === 'ruptures' ? '#BA1A1A' : type === 'alertes' ? '#E69200' : '#27AE60')}
+                  stroke="#FFFFFF"
+                  strokeWidth="1.5"
+                  className="transition-all duration-200 hover:scale-125"
+                />
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Tooltip */}
+        {hoveredPoint && (() => {
+          const percent = (hoveredPoint.x / width) * 100;
+          let transform = 'translate(-50%, -105%)';
+          let leftStyle = `${percent}%`;
+
+          // Shift tooltip position to prevent clipping on edges
+          if (percent < 25) {
+            transform = 'translate(8px, -105%)';
+          } else if (percent > 75) {
+            transform = 'translate(-100%, -105%)';
+          }
+
+          return (
+            <div
+              className="absolute bg-slate-900/95 text-white p-2 rounded-xl text-left pointer-events-none z-50 shadow-md border border-white/10 flex flex-col gap-0.5"
+              style={{
+                left: leftStyle,
+                transform: transform,
+                top: `${(hoveredPoint.y / height) * 100}%`,
+              }}
+            >
+              <span className="text-[10px] font-black whitespace-nowrap">{hoveredPoint.item.nom}</span>
+              <span className="text-[9px] opacity-70 whitespace-nowrap">
+                {type === 'ruptures'
+                  ? `Valeur : ${new Intl.NumberFormat('fr-FR').format(hoveredPoint.item.prix)} FCFA`
+                  : `Quantité : ${hoveredPoint.item.quantite} u`
+                }
+              </span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Selected item quick action */}
+      {selectedPoint ? (
+        <div className="bg-white border border-outline-variant/80 p-3 rounded-xl flex flex-col gap-2.5 animate-scale-in text-left shadow-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-on-surface">{selectedPoint.item.nom}</span>
+              <span className="text-[9px] text-outline font-semibold">
+                Prix: {new Intl.NumberFormat('fr-FR').format(selectedPoint.item.prix)} FCFA • Stock actuel: {selectedPoint.item.quantite}
+              </span>
+            </div>
+            <button
+              onClick={() => onSelectProduct(selectedPoint.item)}
+              className="text-[10px] font-black text-primary border border-outline-variant hover:bg-primary-container/20 px-2.5 py-1 rounded-lg transition-all"
+            >
+              Fiche complète
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-outline font-bold uppercase tracking-wider">Réappro :</span>
+            <div className="flex gap-1.5 flex-1">
+              {[5, 10, 20].map(qty => (
+                <button
+                  key={qty}
+                  onClick={() => onReplenish(selectedPoint.item.id, qty)}
+                  className="flex-1 h-7 rounded-lg bg-primary-container/60 hover:bg-primary-container text-primary text-[10px] font-black active:scale-95 transition-all"
+                >
+                  +{qty}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[10px] text-outline text-center font-medium py-1">
+          💡 Touchez un point sur la courbe pour interagir et réapprovisionner rapidement.
+        </p>
+      )}
+    </div>
+  );
+};
+
 interface StockProps {
   boutiqueId: string;
 }
@@ -22,6 +227,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [stockFilter, setStockFilter] = useState<'all' | 'rupture' | 'alerte'>('all');
   const [activeMetricMenu, setActiveMetricMenu] = useState<'articles' | 'ruptures' | 'alertes' | null>(null);
+  const [selectedChartProductId, setSelectedChartProductId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -165,10 +371,13 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
         ].map((metric) => (
           <div 
             key={metric.id}
-            onClick={() => setActiveMetricMenu(
-              metric.id === 'all' ? 'articles' : 
-              metric.id === 'rupture' ? 'ruptures' : 'alertes'
-            )}
+            onClick={() => {
+              setSelectedChartProductId(null);
+              setActiveMetricMenu(
+                metric.id === 'all' ? 'articles' : 
+                metric.id === 'rupture' ? 'ruptures' : 'alertes'
+              );
+            }}
             className={`cursor-pointer border p-3 rounded-2xl text-left flex flex-col justify-between h-20 premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
               stockFilter === metric.id 
                 ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20' 
@@ -404,6 +613,17 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
         <div className="flex flex-col gap-3 text-left">
           {activeMetricMenu === 'articles' && (
             <>
+              <InteractiveCurve
+                items={products}
+                type="articles"
+                onSelectProduct={(p) => {
+                  setActiveMetricMenu(null);
+                  openEdit(p);
+                }}
+                onReplenish={quickReplenish}
+                selectedId={selectedChartProductId}
+                setSelectedId={setSelectedChartProductId}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -437,6 +657,17 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
 
           {activeMetricMenu === 'ruptures' && (
             <>
+              <InteractiveCurve
+                items={products.filter(p => p.quantite === 0)}
+                type="ruptures"
+                onSelectProduct={(p) => {
+                  setActiveMetricMenu(null);
+                  openEdit(p);
+                }}
+                onReplenish={quickReplenish}
+                selectedId={selectedChartProductId}
+                setSelectedId={setSelectedChartProductId}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -520,6 +751,17 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
 
           {activeMetricMenu === 'alertes' && (
             <>
+              <InteractiveCurve
+                items={products.filter(p => p.quantite > 0 && p.quantite <= p.seuil_alerte)}
+                type="alertes"
+                onSelectProduct={(p) => {
+                  setActiveMetricMenu(null);
+                  openEdit(p);
+                }}
+                onReplenish={quickReplenish}
+                selectedId={selectedChartProductId}
+                setSelectedId={setSelectedChartProductId}
+              />
               <button
                 type="button"
                 onClick={() => {

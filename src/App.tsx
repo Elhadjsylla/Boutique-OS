@@ -4,9 +4,13 @@ import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
+import { Settings } from './pages/Settings';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
+import { BottomSheet } from './components/ui/BottomSheet';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './db/dexie';
 
 function App() {
   const devAdminSession = {
@@ -21,11 +25,30 @@ function App() {
     }
   };
 
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const getInitialSession = () => {
+    try {
+      const keys = Object.keys(localStorage);
+      const supabaseKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (supabaseKey) {
+        const localSession = JSON.parse(localStorage.getItem(supabaseKey) || '');
+        if (localSession) return localSession;
+      }
+    } catch (e) {}
+
+    if (import.meta.env.DEV) {
+      const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+      if (!isSignedOut) return devAdminSession;
+    }
+    return null;
+  };
+
+  const initialSession = getInitialSession();
+  const [session, setSession] = useState<any>(initialSession);
+  const [loading, setLoading] = useState(!initialSession);
   const [activeTab, setActiveTab] = useState<TabType>('caisse');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
   const [liveTime, setLiveTime] = useState(new Date());
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const isOnline = useOnline();
 
@@ -35,30 +58,45 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Check active session
+    // Check active session in background without blocking the UI
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSession(session);
       } else if (import.meta.env.DEV) {
-        setSession(devAdminSession);
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) {
+          setSession(devAdminSession);
+        } else {
+          setSession(null);
+        }
       } else {
         setSession(null);
       }
       setLoading(false);
     }).catch(() => {
       if (import.meta.env.DEV) {
-        setSession(devAdminSession);
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) setSession(devAdminSession);
       }
       setLoading(false);
     });
 
     // Listen to changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+      if (_event === 'SIGNED_OUT') {
+        if (import.meta.env.DEV) {
+          localStorage.setItem('dev_signed_out', 'true');
+        }
+        setSession(null);
+      } else if (session) {
         setSession(session);
-      } else if (import.meta.env.DEV && _event !== 'SIGNED_OUT') {
-        // Only set dev session if the user didn't explicitly log out
-        setSession(devAdminSession);
+      } else if (import.meta.env.DEV) {
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) {
+          setSession(devAdminSession);
+        } else {
+          setSession(null);
+        }
       } else {
         setSession(null);
       }
@@ -69,6 +107,10 @@ function App() {
   }, []);
 
   const handleLogout = async () => {
+    if (import.meta.env.DEV) {
+      localStorage.setItem('dev_signed_out', 'true');
+    }
+    setSession(null);
     await supabase.auth.signOut();
   };
 
@@ -97,6 +139,47 @@ function App() {
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
 
+  const outOfStockCount = useLiveQuery(() => db.produits.where('archive').equals(0).filter(p => p.quantite === 0).count(), []) || 0;
+  const activeArdoises = useLiveQuery(() => db.ardoises.where('statut').equals('en_cours').toArray(), []) || [];
+  const activeArdoisesCount = activeArdoises.length;
+
+  const appNotifications = [
+    {
+      id: 'welcome',
+      title: 'Bienvenue sur BoutikOS',
+      desc: 'Votre moteur de caisse et de stock intelligent est prêt et synchronisé localement.',
+      icon: 'info',
+      color: 'text-primary'
+    },
+    {
+      id: 'csv_feature',
+      title: 'Nouvelle fonctionnalité CSV',
+      desc: 'Vous pouvez désormais exporter vos bilans et rapports clients au format Excel (CSV).',
+      icon: 'download',
+      color: 'text-secondary'
+    }
+  ];
+
+  if (outOfStockCount > 0) {
+    appNotifications.unshift({
+      id: 'stock_alert',
+      title: 'Alerte de Stock Bas',
+      desc: `${outOfStockCount} produit(s) en rupture de stock totale ! Réapprovisionnez au plus vite.`,
+      icon: 'warning',
+      color: 'text-error animate-pulse'
+    });
+  }
+
+  if (activeArdoisesCount > 0) {
+    appNotifications.unshift({
+      id: 'ardoise_alert',
+      title: 'Dettes clients en cours',
+      desc: `Vous avez ${activeArdoisesCount} fiche(s) d'ardoises actives. Pensez à relancer les clients par WhatsApp.`,
+      icon: 'menu_book',
+      color: 'text-tertiary'
+    });
+  }
+
   // Role badge config — couleurs sur fond sombre (top bar bg-primary)
   const roleConfig: Record<string, { label: string; bg: string; text: string; icon: string }> = {
     admin:    { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
@@ -108,8 +191,12 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-on-background">
       {/* Top App Bar */}
-      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-45 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
-        <div className="flex items-center gap-3">
+      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
+        <div 
+          onClick={() => setActiveTab('settings')} 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all"
+          title="Paramètres du compte"
+        >
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
             <span className="text-white text-xs font-black">
               {boutiqueName.slice(0, 2).toUpperCase()}
@@ -158,10 +245,10 @@ function App() {
           <button 
             onClick={() => setShowLandingOverride(true)}
             className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
-            title="Accéder au site vitrine"
+            title="Accéder à l'accueil"
           >
-            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>public</span>
-            Site Vitrine
+            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>home</span>
+            Accueil
           </button>
           
           {/* Simple clock/indicator for mobile */}
@@ -172,8 +259,22 @@ function App() {
             <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error animate-pulse'}`} />
           </div>
 
-          <button className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95">
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`material-symbols-outlined hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 ${activeTab === 'settings' ? 'text-secondary bg-white/10' : 'text-on-primary'}`}
+            title="Paramètres de l'application"
+          >
+            settings
+          </button>
+          <button 
+            onClick={() => setIsNotificationsOpen(true)}
+            className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 relative"
+            title="Notifications SaaS"
+          >
             notifications
+            {appNotifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-primary animate-pulse" />
+            )}
           </button>
           <button 
             onClick={handleLogout}
@@ -199,10 +300,48 @@ function App() {
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
+        {activeTab === 'settings' && <Settings session={session} onLogout={handleLogout} />}
       </main>
 
       {/* Global Bottom Navigation */}
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Bottom Sheet for SaaS Notifications */}
+      <BottomSheet
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        title="Centre de Notifications SaaS"
+      >
+        <div className="flex flex-col gap-3 text-left">
+          {appNotifications.length === 0 ? (
+            <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">
+              Aucune notification active.
+            </p>
+          ) : (
+            appNotifications.map((notif) => (
+              <div 
+                key={notif.id}
+                className="p-3 bg-surface-container/40 hover:bg-surface-container border border-outline-variant/60 rounded-xl flex gap-3 transition-all"
+              >
+                <span className={`material-symbols-outlined ${notif.color} text-xl mt-0.5`}>
+                  {notif.icon}
+                </span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">{notif.title}</span>
+                  <span className="text-[10px] text-outline mt-0.5 leading-relaxed">{notif.desc}</span>
+                </div>
+              </div>
+            ))
+          )}
+          
+          <button
+            onClick={() => setIsNotificationsOpen(false)}
+            className="w-full h-10 mt-2 bg-primary text-white text-xs font-black rounded-xl active:scale-95 transition-all shadow-sm"
+          >
+            Fermer le Centre
+          </button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
