@@ -36,10 +36,21 @@ const DEV_BOUTIQUE: Boutique = {
 export function useAuth() {
   const { setAuth, clearAuth, setLoading, user, profile, boutique, isLoading } = useAuthStore()
 
+  const getRoleFromJWT = useCallback(async (): Promise<string | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return null
+      const payload = JSON.parse(atob(session.access_token.split('.')[1]))
+      return payload.role ?? null
+    } catch {
+      return null
+    }
+  }, [])
+
   const fetchProfileAndBoutique = useCallback(async (authUser: User) => {
     try {
       setLoading(true)
-      
+
       // Fetch public profile
       const { data: profileData, error: profileError } = await supabase
         .from('profils')
@@ -48,8 +59,13 @@ export function useAuth() {
         .single()
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError)
-        setAuth(authUser, null, null)
+        // Fallback: build a minimal profile from JWT claims (role injected by custom_access_token_hook)
+        const jwtRole = await getRoleFromJWT()
+        if (jwtRole) {
+          setAuth(authUser, { id: authUser.id, role: jwtRole, boutique_id: null } as Profile, null)
+        } else {
+          setAuth(authUser, null, null)
+        }
         return
       }
 
@@ -76,7 +92,7 @@ export function useAuth() {
       console.error('Unexpected error in fetchProfileAndBoutique:', err)
       setAuth(authUser, null, null)
     }
-  }, [setAuth, setLoading])
+  }, [setAuth, setLoading, getRoleFromJWT])
 
   useEffect(() => {
     // ── DEV BYPASS: inject fake admin session immediately ──
