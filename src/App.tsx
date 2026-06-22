@@ -4,6 +4,7 @@ import { Caisse } from './pages/Caisse'
 import { Dashboard } from './pages/Dashboard'
 import { Stock } from './pages/Stock'
 import { Ardoise } from './pages/Ardoise'
+import { Reglages } from './pages/Reglages'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
 import { LandingPage } from './pages/LandingPage'
 import { Loader2, LogOut } from 'lucide-react'
@@ -110,17 +111,28 @@ function App() {
 
         <div className="flex items-center gap-1">
           <SyncIndicator />
+
+          {/* ACCUEIL — landing page */}
           <button
             onClick={() => setShowLandingOverride(true)}
             className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
-            title="Accéder au site vitrine"
+            title="Accueil"
           >
-            <span className="material-symbols-outlined text-sm" style={{ fontSize: '15px' }}>public</span>
-            Site Vitrine
+            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>home</span>
+            <span className="hidden sm:inline">Accueil</span>
           </button>
 
-          {/* Simple clock/indicator for mobile */}
-          <div className="flex md:hidden items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-on-primary mr-1">
+          {/* Réglages — settings gear */}
+          <button
+            onClick={() => setActiveTab('reglages')}
+            title="Réglages"
+            className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/90 transition-all active:scale-95 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-white" style={{ fontSize: '18px' }}>settings</span>
+          </button>
+
+          {/* Mobile clock */}
+          <div className="flex md:hidden items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-on-primary mx-1">
             <span className="font-mono">
               {liveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </span>
@@ -154,6 +166,7 @@ function App() {
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
+        {activeTab === 'reglages' && <Reglages boutiqueId={boutiqueId} />}
       </main>
 
       {/* Global Bottom Navigation */}

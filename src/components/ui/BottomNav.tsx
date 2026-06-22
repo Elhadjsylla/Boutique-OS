@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type TabType = 'caisse' | 'stock' | 'ardoise' | 'dashboard';
+export type TabType = 'caisse' | 'stock' | 'ardoise' | 'dashboard' | 'reglages';
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -16,6 +16,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'stock', label: 'Stock', icon: 'inventory_2' },
     { id: 'ardoise', label: 'Ardoise', icon: 'menu_book' },
     { id: 'dashboard', label: 'Dashboard', icon: 'leaderboard' },
+    { id: 'reglages', label: 'Réglages', icon: 'settings' },
   ];
 
   return (
