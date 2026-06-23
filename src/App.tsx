@@ -52,16 +52,19 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function App() {
-  const devAdminSession = {
-    user: {
-      id: 'dev-admin-id',
-      email: 'admin@boutikos.dev',
-      user_metadata: {
-        boutique_id: 'boutique-dev',
-        boutique_name: 'BoutikOS Dev',
-        role: 'super_admin',
+  const getDevSession = () => {
+    const devRole = localStorage.getItem('dev_role') || 'admin';
+    return {
+      user: {
+        id: 'dev-admin-id',
+        email: 'admin@boutikos.dev',
+        user_metadata: {
+          boutique_id: 'boutique-dev',
+          boutique_name: 'BoutikOS Dev',
+          role: devRole,
+        }
       }
-    }
+    };
   };
 
   const getInitialSession = () => {
@@ -76,7 +79,15 @@ function App() {
 
     if (import.meta.env.DEV) {
       const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-      if (!isSignedOut) return devAdminSession;
+      if (isSignedOut) return null;
+
+      // Extract role from URL or load from localStorage, defaulting to 'admin' (merchant view)
+      const urlRole = new URLSearchParams(window.location.search).get('role');
+      if (urlRole) {
+        localStorage.setItem('dev_role', urlRole);
+      }
+
+      return getDevSession();
     }
     return null;
   };
@@ -116,14 +127,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Check active session in background without blocking the UI
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSession(session);
       } else if (import.meta.env.DEV) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
-          setSession(devAdminSession);
+          setSession(getDevSession());
         } else {
           setSession(null);
         }
@@ -134,7 +144,7 @@ function App() {
     }).catch(() => {
       if (import.meta.env.DEV) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-        if (!isSignedOut) setSession(devAdminSession);
+        if (!isSignedOut) setSession(getDevSession());
       }
       setLoading(false);
     });
@@ -151,7 +161,7 @@ function App() {
       } else if (import.meta.env.DEV) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
-          setSession(devAdminSession);
+          setSession(getDevSession());
         } else {
           setSession(null);
         }
