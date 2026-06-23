@@ -59,7 +59,7 @@ function App() {
       user_metadata: {
         boutique_id: 'boutique-dev',
         boutique_name: 'BoutikOS Dev',
-        role: 'admin',
+        role: 'super_admin',
       }
     }
   };
