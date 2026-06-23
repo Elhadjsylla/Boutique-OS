@@ -40,7 +40,7 @@ serve(async (req) => {
       .single();
 
     let unitechRes;
-    const baseUrl = Deno.env.get("APP_URL");
+    const baseUrl = Deno.env.get("APP_URL") ?? "https://boutikos.app";
 
     if (payment_method === "wave") {
       unitechRes = await callUnitech("create_wave_payment", UNITECH_WAVE_KEY, {
