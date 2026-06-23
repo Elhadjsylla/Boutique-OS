@@ -324,23 +324,6 @@ export const Settings: React.FC<SettingsProps> = ({
           Effets & Expérience Utilisateur (Dopamine Shot)
         </h3>
 
-        {/* Toggle sound */}
-        <div className="flex justify-between items-center py-1">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-on-surface">Effet sonore de caisse</span>
-            <span className="text-[10px] text-outline">Jouer un bruit de pièces de monnaie "Cha-ching" à chaque vente.</span>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={soundEnabled} 
-              onChange={(e) => setSoundEnabled(e.target.checked)} 
-              className="sr-only peer"
-            />
-            <div className="w-9 h-5 bg-surface-container rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
-          </label>
-        </div>
-
         {/* Toggle confetti */}
         <div className="flex justify-between items-center py-1 border-t border-outline-variant/20 pt-3">
           <div className="flex flex-col">
