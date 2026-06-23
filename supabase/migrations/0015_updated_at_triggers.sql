@@ -15,27 +15,27 @@ BEGIN
 END;
 $$;
 
--- produits : le plus critique — modifié par decrement_stock_on_sale
+DROP TRIGGER IF EXISTS set_updated_at ON produits;
 CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON produits
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- ventes
+DROP TRIGGER IF EXISTS set_updated_at ON ventes;
 CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON ventes
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- vente_items
+DROP TRIGGER IF EXISTS set_updated_at ON vente_items;
 CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON vente_items
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- ardoises
+DROP TRIGGER IF EXISTS set_updated_at ON ardoises;
 CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON ardoises
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- ardoise_paiements
+DROP TRIGGER IF EXISTS set_updated_at ON ardoise_paiements;
 CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON ardoise_paiements
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
