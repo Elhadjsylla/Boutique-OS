@@ -6,9 +6,15 @@ import { Toast } from '../components/ui/Toast';
 
 interface ReglagesProps {
   boutiqueId: string;
+  activePlan?: string;
+  onManageSubscription?: () => void;
 }
 
-export const Reglages: React.FC<ReglagesProps> = ({ boutiqueId }) => {
+export const Reglages: React.FC<ReglagesProps> = ({ 
+  boutiqueId,
+  activePlan = 'Starter',
+  onManageSubscription
+}) => {
   const { user, profile, boutique } = useAuthStore();
   const [boutiqueName, setBoutiqueName] = useState(boutique?.nom || '');
   const [stockThreshold, setStockThreshold] = useState(5);
@@ -68,6 +74,27 @@ export const Reglages: React.FC<ReglagesProps> = ({ boutiqueId }) => {
             Role: {roleLabels[userRole] ?? userRole}
           </span>
         </div>
+      </div>
+
+      {/* Subscription Card */}
+      <div className="bg-white border border-outline-variant rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 premium-shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-secondary-container text-secondary flex items-center justify-center">
+            <span className="material-symbols-outlined text-lg">workspace_premium</span>
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] text-outline font-black uppercase tracking-wider">Abonnement Actuel</span>
+            <span className="text-sm font-black text-primary uppercase">{activePlan}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onManageSubscription}
+          className="h-9 px-4 bg-primary hover:bg-primary/95 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">credit_card</span>
+          Gérer / S'abonner
+        </button>
       </div>
 
       {/* Boutique Settings */}

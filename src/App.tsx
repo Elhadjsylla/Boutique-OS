@@ -5,18 +5,28 @@ import { Dashboard } from './pages/Dashboard'
 import { Stock } from './pages/Stock'
 import { Ardoise } from './pages/Ardoise'
 import { Reglages } from './pages/Reglages'
+import { Subscription } from './pages/Subscription'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
 import { LandingPage } from './pages/LandingPage'
 import { Loader2, LogOut } from 'lucide-react'
 import { SyncIndicator } from './pwa/SyncIndicator'
 import { PwaPrompt } from './pwa/PwaPrompt'
 import { useOnline } from './hooks/useOnline'
+import { useSubscription } from './hooks/useSubscription'
 
 function App() {
   const { user, profile, boutique, isLoading, signOut } = useAuth()
+  const { subscription, refetch } = useSubscription()
   const [activeTab, setActiveTab] = useState<TabType>('caisse')
   const [showLandingOverride, setShowLandingOverride] = useState(false)
   const [liveTime, setLiveTime] = useState(new Date())
+
+  const planLabels: Record<string, string> = {
+    starter: 'Starter',
+    pro: 'Pro',
+    annual: 'Annuel',
+  };
+  const activePlanLabel = subscription ? (planLabels[subscription.plan] || 'Starter') : 'Starter';
 
   const isOnline = useOnline()
 
@@ -166,7 +176,22 @@ function App() {
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
-        {activeTab === 'reglages' && <Reglages boutiqueId={boutiqueId} />}
+        {activeTab === 'reglages' && (
+          <Reglages 
+            boutiqueId={boutiqueId} 
+            activePlan={activePlanLabel}
+            onManageSubscription={() => setActiveTab('subscription')}
+          />
+        )}
+        {activeTab === 'subscription' && (
+          <Subscription 
+            currentPlan={activePlanLabel}
+            onUpdatePlan={async () => {
+              await refetch();
+            }}
+            onBack={() => setActiveTab('reglages')}
+          />
+        )}
       </main>
 
       {/* Global Bottom Navigation */}
