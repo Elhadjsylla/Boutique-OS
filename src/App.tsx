@@ -8,6 +8,7 @@ import { Settings } from './pages/Settings';
 import { Subscription } from './pages/Subscription';
 import { PortalClient } from './pages/PortalClient';
 import { MonEspace } from './pages/MonEspace';
+import { AdminLayout } from './pages/admin/AdminLayout';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
@@ -230,6 +231,10 @@ function App() {
   const boutiqueName = user.user_metadata?.boutique_name || 'BoutikOS';
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
+
+  if (userRole === 'super_admin') {
+    return <AdminLayout />;
+  }
 
 
   const appNotifications = [
