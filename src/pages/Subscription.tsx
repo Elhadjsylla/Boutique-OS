@@ -280,7 +280,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
             <div className="flex justify-between items-start mb-6 text-left">
               <div>
                 <h2 className="font-bold text-[22px] text-slate-900 tracking-tight leading-none">Paiement Mobile Money</h2>
-                <p className="text-[13px] text-slate-500 mt-1.5">Simulateur de passerelle locale sécurisée</p>
+                <p className="text-[13px] text-slate-500 mt-1.5">Passerelle de paiement sécurisée</p>
               </div>
               <button
                 onClick={() => setSelectedPlanForPayment(null)}
