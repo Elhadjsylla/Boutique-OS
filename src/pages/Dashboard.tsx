@@ -12,6 +12,7 @@ import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 interface DashboardProps {
   onNavigate?: (tab: 'caisse' | 'stock' | 'ardoise' | 'dashboard') => void;
@@ -19,6 +20,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
+  const { user } = useAuth();
   const metrics = useDashboardData();
   const { subscription } = useSubscription();
   const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || import.meta.env.DEV;
@@ -912,7 +914,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                   body: JSON.stringify({
                     type: exportType,
                     scope: exportScope,
-                    boutique_id: user.user_metadata?.boutique_id || 'boutique-1'
+                    boutique_id: user?.user_metadata?.boutique_id || 'boutique-1'
                   })
                 });
 
