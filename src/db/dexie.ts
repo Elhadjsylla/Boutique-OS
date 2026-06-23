@@ -47,6 +47,7 @@ export interface Ardoise {
   statut: 'en_cours' | 'soldee';
   created_at: string;
   updated_at: string;
+  access_token?: string; // généré par Supabase au premier sync, utilisé pour le portail client
 }
 
 export interface ArdoisePaiement {
