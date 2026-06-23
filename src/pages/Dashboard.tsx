@@ -902,46 +902,172 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             onClick={async () => {
               setIsExporting(true);
               try {
-                const { data: { session } } = await supabase.auth.getSession();
-                const token = session?.access_token;
-                
-                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-data`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                    type: exportType,
-                    scope: exportScope,
-                    boutique_id: user?.user_metadata?.boutique_id || 'boutique-1'
-                  })
-                });
-
-                if (!response.ok) {
-                  const errData = await response.json();
-                  throw new Error(errData.error || 'Erreur lors de la génération de l\'export.');
-                }
-
-                if (exportType === 'pdf') {
-                  const htmlText = await response.text();
-                  const win = window.open();
-                  if (win) {
-                    win.document.write(htmlText);
-                    win.document.close();
+                // Generate exports client-side for offline-first resilience
+                if (exportScope === 'stock') {
+                  const produits = await db.produits.where('archive').equals(0).toArray();
+                  
+                  if (exportType === 'excel') {
+                    let csvContent = '\ufeff'; // UTF-8 BOM for Excel
+                    csvContent += 'Nom Produit;Prix (FCFA);Quantité;Seuil d Alerte\n';
+                    produits.forEach(p => {
+                      csvContent += `"${p.nom.replace(/"/g, '""')}";${p.prix};${p.quantite};${p.seuil_alerte}\n`;
+                    });
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `export_stock_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setToast({ message: 'Téléchargement du stock lancé !', type: 'success' });
                   } else {
-                    setToast({ message: 'Veuillez autoriser les fenêtres pop-up.', type: 'error' });
+                    const htmlText = `
+                      <html>
+                      <head>
+                        <title>Rapport de Stock — BoutikOS</title>
+                        <style>
+                          body { font-family: sans-serif; padding: 20px; color: #333; }
+                          h1 { color: #1a3c5e; border-bottom: 2px solid #1a3c5e; padding-bottom: 10px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                          th { background-color: #f5f5f5; }
+                        </style>
+                      </head>
+                      <body>
+                        <h1>Rapport d'Inventaire des Stocks</h1>
+                        <p>Généré le : ${new Date().toLocaleString('fr-FR')}</p>
+                        <table>
+                          <thead>
+                            <tr><th>Produit</th><th>Prix (FCFA)</th><th>Quantité en Stock</th></tr>
+                          </thead>
+                          <tbody>
+                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${new Intl.NumberFormat('fr-FR').format(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
+                          </tbody>
+                        </table>
+                        <script>window.onload = function() { window.print(); }</script>
+                      </body>
+                      </html>
+                    `;
+                    const win = window.open();
+                    if (win) {
+                      win.document.write(htmlText);
+                      win.document.close();
+                    } else {
+                      setToast({ message: 'Veuillez autoriser les fenêtres pop-up.', type: 'error' });
+                    }
                   }
-                } else {
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `export_${exportScope}_${new Date().toISOString().slice(0, 10)}.csv`;
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  setToast({ message: 'Téléchargement lancé avec succès !', type: 'success' });
+                } else if (exportScope === 'ardoises') {
+                  const ardoises = await db.ardoises.toArray();
+                  
+                  if (exportType === 'excel') {
+                    let csvContent = '\ufeff';
+                    csvContent += 'Client;Montant Total (FCFA);Statut\n';
+                    ardoises.forEach(a => {
+                      csvContent += `"${a.client_nom.replace(/"/g, '""')}";${a.montant_total};${a.statut}\n`;
+                    });
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `export_ardoises_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setToast({ message: 'Téléchargement des ardoises lancé !', type: 'success' });
+                  } else {
+                    const htmlText = `
+                      <html>
+                      <head>
+                        <title>Rapport des Ardoises — BoutikOS</title>
+                        <style>
+                          body { font-family: sans-serif; padding: 20px; color: #333; }
+                          h1 { color: #ba1a1a; border-bottom: 2px solid #ba1a1a; padding-bottom: 10px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                          th { background-color: #f5f5f5; }
+                        </style>
+                      </head>
+                      <body>
+                        <h1>Rapport des Crédits & Ardoises Clients</h1>
+                        <p>Généré le : ${new Date().toLocaleString('fr-FR')}</p>
+                        <table>
+                          <thead>
+                            <tr><th>Nom Client</th><th>Crédit Total (FCFA)</th><th>Statut</th></tr>
+                          </thead>
+                          <tbody>
+                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${new Intl.NumberFormat('fr-FR').format(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
+                          </tbody>
+                        </table>
+                        <script>window.onload = function() { window.print(); }</script>
+                      </body>
+                      </html>
+                    `;
+                    const win = window.open();
+                    if (win) {
+                      win.document.write(htmlText);
+                      win.document.close();
+                    } else {
+                      setToast({ message: 'Veuillez autoriser les fenêtres pop-up.', type: 'error' });
+                    }
+                  }
+                } else { // ventes
+                  const ventes = await db.ventes.toArray();
+                  
+                  if (exportType === 'excel') {
+                    let csvContent = '\ufeff';
+                    csvContent += 'Date;Montant Total (FCFA);ID Caissier\n';
+                    ventes.forEach(v => {
+                      csvContent += `${new Date(v.created_at).toLocaleString('fr-FR')};${v.total};${v.caissier_id}\n`;
+                    });
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `export_ventes_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setToast({ message: 'Téléchargement des ventes lancé !', type: 'success' });
+                  } else {
+                    const htmlText = `
+                      <html>
+                      <head>
+                        <title>Rapport des Ventes — BoutikOS</title>
+                        <style>
+                          body { font-family: sans-serif; padding: 20px; color: #333; }
+                          h1 { color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                          th { background-color: #f5f5f5; }
+                        </style>
+                      </head>
+                      <body>
+                        <h1>Rapport Général des Ventes</h1>
+                        <p>Généré le : ${new Date().toLocaleString('fr-FR')}</p>
+                        <table>
+                          <thead>
+                            <tr><th>Date</th><th>Montant (FCFA)</th><th>ID Caissier</th></tr>
+                          </thead>
+                          <tbody>
+                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${new Intl.NumberFormat('fr-FR').format(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
+                          </tbody>
+                        </table>
+                        <script>window.onload = function() { window.print(); }</script>
+                      </body>
+                      </html>
+                    `;
+                    const win = window.open();
+                    if (win) {
+                      win.document.write(htmlText);
+                      win.document.close();
+                    } else {
+                      setToast({ message: 'Veuillez autoriser les fenêtres pop-up.', type: 'error' });
+                    }
+                  }
                 }
                 setIsExportModalOpen(false);
               } catch (e: any) {
