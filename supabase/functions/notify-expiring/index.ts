@@ -5,7 +5,7 @@ const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY    = Deno.env.get("RESEND_API_KEY")!;
 const CRON_SECRET       = Deno.env.get("CRON_SECRET")!;
-const FROM_EMAIL        = "BoutikOS <noreply@boutikos.app>";
+const FROM_EMAIL        = "BoutikOS <onboarding@resend.dev>";
 
 const PLAN_LABELS: Record<string, string> = {
   starter: "Starter",
