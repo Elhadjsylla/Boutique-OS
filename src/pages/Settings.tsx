@@ -62,12 +62,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [confettiEnabled, setConfettiEnabled] = useState(localStorage.getItem('confetti_enabled') !== 'false');
   const [seuilAlerte, setSeuilAlerte] = useState(parseInt(localStorage.getItem('seuil_alerte_global') || '5'));
   const [isSaving, setIsSaving] = useState(false);
-  const [dopamineClickCount, setDopamineClickCount] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const playChachingSound = () => {
-    // Sound effects disabled
-  };
 
   const handleSaveSettings = () => {
     setIsSaving(true);
@@ -78,16 +73,8 @@ export const Settings: React.FC<SettingsProps> = ({
     // Simulate savings animation
     setTimeout(() => {
       setIsSaving(false);
-      if (soundEnabled) {
-        playChachingSound();
-      }
       setToast({ message: "Paramètres enregistrés avec succès !", type: "success" });
     }, 800);
-  };
-
-  const triggerDopamineShot = () => {
-    setDopamineClickCount(prev => prev + 1);
-    playChachingSound();
   };
 
   const handleExportDB = async () => {
@@ -339,21 +326,6 @@ export const Settings: React.FC<SettingsProps> = ({
             />
             <div className="w-9 h-5 bg-surface-container rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
           </label>
-        </div>
-
-        {/* Interactive Dopamine Shot Button */}
-        <div className="border-t border-outline-variant/20 pt-3 mt-1 flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-on-surface">Bouton Dopamine Instantané</span>
-            <span className="text-[10px] text-outline">Une mini-célébration immédiate pour relâcher le stress ({dopamineClickCount} clics).</span>
-          </div>
-          <button
-            type="button"
-            onClick={triggerDopamineShot}
-            className="h-8 px-3.5 bg-gradient-to-r from-secondary to-orange-500 hover:scale-105 active:scale-95 text-white text-[10px] font-black rounded-lg uppercase tracking-wider transition-all flex items-center gap-1 shadow-sm"
-          >
-            🔥 CLIC DOPAMINE
-          </button>
         </div>
       </Card>
 
