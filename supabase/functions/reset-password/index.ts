@@ -1,0 +1,79 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return json({ error: 'Authorization requise' }, 401);
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // ── Vérifier que l'appelant est super_admin ──
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (authError || !user) return json({ error: 'Token invalide' }, 401);
+
+    const { data: profil } = await supabase
+      .from('profils')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profil?.role !== 'super_admin') {
+      return json({ error: 'Réservé aux super_admins' }, 403);
+    }
+
+    // ── Récupérer le user cible ──
+    const { user_id } = await req.json() as { user_id: string };
+    if (!user_id) return json({ error: 'user_id requis' }, 400);
+
+    const { data: targetUser, error: userError } = await supabase.auth.admin.getUserById(user_id);
+    if (userError || !targetUser?.user?.email) {
+      return json({ error: 'Utilisateur introuvable' }, 404);
+    }
+
+    // ── Générer le lien de recovery ──
+    const { error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: targetUser.user.email,
+    });
+
+    if (linkError) throw linkError;
+
+    // ── Logger l'action ──
+    await supabase.from('admin_audit_log').insert({
+      actor_id:    user.id,
+      action:      'user.password_reset',
+      target_type: 'user',
+      target_id:   user_id,
+      details:     { email: targetUser.user.email },
+    });
+
+    return json({
+      success: true,
+      message: `Email de réinitialisation envoyé à ${targetUser.user.email}`,
+    });
+
+  } catch (err) {
+    console.error('reset-password error:', err);
+    return json({ error: String(err) }, 500);
+  }
+});
+
+function json(data: object, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
