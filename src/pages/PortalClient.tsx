@@ -227,6 +227,8 @@ export const PortalClient: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+
           {/* Publicité / Ads Placeholder */}
           <div className="mt-6 p-4 rounded-2xl bg-surface-container/30 border border-dashed border-outline-variant flex flex-col items-center justify-center gap-2 text-center text-outline">
             <span className="text-[9px] font-black uppercase tracking-widest bg-outline/10 px-2 py-0.5 rounded text-outline-variant">Sponsorisé / Publicité</span>
