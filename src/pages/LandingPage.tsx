@@ -6,8 +6,21 @@ interface LandingPageProps {
   onBackToApp?: () => void;
 }
 
+const extractToken = (input: string): string | null => {
+  try {
+    const url = new URL(input);
+    const t = url.searchParams.get('token');
+    if (t) return t;
+  } catch {}
+  const match = input.trim().match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  return match ? match[0] : null;
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, onBackToApp }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [clientTokenInput, setClientTokenInput] = useState('');
+  const [clientTokenError, setClientTokenError] = useState(false);
   const [activeSimTab, setActiveSimTab] = useState<'caisse' | 'stock' | 'ardoise' | 'dashboard'>('caisse');
   const [activeSection, setActiveSection] = useState<string>('');
 
@@ -118,8 +131,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           </nav>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowClientModal(true)}
+              className="px-4 h-9.5 text-xs font-bold tracking-wider uppercase bg-white border border-outline-variant rounded-xl hover:bg-surface-container hover:border-outline active:scale-95 transition-all text-texte flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>account_balance_wallet</span>
+              Espace Client
+            </button>
             {isLoggedIn ? (
-              <button 
+              <button
                 onClick={onBackToApp}
                 className="px-4.5 h-9.5 text-xs font-black tracking-wider uppercase bg-secondary text-white rounded-xl shadow-md hover:scale-[1.03] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
@@ -128,13 +148,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
               </button>
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => setShowLoginModal(true)}
-                  className="px-4 h-9.5 text-xs font-bold tracking-wider uppercase bg-white border border-outline-variant rounded-xl hover:bg-surface-container hover:border-outline active:scale-95 transition-all text-texte"
+                  className="hidden sm:block px-4 h-9.5 text-xs font-bold tracking-wider uppercase bg-white border border-outline-variant rounded-xl hover:bg-surface-container hover:border-outline active:scale-95 transition-all text-texte"
                 >
                   Se Connecter
                 </button>
-                <button 
+                <button
                   onClick={() => setShowLoginModal(true)}
                   className="px-4.5 h-9.5 text-xs font-black tracking-wider uppercase bg-primary text-white rounded-xl shadow-md hover:scale-[1.03] active:scale-95 transition-all"
                 >
@@ -717,6 +737,65 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isLoggedIn = false, on
           <p>© 2026 BoutikOS. Le système d'exploitation de votre boutique.</p>
         </div>
       </footer>
+
+      {/* Modal Espace Client — saisie du lien de partage */}
+      {showClientModal && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-[#030712]/50 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-sm bg-white border border-outline-variant rounded-[28px] overflow-hidden shadow-2xl p-6">
+            <button
+              onClick={() => { setShowClientModal(false); setClientTokenInput(''); setClientTokenError(false); }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-primary">Espace Client</h3>
+                <p className="text-[11px] text-texte-2">Consultez votre ardoise</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-texte-2 leading-relaxed mb-4">
+              Collez le lien que votre commerçant vous a envoyé (WhatsApp, SMS…) ou saisissez votre code d'accès.
+            </p>
+
+            <div className="flex flex-col gap-2 mb-4">
+              <label className="text-[10px] font-extrabold text-texte uppercase tracking-wider">
+                Lien ou code d'accès
+              </label>
+              <input
+                type="text"
+                value={clientTokenInput}
+                onChange={(e) => { setClientTokenInput(e.target.value); setClientTokenError(false); }}
+                placeholder="https://boutikos.app/?token=... ou code UUID"
+                className={`w-full h-11 px-3 rounded-xl border text-xs font-medium outline-none transition-all ${
+                  clientTokenError
+                    ? 'border-error bg-error-container/20 text-error'
+                    : 'border-outline-variant bg-surface-container focus:border-primary'
+                }`}
+              />
+              {clientTokenError && (
+                <p className="text-[11px] text-error font-bold">Lien invalide — vérifiez le lien reçu.</p>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                const token = extractToken(clientTokenInput);
+                if (!token) { setClientTokenError(true); return; }
+                window.location.href = `/?token=${token}`;
+              }}
+              className="w-full h-11 bg-primary text-white text-xs font-black uppercase tracking-wide rounded-xl hover:bg-primary/90 active:scale-95 transition-all"
+            >
+              Accéder à mon ardoise
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Auth / Login Modal Wrapper */}
       {showLoginModal && (

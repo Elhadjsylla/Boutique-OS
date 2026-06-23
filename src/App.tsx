@@ -7,6 +7,7 @@ import { Ardoise } from './pages/Ardoise'
 import { Reglages } from './pages/Reglages'
 import { BottomNav, type TabType } from './components/ui/BottomNav'
 import { LandingPage } from './pages/LandingPage'
+import { PortalClient } from './pages/PortalClient'
 import { Loader2, LogOut } from 'lucide-react'
 import { SyncIndicator } from './pwa/SyncIndicator'
 import { PwaPrompt } from './pwa/PwaPrompt'
@@ -24,6 +25,10 @@ function App() {
     const timer = setInterval(() => setLiveTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // 0. PORTAL CLIENT — accès public sans authentification via ?token=UUID
+  const portalToken = new URLSearchParams(window.location.search).get('token')
+  if (portalToken) return <PortalClient token={portalToken} />
 
   // 1. LOADING SCREEN
   if (isLoading) {
