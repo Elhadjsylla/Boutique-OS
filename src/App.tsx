@@ -1,80 +1,282 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from './hooks/useAuth'
-import { Caisse } from './pages/Caisse'
-import { Dashboard } from './pages/Dashboard'
-import { Stock } from './pages/Stock'
-import { Ardoise } from './pages/Ardoise'
-import { Reglages } from './pages/Reglages'
-import { Subscription } from './pages/Subscription'
-import { BottomNav, type TabType } from './components/ui/BottomNav'
-import { LandingPage } from './pages/LandingPage'
-import { Loader2, LogOut } from 'lucide-react'
-import { SyncIndicator } from './pwa/SyncIndicator'
-import { PwaPrompt } from './pwa/PwaPrompt'
-import { useOnline } from './hooks/useOnline'
-import { useSubscription } from './hooks/useSubscription'
+import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
+import { supabase } from './lib/supabase';
+import { Caisse } from './pages/Caisse';
+import { Stock } from './pages/Stock';
+import { Dashboard } from './pages/Dashboard';
+import { Ardoise } from './pages/Ardoise';
+import { Settings } from './pages/Settings';
+import { Subscription } from './pages/Subscription';
+import { PortalClient } from './pages/PortalClient';
+import { BottomNav, type TabType } from './components/ui/BottomNav';
+import { LandingPage } from './pages/LandingPage';
+import { useOnline } from './hooks/useOnline';
+import { BottomSheet } from './components/ui/BottomSheet';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './db/dexie';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'monospace', background: '#1a1a2e', color: '#ff6b6b', minHeight: '100vh' }}>
+          <h1 style={{ fontSize: 24, marginBottom: 16 }}>⚠️ BoutikOS — Erreur Runtime</h1>
+          <p style={{ color: '#fff', marginBottom: 8 }}>L'application a planté. Voici l'erreur :</p>
+          <pre style={{ background: '#2d2d44', padding: 16, borderRadius: 8, overflow: 'auto', fontSize: 12, color: '#ffa07a' }}>
+            {this.state.error?.message}
+            {'\n\n'}
+            {this.state.error?.stack}
+          </pre>
+          <button 
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            style={{ marginTop: 16, padding: '10px 20px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Recharger l'application
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function App() {
-  const { user, profile, boutique, isLoading, signOut } = useAuth()
-  const { subscription, refetch } = useSubscription()
-  const [activeTab, setActiveTab] = useState<TabType>('caisse')
-  const [showLandingOverride, setShowLandingOverride] = useState(false)
-  const [liveTime, setLiveTime] = useState(new Date())
-
-  const planLabels: Record<string, string> = {
-    starter: 'Starter',
-    pro: 'Pro',
-    annual: 'Annuel',
+  const devAdminSession = {
+    user: {
+      id: 'dev-admin-id',
+      email: 'admin@boutikos.dev',
+      user_metadata: {
+        boutique_id: 'boutique-dev',
+        boutique_name: 'BoutikOS Dev',
+        role: 'admin',
+      }
+    }
   };
-  const activePlanLabel = subscription ? (planLabels[subscription.plan] || 'Starter') : 'Starter';
 
-  const isOnline = useOnline()
+  const getInitialSession = () => {
+    try {
+      const keys = Object.keys(localStorage);
+      const supabaseKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (supabaseKey) {
+        const localSession = JSON.parse(localStorage.getItem(supabaseKey) || '');
+        if (localSession) return localSession;
+      }
+    } catch (e) {}
+
+    if (import.meta.env.DEV) {
+      const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+      if (!isSignedOut) return devAdminSession;
+    }
+    return null;
+  };
+
+  const initialSession = getInitialSession();
+  const [session, setSession] = useState<any>(initialSession);
+  const [loading, setLoading] = useState(!initialSession);
+  const [activeTab, setActiveTab] = useState<TabType>('caisse');
+  const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
+  const [showLandingOverride, setShowLandingOverride] = useState(false);
+  const [liveTime, setLiveTime] = useState(new Date());
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const isOnline = useOnline();
+  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [isClientViewingPortal, setIsClientViewingPortal] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setLiveTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+    if (!isOnline) {
+      setShowOfflineBanner(true);
+      const timer = setTimeout(() => {
+        setShowOfflineBanner(false);
+      }, 30000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowOfflineBanner(false);
+    }
+  }, [isOnline]);
 
-  // 1. LOADING SCREEN
-  if (isLoading) {
+  const outOfStockCount = useLiveQuery(() => db.produits.where('archive').equals(0).filter(p => p.quantite === 0).count(), []) || 0;
+  const activeArdoises = useLiveQuery(() => db.ardoises.where('statut').equals('en_cours').toArray(), []) || [];
+  const activeArdoisesCount = activeArdoises?.length || 0;
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    // Check active session in background without blocking the UI
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+      } else if (import.meta.env.DEV) {
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) {
+          setSession(devAdminSession);
+        } else {
+          setSession(null);
+        }
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    }).catch(() => {
+      if (import.meta.env.DEV) {
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) setSession(devAdminSession);
+      }
+      setLoading(false);
+    });
+
+    // Listen to changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'SIGNED_OUT') {
+        if (import.meta.env.DEV) {
+          localStorage.setItem('dev_signed_out', 'true');
+        }
+        setSession(null);
+      } else if (session) {
+        setSession(session);
+      } else if (import.meta.env.DEV) {
+        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
+        if (!isSignedOut) {
+          setSession(devAdminSession);
+        } else {
+          setSession(null);
+        }
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (import.meta.env.DEV) {
+      localStorage.setItem('dev_signed_out', 'true');
+    }
+    setSession(null);
+    await supabase.auth.signOut();
+  };
+
+  if (isClientViewingPortal) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background font-body">
-        <Loader2 className="w-10 h-10 animate-spin text-primary mb-md" />
-        <p className="text-outline text-sm font-medium">Chargement de BoutikOS...</p>
+      <div className="min-h-screen bg-background text-on-background">
+        <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
+              <span className="text-white text-sm font-black">OS</span>
+            </div>
+            <span className="text-lg font-black tracking-tight text-white">BoutikOS — Espace Client</span>
+          </div>
+          <button 
+            onClick={() => setIsClientViewingPortal(false)}
+            className="flex items-center justify-center h-9 px-3.5 text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95"
+            title="Quitter l'espace client"
+          >
+            <span className="material-symbols-outlined text-sm">logout</span>
+            <span className="ml-1.5 text-[10px] uppercase font-black">Quitter</span>
+          </button>
+        </header>
+        <main className="w-full">
+          <PortalClient />
+        </main>
       </div>
-    )
+    );
   }
 
-  // 2. UNAUTHENTICATED or LANDING OVERRIDE
-  if (!user || showLandingOverride) {
+  if (loading) {
     return (
-      <LandingPage
-        isLoggedIn={!!user}
-        onBackToApp={() => setShowLandingOverride(false)}
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-outline font-bold text-xs uppercase tracking-wider">Chargement de la session...</p>
+      </div>
+    );
+  }
+
+  if (!session || showLandingOverride) {
+    return (
+      <LandingPage 
+        isLoggedIn={!!session} 
+        onBackToApp={() => setShowLandingOverride(false)} 
+        onNavigateToPortal={() => setIsClientViewingPortal(true)}
       />
-    )
+    );
   }
 
-  const boutiqueId = boutique?.id || 'boutique-dev'
-  const boutiqueName = boutique?.nom || 'BoutikOS'
-  const caissierId = user.id
-  const userRole = profile?.role || 'caissier'
+  // Extract metadata safely with fallbacks if needed
+  const user = session.user;
+  const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
+  const boutiqueName = user.user_metadata?.boutique_name || 'BoutikOS';
+  const caissierId = user.id;
+  const userRole = user.user_metadata?.role || 'caissier';
 
-  // Role badge config
+
+  const appNotifications = [
+    {
+      id: 'welcome',
+      title: 'Bienvenue sur BoutikOS',
+      desc: 'Votre moteur de caisse et de stock intelligent est prêt et synchronisé localement.',
+      icon: 'info',
+      color: 'text-primary'
+    },
+    {
+      id: 'csv_feature',
+      title: 'Nouvelle fonctionnalité CSV',
+      desc: 'Vous pouvez désormais exporter vos bilans et rapports clients au format Excel (CSV).',
+      icon: 'download',
+      color: 'text-secondary'
+    }
+  ];
+
+  if (outOfStockCount > 0) {
+    appNotifications.unshift({
+      id: 'stock_alert',
+      title: 'Alerte de Stock Bas',
+      desc: `${outOfStockCount} produit(s) en rupture de stock totale ! Réapprovisionnez au plus vite.`,
+      icon: 'warning',
+      color: 'text-error animate-pulse'
+    });
+  }
+
+  if (activeArdoisesCount > 0) {
+    appNotifications.unshift({
+      id: 'ardoise_alert',
+      title: 'Dettes clients en cours',
+      desc: `Vous avez ${activeArdoisesCount} fiche(s) d'ardoises actives. Pensez à relancer les clients par WhatsApp.`,
+      icon: 'menu_book',
+      color: 'text-tertiary'
+    });
+  }
+
+  // Role badge config — couleurs sur fond sombre (top bar bg-primary)
   const roleConfig: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-    super_admin: { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
-    admin:       { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
-    gerant:      { label: 'Gérant',   bg: 'bg-sky-400/20',     text: 'text-sky-200',     icon: 'manage_accounts' },
-    caissier:    { label: 'Caissier', bg: 'bg-emerald-400/20', text: 'text-emerald-200', icon: 'point_of_sale' },
-  }
-  const role = roleConfig[userRole] ?? { label: userRole, bg: 'bg-white/10', text: 'text-white/70', icon: 'person' }
+    admin:    { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
+    gerant:   { label: 'Gérant',   bg: 'bg-sky-400/20',     text: 'text-sky-200',     icon: 'manage_accounts' },
+    caissier: { label: 'Caissier', bg: 'bg-emerald-400/20', text: 'text-emerald-200', icon: 'point_of_sale' },
+  };
+  const role = roleConfig[userRole] ?? { label: userRole, bg: 'bg-white/10', text: 'text-white/70', icon: 'person' };
 
-  // 3. AUTHENTICATED SCREEN
   return (
-    <div className="min-h-screen bg-background text-on-background pb-20 pt-16">
+    <div className="min-h-screen bg-background text-on-background">
       {/* Top App Bar */}
-      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-16 flex justify-between items-center px-margin-mobile border-b border-white/5 shadow-md">
-        <div className="flex items-center gap-3">
+      <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
+        <div 
+          onClick={() => setActiveTab('settings')} 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all"
+          title="Paramètres du compte"
+        >
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
             <span className="text-white text-xs font-black">
               {boutiqueName.slice(0, 2).toUpperCase()}
@@ -82,14 +284,14 @@ function App() {
           </div>
           <div className="flex flex-col text-left">
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
+              <h1 className="text-sm sm:text-base font-extrabold tracking-tight leading-none">{boutiqueName}</h1>
               {/* Role Badge */}
-              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${role.bg} ${role.text} border border-current/20`}>
+              <span className={`hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${role.bg} ${role.text} border border-current/20`}>
                 <span className="material-symbols-outlined" style={{ fontSize: '9px' }}>{role.icon}</span>
                 {role.label}
               </span>
             </div>
-            <span className="text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
+            <span className="hidden sm:inline text-[9px] opacity-70 tracking-widest font-black uppercase mt-0.5">
               {user.email}
             </span>
           </div>
@@ -120,50 +322,49 @@ function App() {
         </div>
 
         <div className="flex items-center gap-1">
-          <SyncIndicator />
-
-          {/* ACCUEIL — landing page */}
-          <button
+          {!isOnline && !showOfflineBanner && (
+            <div className="flex items-center justify-center px-2 py-1 text-error animate-pulse mr-1" title="Hors ligne">
+              <span className="material-symbols-outlined text-lg" style={{ animationDuration: '2s' }}>wifi_off</span>
+            </div>
+          )}
+          <button 
             onClick={() => setShowLandingOverride(true)}
-            className="flex items-center gap-1 h-9 px-3 text-[10px] uppercase font-black text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
-            title="Accueil"
+            className="hidden sm:flex items-center justify-center h-9 w-9 md:w-auto md:px-3 text-on-primary border border-white/20 hover:bg-white/10 rounded-xl transition-all active:scale-95 mr-1"
+            title="Accéder à l'accueil"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>home</span>
-            <span className="hidden sm:inline">Accueil</span>
+            <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>home</span>
+            <span className="hidden md:inline ml-1 text-[10px] uppercase font-black">Accueil</span>
           </button>
 
-          {/* Réglages — settings gear */}
-          <button
-            onClick={() => setActiveTab('reglages')}
-            title="Réglages"
-            className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/90 transition-all active:scale-95 shadow-sm"
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`hidden sm:inline-block material-symbols-outlined hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 ${activeTab === 'settings' ? 'text-secondary bg-white/10' : 'text-on-primary'}`}
+            title="Paramètres de l'application"
           >
-            <span className="material-symbols-outlined text-white" style={{ fontSize: '18px' }}>settings</span>
+            settings
           </button>
-
-          {/* Mobile clock */}
-          <div className="flex md:hidden items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-on-primary mx-1">
-            <span className="font-mono">
-              {liveTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-secondary animate-pulse' : 'bg-error animate-pulse'}`} />
-          </div>
-
-          <button className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95">
+          <button 
+            onClick={() => setIsNotificationsOpen(true)}
+            className="material-symbols-outlined text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 relative"
+            title="Notifications SaaS"
+          >
             notifications
+            {appNotifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-primary animate-pulse" />
+            )}
           </button>
-          <button
-            onClick={signOut}
-            title="Déconnexion"
-            className="flex items-center justify-center text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
+          <button 
+            onClick={handleLogout}
+            className="hidden sm:inline-block material-symbols-outlined text-on-primary/80 hover:text-on-primary hover:bg-white/10 p-2.5 rounded-full transition-all active:scale-95"
+            title="Se déconnecter"
           >
-            <LogOut className="w-5 h-5" />
+            logout
           </button>
         </div>
       </header>
 
       {/* Offline Alert Banner */}
-      {!isOnline && (
+      {!isOnline && showOfflineBanner && (
         <div className="bg-error text-white text-center py-2 px-4 text-[10px] font-extrabold tracking-wider uppercase flex items-center justify-center gap-2 fixed top-16 left-0 w-full z-40 shadow-md animate-fade-in border-b border-white/10">
           <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>wifi_off</span>
           <span>Mode Hors ligne activé — Les ventes sont sauvegardées localement et se synchroniseront au retour d'Internet.</span>
@@ -176,31 +377,77 @@ function App() {
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
-        {activeTab === 'reglages' && (
-          <Reglages 
-            boutiqueId={boutiqueId} 
-            activePlan={activePlanLabel}
+        {activeTab === 'settings' && (
+          <Settings 
+            session={session} 
+            onLogout={handleLogout} 
+            activePlan={activePlan}
             onManageSubscription={() => setActiveTab('subscription')}
+            onNavigateToPortal={() => setIsClientViewingPortal(true)}
           />
         )}
         {activeTab === 'subscription' && (
           <Subscription 
-            currentPlan={activePlanLabel}
-            onUpdatePlan={async () => {
-              await refetch();
+            currentPlan={activePlan}
+            onUpdatePlan={(plan) => {
+              setActivePlan(plan);
+              localStorage.setItem('active_subscription_plan', plan);
             }}
-            onBack={() => setActiveTab('reglages')}
+            onBack={() => setActiveTab('settings')}
           />
         )}
+        {activeTab === 'portal_client' && <PortalClient />}
       </main>
 
       {/* Global Bottom Navigation */}
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* PWA Prompt for install & updates */}
-      <PwaPrompt />
+      {/* Bottom Sheet for SaaS Notifications */}
+      <BottomSheet
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        title="Centre de Notifications SaaS"
+      >
+        <div className="flex flex-col gap-3 text-left">
+          {appNotifications.length === 0 ? (
+            <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">
+              Aucune notification active.
+            </p>
+          ) : (
+            appNotifications.map((notif) => (
+              <div 
+                key={notif.id}
+                className="p-3 bg-surface-container/40 hover:bg-surface-container border border-outline-variant/60 rounded-xl flex gap-3 transition-all"
+              >
+                <span className={`material-symbols-outlined ${notif.color} text-xl mt-0.5`}>
+                  {notif.icon}
+                </span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">{notif.title}</span>
+                  <span className="text-[10px] text-outline mt-0.5 leading-relaxed">{notif.desc}</span>
+                </div>
+              </div>
+            ))
+          )}
+          
+          <button
+            onClick={() => setIsNotificationsOpen(false)}
+            className="w-full h-10 mt-2 bg-primary text-white text-xs font-black rounded-xl active:scale-95 transition-all shadow-sm"
+          >
+            Fermer le Centre
+          </button>
+        </div>
+      </BottomSheet>
     </div>
-  )
+  );
 }
 
-export default App
+function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithErrorBoundary;

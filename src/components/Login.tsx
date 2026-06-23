@@ -55,10 +55,26 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         });
 
         if (error) throw error;
+        if (import.meta.env.DEV) {
+          localStorage.removeItem('dev_signed_out');
+        }
         setToast({ message: "Connexion réussie !", type: 'success' });
       }
     } catch (err: any) {
-      setToast({ message: err.message || "Une erreur est survenue.", type: 'error' });
+      const isFetchError = err.message?.toLowerCase().includes('failed to fetch') || err.message?.toLowerCase().includes('fetch');
+      if (isFetchError) {
+        if (import.meta.env.DEV) {
+          localStorage.removeItem('dev_signed_out');
+          setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          setToast({ message: "Connexion impossible. Vous semblez hors ligne. Veuillez vérifier votre connexion Internet.", type: 'error' });
+        }
+      } else {
+        setToast({ message: err.message || "Une erreur est survenue.", type: 'error' });
+      }
     } finally {
       setLoading(false);
     }

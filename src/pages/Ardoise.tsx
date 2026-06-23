@@ -36,6 +36,256 @@ const getAvatarGradient = (name: string) => {
 
 const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
 
+const ArdoiseInteractiveChart: React.FC<{
+  items: any[];
+  type: 'credits' | 'fiches';
+  onOpenDetail: (id: string) => void;
+  onAddPayment: (id: string, amount: number) => void;
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+  onShowToast?: (msg: string, type: 'success' | 'error') => void;
+}> = ({
+  items,
+  type,
+  onOpenDetail,
+  onAddPayment,
+  selectedId,
+  setSelectedId,
+  onShowToast
+}) => {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  if (items.length === 0) {
+    return (
+      <p className="text-xs text-outline italic text-center py-4 bg-surface-container/20 rounded-xl">
+        Aucune donnée disponible pour le graphique.
+      </p>
+    );
+  }
+
+  const paddingX = 30;
+  const paddingY = 20;
+  const width = 450;
+  const height = 160;
+
+  // Sort by remaining debt ascending to make a nice curve
+  const sortedItems = [...items].sort((a, b) => {
+    const valA = type === 'credits' ? a.remaining : a.montant_total;
+    const valB = type === 'credits' ? b.remaining : b.montant_total;
+    return valA - valB;
+  });
+
+  const getVal = (item: any) => {
+    return type === 'credits' ? item.remaining : item.montant_total;
+  };
+
+  const maxVal = Math.max(...sortedItems.map(getVal), 1);
+
+  const points = sortedItems.map((item, index) => {
+    const x = paddingX + (sortedItems.length > 1 ? (index / (sortedItems.length - 1)) * (width - 2 * paddingX) : (width / 2));
+    const val = getVal(item);
+    const y = height - paddingY - (val / maxVal) * (height - 2 * paddingY);
+    return { x, y, item };
+  });
+
+  let pathD = '';
+  let areaD = '';
+  if (points.length > 1) {
+    pathD = `M ${points[0].x} ${points[0].y}`;
+    areaD = `M ${points[0].x} ${height - paddingY} L ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      pathD += ` L ${points[i].x} ${points[i].y}`;
+      areaD += ` L ${points[i].x} ${points[i].y}`;
+    }
+    areaD += ` L ${points[points.length - 1].x} ${height - paddingY} Z`;
+  }
+
+  const selectedPoint = points.find(p => p.item.id === selectedId);
+  const hoveredPoint = points.find(p => p.item.id === hoveredId);
+
+  // Generate WhatsApp text
+  const getWhatsAppLink = (clientNom: string, remaining: number) => {
+    const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez BoutikOS est de ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA. Merci !`;
+    return `https://wa.me/?text=${encodeURIComponent(message)}`;
+  };
+
+  return (
+    <div className="bg-gradient-to-b from-primary-container/20 to-transparent border border-outline-variant/40 rounded-2xl p-4 flex flex-col gap-3 relative shadow-inner">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] text-outline font-extrabold uppercase tracking-wider">
+          {type === 'credits' ? 'Répartition des Dettes par Client' : 'Volumes des Crédits Initiaux'}
+        </span>
+        <Badge variant={type === 'credits' ? 'danger' : 'success'} className="text-[9px] font-black uppercase">
+          Interactif
+        </Badge>
+      </div>
+
+      <div className="relative w-full overflow-visible">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+          <defs>
+            <linearGradient id="ardoiseCurveGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#BA1A1A" />
+              <stop offset="100%" stopColor="#1A3C5E" />
+            </linearGradient>
+            <linearGradient id="ardoiseAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#BA1A1A" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#BA1A1A" stopOpacity="0.00" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          <line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke="#E5E7EB" strokeWidth="1.5" />
+          <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3,3" />
+
+          {/* Area fill */}
+          {areaD && <path d={areaD} fill="url(#ardoiseAreaGrad)" />}
+
+          {/* Line path */}
+          {pathD && <path d={pathD} fill="none" stroke="url(#ardoiseCurveGrad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+
+          {/* Interactive dots */}
+          {points.map((p) => {
+            const isHovered = hoveredId === p.item.id;
+            const isSelected = selectedId === p.item.id;
+
+            return (
+              <g
+                key={p.item.id}
+                onMouseEnter={() => setHoveredId(p.item.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => setSelectedId(isSelected ? null : p.item.id)}
+                className="cursor-pointer"
+              >
+                {/* Glow ring */}
+                {(isHovered || isSelected) && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isSelected ? 9 : 7}
+                    fill={type === 'credits' ? '#BA1A1A' : '#1A3C5E'}
+                    opacity="0.3"
+                    className="transition-all duration-200"
+                  />
+                )}
+                {/* Core dot */}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r="4.5"
+                  fill={isSelected ? '#1A3C5E' : (type === 'credits' ? '#BA1A1A' : '#27AE60')}
+                  stroke="#FFFFFF"
+                  strokeWidth="1.5"
+                  className="transition-all duration-200 hover:scale-125"
+                />
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Tooltip */}
+        {hoveredPoint && (() => {
+          const percent = (hoveredPoint.x / width) * 100;
+          let transform = 'translate(-50%, -105%)';
+          let leftStyle = `${percent}%`;
+
+          if (percent < 25) {
+            transform = 'translate(8px, -105%)';
+          } else if (percent > 75) {
+            transform = 'translate(-100%, -105%)';
+          }
+
+          return (
+            <div
+              className="absolute bg-slate-900/95 text-white p-2 rounded-xl text-left pointer-events-none z-50 shadow-md border border-white/10 flex flex-col gap-0.5"
+              style={{
+                left: leftStyle,
+                transform: transform,
+                top: `${(hoveredPoint.y / height) * 100}%`,
+              }}
+            >
+              <span className="text-[10px] font-black whitespace-nowrap">{hoveredPoint.item.client_nom}</span>
+              <span className="text-[9px] opacity-70 whitespace-nowrap">
+                Reste : {new Intl.NumberFormat('fr-FR').format(hoveredPoint.item.remaining)} FCFA
+              </span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Selected client actions */}
+      {selectedPoint ? (
+        <div className="bg-white border border-outline-variant/80 p-3 rounded-xl flex flex-col gap-3 animate-scale-in text-left shadow-sm">
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-on-surface">{selectedPoint.item.client_nom}</span>
+              <span className="text-[9px] text-outline font-semibold">
+                Reste dû : {new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA ({selectedPoint.item.percent}% remboursé)
+              </span>
+            </div>
+            <button
+              onClick={() => onOpenDetail(selectedPoint.item.id)}
+              className="text-[10px] font-black text-primary border border-outline-variant hover:bg-primary-container/20 px-2.5 py-1 rounded-lg transition-all"
+            >
+              Gérer la fiche
+            </button>
+          </div>
+
+          {/* Quick Pay */}
+          {selectedPoint.item.remaining > 0 && (
+            <div className="flex flex-col gap-1.5 border-t border-outline-variant/30 pt-2">
+              <span className="text-[9px] text-outline font-bold uppercase tracking-wider">Versement Rapide :</span>
+              <div className="flex gap-1.5">
+                {[1000, 2000, 5000].map(amt => (
+                  <button
+                    key={amt}
+                    onClick={() => onAddPayment(selectedPoint.item.id, amt)}
+                    disabled={selectedPoint.item.remaining < amt}
+                    className="flex-1 h-7 rounded-lg bg-secondary-container/60 hover:bg-secondary-container text-secondary text-[10px] font-black active:scale-95 transition-all disabled:opacity-30"
+                  >
+                    +{new Intl.NumberFormat('fr-FR').format(amt)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp and WhatsApp template */}
+          <div className="flex gap-2 border-t border-outline-variant/30 pt-2.5">
+            <a
+              href={getWhatsAppLink(selectedPoint.item.client_nom, selectedPoint.item.remaining)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white text-[10px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-sm">chat</span>
+              Relance WhatsApp
+            </a>
+            <button
+              onClick={() => {
+                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez BoutikOS est de ${new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA. Merci !`;
+                navigator.clipboard.writeText(text);
+                if (onShowToast) {
+                  onShowToast("Message de relance copié !", "success");
+                } else {
+                  console.log("Message de relance copié !");
+                }
+              }}
+              className="px-2.5 h-8 rounded-lg border border-outline-variant text-[10px] font-black text-texte-2 hover:bg-surface-container active:scale-95 transition-all"
+              title="Copier le texte de relance"
+            >
+              Copier texte
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[10px] text-outline text-center font-medium py-1">
+          💡 Touchez un client sur la courbe pour enregistrer un versement ou le relancer sur WhatsApp.
+        </p>
+      )}
+    </div>
+  );
+};
+
 interface ArdoiseProps {
   boutiqueId: string;
 }
@@ -49,6 +299,9 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeMetricMenu, setActiveMetricMenu] = useState<'credits' | 'fiches' | null>(null);
+  const [selectedChartClientId, setSelectedChartClientId] = useState<string | null>(null);
+  const [criticalFilterActive, setCriticalFilterActive] = useState(false);
+  const [showChart, setShowChart] = useState(false);
 
   // Form states — création
   const [newClientName, setNewClientName] = useState('');
@@ -107,8 +360,9 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   });
 
   const filteredArdoises = processedArdoises.filter((a) => {
-    if (filter === 'en_cours') return a.statut === 'en_cours';
-    if (filter === 'soldee') return a.statut === 'soldee';
+    const matchesFilter = filter === 'en_cours' ? a.statut === 'en_cours' : filter === 'soldee' ? a.statut === 'soldee' : true;
+    if (!matchesFilter) return false;
+    if (criticalFilterActive) return a.remaining > 10000;
     return true;
   });
 
@@ -126,6 +380,38 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
     setAddDebtAmount('');
     setShowAddDebt(false);
     setIsDetailOpen(true);
+  };
+
+  const handleExportGlobalReport = () => {
+    const debtors = processedArdoises.filter(a => a.remaining > 0);
+    if (debtors.length === 0) {
+      setToast({ message: "Aucune dette en cours à exporter !", type: "error" });
+      return;
+    }
+    const text = `Rapport des ardoises en cours (Boutique OS) :\n` +
+      debtors.map(d => `- ${d.client_nom} : ${fmt(d.remaining)} FCFA`).join('\n') +
+      `\nTotal dû : ${fmt(totalRemainingCredit)} FCFA`;
+    navigator.clipboard.writeText(text);
+    setToast({ message: "Rapport global copié dans le presse-papiers !", type: "success" });
+  };
+
+  const handleExportCSV = () => {
+    if (processedArdoises.length === 0) {
+      setToast({ message: "Aucune fiche à exporter !", type: "error" });
+      return;
+    }
+    const headers = "Client;Statut;Montant Initial;Paye;Reste du\n";
+    const rows = processedArdoises.map(a => 
+      `"${a.client_nom.replace(/"/g, '""')}";${a.statut === 'soldee' ? 'Soldee' : 'En cours'};${a.montant_total};${a.paid};${a.remaining}`
+    ).join('\n');
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(headers + rows);
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", `ardoises_fiches_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setToast({ message: "Export CSV téléchargé !", type: "success" });
   };
 
   return (
@@ -161,7 +447,11 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
         <div 
-          onClick={() => setActiveMetricMenu('credits')}
+          onClick={() => {
+            setSelectedChartClientId(null);
+            setShowChart(true);
+            setActiveMetricMenu('credits');
+          }}
           className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
             filter === 'en_cours'
               ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
@@ -172,7 +462,11 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
           <MoneyText value={totalRemainingCredit} className="text-lg font-extrabold text-error" />
         </div>
         <div 
-          onClick={() => setActiveMetricMenu('fiches')}
+          onClick={() => {
+            setSelectedChartClientId(null);
+            setShowChart(true);
+            setActiveMetricMenu('fiches');
+          }}
           className={`cursor-pointer border p-4 rounded-2xl text-left premium-shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 active:scale-95 ${
             filter === 'all'
               ? 'bg-primary-container/20 border-primary ring-2 ring-primary/20'
@@ -484,6 +778,78 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
         <div className="flex flex-col gap-3 text-left">
           {activeMetricMenu === 'credits' ? (
             <>
+              {/* Toggle Graph Button */}
+              <button
+                type="button"
+                onClick={() => setShowChart(!showChart)}
+                className={`w-full text-left p-3.5 border rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
+                  showChart 
+                    ? 'bg-primary-container/20 border-primary text-primary' 
+                    : 'bg-primary-container/20 border-outline-variant/60 hover:bg-primary-container/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-primary">show_chart</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Graphique Interactif</span>
+                  <span className="text-[10px] text-outline">Afficher la courbe de répartition des dettes en cours.</span>
+                </div>
+              </button>
+
+              {/* Display Graph if showChart is true */}
+              {showChart && (
+                <div className="mt-1 animate-scale-in">
+                  <ArdoiseInteractiveChart
+                    items={processedArdoises.filter(a => a.statut === 'en_cours')}
+                    type="credits"
+                    onOpenDetail={(id) => {
+                      setActiveMetricMenu(null);
+                      openDetail(id);
+                    }}
+                    onAddPayment={async (id, amount) => {
+                      await addPayment(id, amount);
+                    }}
+                    selectedId={selectedChartClientId}
+                    setSelectedId={setSelectedChartClientId}
+                    onShowToast={(msg, type) => setToast({ message: msg, type })}
+                  />
+                </div>
+              )}
+
+              {/* Critical Filter Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setCriticalFilterActive(!criticalFilterActive);
+                }}
+                className={`w-full text-left p-3.5 border rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
+                  criticalFilterActive 
+                    ? 'bg-error-container/30 border-error text-error' 
+                    : 'bg-primary-container/20 border-outline-variant/60 hover:bg-primary-container/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-error">warning</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">
+                    {criticalFilterActive ? "Désactiver le filtre critique" : "Filtrer les dettes critiques (> 10 000 FCFA)"}
+                  </span>
+                  <span className="text-[10px] text-outline">Isoler uniquement les clients avec des arriérés importants.</span>
+                </div>
+              </button>
+
+              {/* Export Global Report Button */}
+              <button
+                type="button"
+                onClick={handleExportGlobalReport}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">share</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Exporter le rapport global (Copier)</span>
+                  <span className="text-[10px] text-outline">Copier le récapitulatif de tous les clients débiteurs.</span>
+                </div>
+              </button>
+
+              {/* Filter List to en_cours */}
               <button
                 type="button"
                 onClick={() => {
@@ -495,9 +861,11 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                 <span className="material-symbols-outlined text-primary">filter_alt</span>
                 <div className="flex flex-col text-left">
                   <span className="text-xs font-bold text-on-surface">Filtrer la liste</span>
-                  <span className="text-[10px] text-outline">Afficher uniquement les comptes avec des dettes en cours.</span>
+                  <span className="text-[10px] text-outline">Afficher uniquement les comptes avec des dettes en cours dans l'ardoise principale.</span>
                 </div>
               </button>
+
+              {/* Nouveau compte Ardoise */}
               <button
                 type="button"
                 onClick={() => {
@@ -515,6 +883,80 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
             </>
           ) : (
             <>
+              {/* Toggle Graph Button */}
+              <button
+                type="button"
+                onClick={() => setShowChart(!showChart)}
+                className={`w-full text-left p-3.5 border rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
+                  showChart 
+                    ? 'bg-primary-container/20 border-primary text-primary' 
+                    : 'bg-primary-container/20 border-outline-variant/60 hover:bg-primary-container/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-primary">show_chart</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Graphique Interactif</span>
+                  <span className="text-[10px] text-outline">Afficher la courbe des volumes de crédits totaux octroyés.</span>
+                </div>
+              </button>
+
+              {/* Display Graph if showChart is true */}
+              {showChart && (
+                <div className="mt-1 animate-scale-in">
+                  <ArdoiseInteractiveChart
+                    items={processedArdoises}
+                    type="fiches"
+                    onOpenDetail={(id) => {
+                      setActiveMetricMenu(null);
+                      openDetail(id);
+                    }}
+                    onAddPayment={async (id, amount) => {
+                      await addPayment(id, amount);
+                    }}
+                    selectedId={selectedChartClientId}
+                    setSelectedId={setSelectedChartClientId}
+                    onShowToast={(msg, type) => setToast({ message: msg, type })}
+                  />
+                </div>
+              )}
+
+              {/* Statistics & Distribution summary card */}
+              <div className="w-full p-4 bg-surface-container border border-outline-variant/50 rounded-xl flex flex-col gap-2">
+                <span className="text-[10px] font-black uppercase text-outline tracking-wider">Statistiques des Fiches</span>
+                <div className="grid grid-cols-3 gap-2 text-center mt-1">
+                  <div className="bg-white p-2 rounded-lg border border-outline-variant/40">
+                    <span className="text-[9px] text-outline block font-medium">Total clients</span>
+                    <span className="text-xs font-black text-on-surface">{processedArdoises.length}</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-outline-variant/40">
+                    <span className="text-[9px] text-outline block font-medium">Taux de solde</span>
+                    <span className="text-xs font-black text-secondary">
+                      {processedArdoises.length > 0 ? Math.round((processedArdoises.filter(a => a.statut === 'soldee').length / processedArdoises.length) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-outline-variant/40">
+                    <span className="text-[9px] text-outline block font-medium">Moy. Dette</span>
+                    <span className="text-xs font-black text-error">
+                      {activeAccountsCount > 0 ? fmt(Math.round(totalRemainingCredit / activeAccountsCount)) : 0} F
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Export CSV Button */}
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                className="w-full text-left p-3.5 bg-primary-container/20 hover:bg-primary-container/30 border border-outline-variant/60 rounded-xl flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-primary">download</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-on-surface">Exporter au format Excel (CSV)</span>
+                  <span className="text-[10px] text-outline">Télécharger la base des fiches d'ardoise clients.</span>
+                </div>
+              </button>
+
+              {/* Afficher tous les comptes */}
               <button
                 type="button"
                 onClick={() => {
@@ -529,6 +971,8 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                   <span className="text-[10px] text-outline">Montrer toutes les fiches (en cours et soldées).</span>
                 </div>
               </button>
+
+              {/* Nouveau compte Ardoise */}
               <button
                 type="button"
                 onClick={() => {
