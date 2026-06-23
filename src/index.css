@@ -31,6 +31,15 @@
   --color-texte: #1A1A2E;
   --color-texte-2: #43474E;
 
+  /* Admin Theme Colors */
+  --color-admin-primary: #7C3AED;
+  --color-admin-primary-light: #A78BFA;
+  --color-admin-surface: #0F172A;
+  --color-admin-card: #1E293B;
+  --color-admin-border: #334155;
+  --color-admin-text: #F1F5F9;
+  --color-admin-text-muted: #94A3B8;
+
   /* Surface containers (backward compat) */
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-low: #F0F4F8;
