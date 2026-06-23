@@ -58,16 +58,12 @@ export const Settings: React.FC<SettingsProps> = ({
   }, [boutiqueId]);
 
   const [boutiqueName, setBoutiqueName] = useState(initialBoutiqueName);
-  const [soundEnabled, setSoundEnabled] = useState(localStorage.getItem('sound_enabled') !== 'false');
-  const [confettiEnabled, setConfettiEnabled] = useState(localStorage.getItem('confetti_enabled') !== 'false');
   const [seuilAlerte, setSeuilAlerte] = useState(parseInt(localStorage.getItem('seuil_alerte_global') || '5'));
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const handleSaveSettings = () => {
     setIsSaving(true);
-    localStorage.setItem('sound_enabled', soundEnabled.toString());
-    localStorage.setItem('confetti_enabled', confettiEnabled.toString());
     localStorage.setItem('seuil_alerte_global', seuilAlerte.toString());
     
     // Simulate savings animation
@@ -305,29 +301,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </Card>
 
-      {/* Dopamine and Effects Card */}
-      <Card elevation={1} className="p-4 flex flex-col gap-4 bg-secondary-container/10 border-secondary-container/20">
-        <h3 className="text-xs text-secondary font-extrabold uppercase tracking-wider border-b border-secondary-container/30 pb-2">
-          Effets & Expérience Utilisateur (Dopamine Shot)
-        </h3>
 
-        {/* Toggle confetti */}
-        <div className="flex justify-between items-center py-1 border-t border-outline-variant/20 pt-3">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-on-surface">Confettis de célébration</span>
-            <span className="text-[10px] text-outline">Lancer une pluie de confettis virtuels après chaque encaissement.</span>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={confettiEnabled} 
-              onChange={(e) => setConfettiEnabled(e.target.checked)} 
-              className="sr-only peer"
-            />
-            <div className="w-9 h-5 bg-surface-container rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
-          </label>
-        </div>
-      </Card>
 
       {/* Client Portal Access */}
       <Card elevation={1} className="p-4 flex flex-col gap-4 bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20">
