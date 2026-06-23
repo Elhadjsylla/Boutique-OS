@@ -7,6 +7,7 @@ import { Ardoise } from './pages/Ardoise';
 import { Settings } from './pages/Settings';
 import { Subscription } from './pages/Subscription';
 import { PortalClient } from './pages/PortalClient';
+import { MonEspace } from './pages/MonEspace';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
@@ -195,6 +196,14 @@ function App() {
       </div>
     );
   }
+
+  // 0a. PORTAL CLIENT — ardoise view by token
+  const portalToken = new URLSearchParams(window.location.search).get('token');
+  if (portalToken) return <PortalClient token={portalToken} />;
+
+  // 0b. MON ESPACE CLIENT — dashboard client connecté
+  const espaceParam = new URLSearchParams(window.location.search).get('espace');
+  if (espaceParam === 'client') return <MonEspace />;
 
   if (loading) {
     return (

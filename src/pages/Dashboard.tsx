@@ -9,6 +9,9 @@ import { Badge } from '../components/ui/Badge';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { getProductIconAndGradient } from '../lib/productHelper';
 import { Toast } from '../components/ui/Toast';
+import { Modal } from '../components/ui/Modal';
+import { useSubscription } from '../hooks/useSubscription';
+import { supabase } from '../lib/supabase';
 
 interface DashboardProps {
   onNavigate?: (tab: 'caisse' | 'stock' | 'ardoise' | 'dashboard') => void;
@@ -17,12 +20,49 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
   const metrics = useDashboardData();
+  const { subscription } = useSubscription();
+  const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || import.meta.env.DEV;
+
   const [period, setPeriod] = useState<'24h' | '7j' | '30j' | '1an'>('7j');
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
   const [bilanPeriod, setBilanPeriod] = useState<'week' | 'month' | 'year'>('week');
   const [selectedAnalysisProduct, setSelectedAnalysisProduct] = useState<any | null>(null);
   const [analysisType, setAnalysisType] = useState<'top' | 'unsold' | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Export states
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState<'pdf' | 'excel'>('excel');
+  const [exportScope, setExportScope] = useState<'ventes' | 'stock' | 'ardoises'>('ventes');
+  const [isExporting, setIsExporting] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const renderLockedSection = (title: string, children: React.ReactNode) => {
+    if (isPro) return children;
+    return (
+      <div className="relative group">
+        <div className="opacity-30 pointer-events-none select-none blur-[2px]">
+          {children}
+        </div>
+        <div className="absolute inset-0 bg-[#F5F7FA]/75 backdrop-blur-[2px] border border-outline-variant/60 rounded-2xl flex flex-col items-center justify-center gap-3 p-6 text-center z-10">
+          <span className="px-3 py-1 bg-gradient-to-r from-secondary to-secondary/80 text-white rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm border border-secondary/20 animate-pulse-subtle">
+            Option Pro
+          </span>
+          <h3 className="text-xs font-black text-primary uppercase tracking-wide">Débloquez le {title}</h3>
+          <p className="text-[10px] text-outline max-w-[240px] leading-relaxed">
+            Mettez à niveau votre abonnement pour accéder aux rapports avancés et historiques.
+          </p>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('subscription')}
+            className="h-8 px-4 bg-primary hover:bg-primary/95 text-white text-[9px] font-black rounded-lg uppercase tracking-wider active:scale-95 transition-all shadow-sm cursor-pointer"
+          >
+            Passer à l'offre Pro
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const sales = useLiveQuery(() => db.ventes.toArray(), []) || [];
   const allProducts = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
@@ -48,6 +88,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     <div className="pb-40 pt-20 px-4 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       
+      {/* Page Header */}
+      <div className="flex justify-between items-center mt-2">
+        <div className="text-left">
+          <h1 className="font-headline-lg-mobile text-on-surface">Bilan d'Activité</h1>
+          <p className="font-body-md text-on-surface-variant">Statistiques et rapports de votre boutique.</p>
+        </div>
+        <button
+          onClick={() => {
+            if (isPro) {
+              setIsExportModalOpen(true);
+            } else {
+              setShowUpgradeModal(true);
+            }
+          }}
+          className="h-10 px-4 bg-primary hover:bg-primary/95 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">file_download</span>
+          Exporter
+        </button>
+      </div>
+
       {/* Sleek connection banner */}
       <div className="flex justify-between items-center bg-white border border-outline-variant px-4 py-3 rounded-2xl premium-shadow-sm">
         <span className="text-sm font-bold text-on-surface">Moteur de synchronisation</span>
@@ -117,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       </section>
 
       {/* Activity Graph Section */}
-      {(() => {
+      {renderLockedSection("Graphique d'Activité", (() => {
         const fmtFr = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
         const now = new Date();
         let chartData: { label: string; value: number; detail: string }[] = [];
@@ -360,10 +421,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </Card>
           </section>
         );
-      })()}
+      })())}
 
       {/* Performance Reports Section */}
-      {(() => {
+      {renderLockedSection("Bilans de Clôture", (() => {
         const fmtFr = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
         const now = new Date();
         let start = new Date();
@@ -539,10 +600,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </Card>
           </section>
         );
-      })()}
+      })())}
 
       {/* Top 5 Products Section */}
-      <section className="flex flex-col gap-3 text-left">
+      {renderLockedSection("Top Produits", (
+        <section className="flex flex-col gap-3 text-left">
         <h2 className="font-headline-sm text-sm border-b border-outline-variant pb-2 text-primary font-bold uppercase tracking-wider">Top 5 Produits Vendus</h2>
         <Card elevation={1} className="flex flex-col gap-4 p-4">
           {metrics.topProducts.length === 0 ? (
@@ -589,9 +651,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           )}
         </Card>
       </section>
+      ))}
 
       {/* Top 5 Unsold Products Section */}
-      <section className="flex flex-col gap-3 text-left">
+      {renderLockedSection("Produits Invendus", (
+        <section className="flex flex-col gap-3 text-left">
         <div className="flex justify-between items-center border-b border-outline-variant pb-2">
           <h2 className="font-headline-sm text-sm text-primary font-bold uppercase tracking-wider">Top 5 Produits Invendus</h2>
           <Badge variant="warning" className="text-[9px] font-black uppercase">
@@ -639,6 +703,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           )}
         </Card>
       </section>
+      ))}
 
       {/* Bottom Sheet for Product Analytics */}
       <BottomSheet
@@ -748,7 +813,149 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           );
         })()}
       </BottomSheet>
+ 
+      {/* MODAL: Upgrade CTA */}
+      <Modal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} title="🚀 Fonctionnalité Pro">
+        <div className="flex flex-col gap-4 text-center p-2">
+          <div className="w-12 h-12 rounded-full bg-secondary/15 text-secondary flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-2xl">workspace_premium</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-black text-primary uppercase">Mettre à niveau votre forfait</h3>
+            <p className="text-[11px] text-outline leading-relaxed">
+              L'export des bilans au format PDF et Excel est réservé aux abonnements **Pro** et **Annuel**.
+            </p>
+          </div>
+          <div className="flex gap-2.5 mt-2">
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="flex-1 h-10 border border-outline-variant hover:bg-surface-container text-texte text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={() => {
+                setShowUpgradeModal(false);
+                onNavigate?.('subscription');
+              }}
+              className="flex-1 h-10 bg-primary hover:bg-primary/95 text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm"
+            >
+              Voir les offres
+            </button>
+          </div>
+        </div>
+      </Modal>
 
+      {/* MODAL: Export Configuration */}
+      <Modal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} title="📥 Exporter les Données">
+        <div className="flex flex-col gap-4 text-left">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-outline">Type de Rapport</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: 'ventes', label: 'Ventes', icon: 'receipt_long' },
+                { id: 'stock', label: 'Stock', icon: 'inventory_2' },
+                { id: 'ardoises', label: 'Ardoises', icon: 'menu_book' }
+              ] as const).map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setExportScope(s.id)}
+                  className={`h-16 border rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer ${
+                    exportScope === s.id
+                      ? 'bg-primary-container/20 border-primary text-primary font-bold'
+                      : 'border-outline-variant hover:bg-surface-container'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">{s.icon}</span>
+                  <span className="text-[9px] uppercase tracking-wider font-extrabold">{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-wider text-outline">Format d'Export</label>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { id: 'excel', label: 'Excel / CSV', desc: 'Fichier tableur' },
+                { id: 'pdf', label: 'PDF (Impression)', desc: 'Document prêt à imprimer' }
+              ] as const).map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setExportType(t.id)}
+                  className={`p-3 border rounded-xl flex flex-col text-left gap-0.5 active:scale-95 transition-all cursor-pointer ${
+                    exportType === t.id
+                      ? 'bg-secondary-container/20 border-secondary text-secondary'
+                      : 'border-outline-variant hover:bg-surface-container'
+                  }`}
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wide">{t.label}</span>
+                  <span className="text-[8px] text-outline font-semibold">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={async () => {
+              setIsExporting(true);
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-data`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    type: exportType,
+                    scope: exportScope,
+                    boutique_id: user.user_metadata?.boutique_id || 'boutique-1'
+                  })
+                });
+
+                if (!response.ok) {
+                  const errData = await response.json();
+                  throw new Error(errData.error || 'Erreur lors de la génération de l\'export.');
+                }
+
+                if (exportType === 'pdf') {
+                  const htmlText = await response.text();
+                  const win = window.open();
+                  if (win) {
+                    win.document.write(htmlText);
+                    win.document.close();
+                  } else {
+                    setToast({ message: 'Veuillez autoriser les fenêtres pop-up.', type: 'error' });
+                  }
+                } else {
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `export_${exportScope}_${new Date().toISOString().slice(0, 10)}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setToast({ message: 'Téléchargement lancé avec succès !', type: 'success' });
+                }
+                setIsExportModalOpen(false);
+              } catch (e: any) {
+                setToast({ message: e.message || 'Erreur lors de l\'export.', type: 'error' });
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            disabled={isExporting}
+            className="h-10 bg-primary hover:bg-primary/95 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm mt-2 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-base">file_download</span>
+            {isExporting ? 'EXPORTATION EN COURS...' : 'CONFIRMER L\'EXPORT'}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
