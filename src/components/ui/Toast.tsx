@@ -13,7 +13,12 @@ export const Toast: React.FC<ToastProps> = ({
   onClose,
   duration = 2000,
 }) => {
+  const playToastSound = () => {
+    // Sound effects disabled
+  };
+
   useEffect(() => {
+    playToastSound();
     const timer = setTimeout(() => {
       onClose();
     }, duration);

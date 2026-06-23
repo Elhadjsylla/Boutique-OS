@@ -61,7 +61,9 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (invError) throw invError;
+    if (invError) {
+      return json({ error: invError.message }, 400);
+    }
 
     // Envoyer l'email d'invitation via Supabase Auth
     const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
