@@ -21,6 +21,7 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [demoReason, setDemoReason] = useState<string | null>(null);
 
   // Demo data used when the backend RPCs haven't been deployed yet
   const DEMO_STATS: PlatformStats = {
@@ -51,6 +52,7 @@ export const AdminDashboard: React.FC = () => {
         console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
         setStats(DEMO_STATS);
         setIsDemo(true);
+        setDemoReason(e.message || 'RPC non déployé');
         setError(null);
       } finally {
         setLoading(false);
@@ -92,7 +94,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex flex-col">
             <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
             <span className="text-[10px] text-amber-400/80">
-              Les données affichées sont fictives. Les RPCs backend ne sont pas encore déployées sur Supabase.
+              Les données affichées sont fictives. Raison : {demoReason || 'Inconnue (Vérifiez la console)'}
             </span>
           </div>
         </div>
