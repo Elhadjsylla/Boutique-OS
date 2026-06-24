@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toast } from '../components/ui/Toast';
 import { db } from '../db/dexie';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface SettingsProps {
   session: any;
@@ -26,7 +27,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const user = session.user;
   const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
   const initialBoutiqueName = user.user_metadata?.boutique_name || 'Ma Boutique';
-  const userRole = user.user_metadata?.role || 'caissier';
+  // Use role from profils table (Zustand store) first, fallback to user_metadata
+  const storeProfile = useAuthStore.getState().profile;
+  const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
   const userEmail = user.email;
 
   const [teamProfiles, setTeamProfiles] = useState<any[]>([]);

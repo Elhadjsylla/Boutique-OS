@@ -17,6 +17,7 @@ import { useOnline } from './hooks/useOnline';
 import { BottomSheet } from './components/ui/BottomSheet';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/dexie';
+import { useAuthStore } from './store/useAuthStore';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -261,7 +262,9 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
-  const isAdmin = session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
+  // Check role from Zustand store (loaded from profils table) first, fallback to user_metadata
+  const storeProfile = useAuthStore.getState().profile;
+  const isAdmin = storeProfile?.role === 'super_admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
 
   if (!loading && session?.user && isAdmin && showAdminConsole) {
     return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
