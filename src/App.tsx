@@ -294,7 +294,7 @@ function App() {
 
   // Check role from Zustand store (loaded from profils table) first, fallback to user_metadata
   const storeProfile = useAuthStore(state => state.profile);
-  const isAdmin = storeProfile?.role === 'super_admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
 
   if (!loading && session?.user && isAdmin && showAdminConsole) {
     return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
