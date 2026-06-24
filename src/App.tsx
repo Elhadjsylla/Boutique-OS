@@ -55,6 +55,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function App() {
+  // Respect VITE_DEV_BYPASS=false to disable ALL dev session injection
+  const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
+
   const getDevSession = () => {
     const devRole = localStorage.getItem('dev_role') || 'admin';
     return {
@@ -72,7 +75,7 @@ function App() {
 
   // Applies DEV role override to any session (real or fake)
   const applyDevRoleOverride = (s: any) => {
-    if (!import.meta.env.DEV || !s) return s;
+    if (!devBypassEnabled || !s) return s;
     const devRole = localStorage.getItem('dev_role');
     if (devRole) {
       return {
@@ -99,7 +102,7 @@ function App() {
       }
     } catch (e) {}
 
-    if (import.meta.env.DEV) {
+    if (devBypassEnabled) {
       const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
       if (isSignedOut) return null;
 
@@ -171,7 +174,7 @@ function App() {
       if (session) {
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
-      } else if (import.meta.env.DEV) {
+      } else if (devBypassEnabled) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
           setSession(getDevSession());
@@ -183,7 +186,7 @@ function App() {
       }
       setLoading(false);
     }).catch(() => {
-      if (import.meta.env.DEV) {
+      if (devBypassEnabled) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) setSession(getDevSession());
       }
@@ -193,14 +196,14 @@ function App() {
     // Listen to changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (_event === 'SIGNED_OUT') {
-        if (import.meta.env.DEV) {
+        if (devBypassEnabled) {
           localStorage.setItem('dev_signed_out', 'true');
         }
         setSession(null);
       } else if (session) {
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
-      } else if (import.meta.env.DEV) {
+      } else if (devBypassEnabled) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
           setSession(getDevSession());
@@ -217,7 +220,7 @@ function App() {
   }, []);
 
   const handleLogout = async () => {
-    if (import.meta.env.DEV) {
+    if (devBypassEnabled) {
       localStorage.setItem('dev_signed_out', 'true');
     }
     setSession(null);
