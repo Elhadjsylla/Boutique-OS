@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.admin_audit_log (
 );
 ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "super_admin_read_audit_log" ON public.admin_audit_log;
 CREATE POLICY "super_admin_read_audit_log"
   ON public.admin_audit_log FOR SELECT
   USING ((SELECT role FROM public.profils WHERE id = auth.uid()) = 'super_admin');
