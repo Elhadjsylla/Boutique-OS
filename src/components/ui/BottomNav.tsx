@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type TabType = 'caisse' | 'stock' | 'ardoise' | 'dashboard' | 'settings' | 'subscription' | 'portal_client';
 
@@ -11,12 +12,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   setActiveTab,
 }) => {
+  const { t } = useTranslation();
   const tabs: { id: TabType; label: string; icon: string }[] = [
-    { id: 'caisse', label: 'Caisse', icon: 'point_of_sale' },
-    { id: 'stock', label: 'Stock', icon: 'inventory_2' },
-    { id: 'ardoise', label: 'Ardoise', icon: 'menu_book' },
-    { id: 'dashboard', label: 'Dashboard', icon: 'leaderboard' },
-    { id: 'settings', label: 'Réglages', icon: 'settings' },
+    { id: 'caisse', label: t('nav.ventes'), icon: 'point_of_sale' },
+    { id: 'stock', label: t('nav.stock'), icon: 'inventory_2' },
+    { id: 'ardoise', label: t('nav.ardoises'), icon: 'menu_book' },
+    { id: 'dashboard', label: t('nav.rapports'), icon: 'leaderboard' },
+    { id: 'settings', label: t('nav.reglages'), icon: 'settings' },
   ];
 
   return (

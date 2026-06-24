@@ -105,7 +105,7 @@ const ArdoiseInteractiveChart: React.FC<{
 
   // Generate WhatsApp text
   const getWhatsAppLink = (clientNom: string, remaining: number) => {
-    const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez BoutikOS est de ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA. Merci !`;
+    const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA. Merci !`;
     return `https://wa.me/?text=${encodeURIComponent(message)}`;
   };
 
@@ -262,7 +262,7 @@ const ArdoiseInteractiveChart: React.FC<{
             </a>
             <button
               onClick={() => {
-                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez BoutikOS est de ${new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA. Merci !`;
+                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA. Merci !`;
                 navigator.clipboard.writeText(text);
                 if (onShowToast) {
                   onShowToast("Message de relance copié !", "success");

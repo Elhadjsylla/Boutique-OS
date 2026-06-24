@@ -84,11 +84,15 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     <div className="w-full max-w-md bg-white rounded-3xl border border-outline-variant premium-shadow-lg p-8 flex flex-col gap-6 text-center animate-fade-in mx-auto">
       {/* Logo Section */}
       <div className="flex flex-col items-center gap-3">
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md">
-          <span className="text-white text-2xl font-black">OS</span>
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md text-white">
+          <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
         </div>
         <div>
-          <h1 className="font-headline-lg text-primary">BoutikOS</h1>
+          <h1 className="font-headline-lg text-primary">Sama Boutik</h1>
           <p className="font-body-md text-outline font-medium">Votre point de vente intelligent</p>
         </div>
       </div>

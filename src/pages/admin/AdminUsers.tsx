@@ -25,6 +25,20 @@ export const AdminUsers: React.FC = () => {
   const [editBoutiqueId, setEditBoutiqueId] = useState<string>('null');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const [isDemo, setIsDemo] = useState(false);
+
+  const DEMO_USERS: Profile[] = [
+    { id: 'usr-001-aaaa', role: 'admin', boutique_id: 'demo-1', created_at: '2025-01-10T08:00:00Z', boutiques: { nom: 'Boutique Medina' } },
+    { id: 'usr-002-bbbb', role: 'caissier', boutique_id: 'demo-1', created_at: '2025-02-15T10:00:00Z', boutiques: { nom: 'Boutique Medina' } },
+    { id: 'usr-003-cccc', role: 'gerant', boutique_id: 'demo-2', created_at: '2025-03-20T14:00:00Z', boutiques: { nom: 'Superette Plateau' } },
+    { id: 'usr-004-dddd', role: 'super_admin', boutique_id: null, created_at: '2025-01-01T00:00:00Z', boutiques: null },
+  ];
+
+  const DEMO_BOUTIQUES: Boutique[] = [
+    { id: 'demo-1', nom: 'Boutique Medina' },
+    { id: 'demo-2', nom: 'Superette Plateau' },
+  ];
+
   const fetchUsersAndBoutiques = async () => {
     setLoading(true);
     try {
@@ -40,10 +54,18 @@ export const AdminUsers: React.FC = () => {
         .order('nom');
       if (boutsErr) throw boutsErr;
 
-      setUsers(profs || []);
+      const formattedProfs = (profs || []).map((p: any) => ({
+        ...p,
+        boutiques: Array.isArray(p.boutiques) ? p.boutiques[0] || null : p.boutiques
+      }));
+      setUsers(formattedProfs);
       setBoutiques(bouts || []);
+      setIsDemo(false);
     } catch (e) {
-      console.error("Error fetching users or boutiques:", e);
+      console.warn("[AdminUsers] Erreur fetch, utilisation données démo.", e);
+      setUsers(DEMO_USERS);
+      setBoutiques(DEMO_BOUTIQUES);
+      setIsDemo(true);
     } finally {
       setLoading(false);
     }
@@ -88,6 +110,16 @@ export const AdminUsers: React.FC = () => {
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Utilisateurs</h1>
         <p className="text-xs text-admin-text-muted">Affichez les profils utilisateurs et réassignez les rôles et boutiques.</p>
       </div>
+
+      {isDemo && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
+            <span className="text-[10px] text-amber-400/80">Données fictives. Les migrations backend ne sont pas encore déployées.</span>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">

@@ -12,6 +12,7 @@ interface SettingsProps {
   activePlan?: string;
   onManageSubscription?: () => void;
   onNavigateToPortal?: () => void;
+  onActivateAdmin?: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -19,7 +20,8 @@ export const Settings: React.FC<SettingsProps> = ({
   onLogout,
   activePlan = 'Starter',
   onManageSubscription,
-  onNavigateToPortal
+  onNavigateToPortal,
+  onActivateAdmin
 }) => {
   const user = session.user;
   const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
@@ -303,8 +305,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
 
 
-      {/* Super Admin Console Access (Dev Mode Role Switcher) */}
-      {import.meta.env.DEV && (
+      {/* Super Admin Console Access — visible only for admin / super_admin role users */}
+      {(userRole === 'admin' || userRole === 'super_admin') && onActivateAdmin && (
         <Card elevation={1} className="p-4 flex flex-col gap-4 bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/20 text-left">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-600">
@@ -315,17 +317,14 @@ export const Settings: React.FC<SettingsProps> = ({
               <span className="text-xs font-bold text-on-surface">Console Globale Super Admin</span>
             </div>
           </div>
-          <p className="text-[10px] text-outline">Basculez l'application locale en mode d'administration plateforme Super Admin.</p>
+          <p className="text-[10px] text-outline">Accédez à la console d'administration plateforme Sama Boutik.</p>
           <button
             type="button"
-            onClick={() => {
-              localStorage.setItem('dev_role', 'super_admin');
-              window.location.search = '?role=super_admin';
-            }}
+            onClick={onActivateAdmin}
             className="h-9 px-4 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span className="material-symbols-outlined text-base">security</span>
-            Activer Mode Super Admin
+            Ouvrir la Console Super Admin
           </button>
         </Card>
       )}

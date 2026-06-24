@@ -39,7 +39,7 @@ export const PwaPrompt: React.FC = () => {
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       setShowInstallBanner(false);
-      console.log('BoutikOS was installed successfully');
+      console.log('Sama Boutik was installed successfully');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -70,7 +70,7 @@ export const PwaPrompt: React.FC = () => {
               <span className="material-symbols-outlined text-secondary-container">update</span>
               <div>
                 <p className="font-semibold text-sm">Mise à jour disponible</p>
-                <p className="text-xs opacity-80 mt-xs">Une nouvelle version de BoutikOS est disponible pour votre appareil.</p>
+                <p className="text-xs opacity-80 mt-xs">Une nouvelle version de Sama Boutik est disponible pour votre appareil.</p>
               </div>
             </div>
             <div className="flex gap-sm mt-xs">
@@ -100,7 +100,7 @@ export const PwaPrompt: React.FC = () => {
                 <span className="material-symbols-outlined text-white text-xl">shop</span>
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-sm text-on-surface truncate">Installer BoutikOS</p>
+                <p className="font-semibold text-sm text-on-surface truncate">Installer Sama Boutik</p>
                 <p className="text-[11px] text-outline truncate">Accès rapide depuis votre écran d'accueil.</p>
               </div>
             </div>

@@ -288,15 +288,15 @@ BEGIN
   IF sub_id IS NULL THEN
     -- Créer un nouvel abonnement
     INSERT INTO public.subscriptions (user_id, plan, status, payment_method, amount, net_amount, starts_at, expires_at)
-    VALUES (target_user, new_plan::plan_type, 'active', 'admin', 0, 0, NOW(), new_expires_at)
+    VALUES (target_user, new_plan::public.plan_type, 'active'::public.subscription_status, 'admin'::public.payment_method, 0, 0, NOW(), new_expires_at)
     RETURNING id INTO sub_id;
     old_plan := 'aucun';
   ELSE
     -- Mettre à jour l'existant
     UPDATE public.subscriptions
     SET
-      plan       = new_plan::plan_type,
-      status     = 'active',
+      plan       = new_plan::public.plan_type,
+      status     = 'active'::public.subscription_status,
       expires_at = new_expires_at,
       updated_at = NOW()
     WHERE id = sub_id;

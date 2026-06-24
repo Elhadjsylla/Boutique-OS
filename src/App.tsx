@@ -5,11 +5,13 @@ import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
 import { Settings } from './pages/Settings';
+import { Reglages } from './pages/Reglages';
 import { Subscription } from './pages/Subscription';
 import { PortalClient } from './pages/PortalClient';
 import { MonEspace } from './pages/MonEspace';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
+import { TrialBanner } from './components/ui/TrialBanner';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
 import { BottomSheet } from './components/ui/BottomSheet';
@@ -31,7 +33,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     if (this.state.hasError) {
       return (
         <div style={{ padding: 40, fontFamily: 'monospace', background: '#1a1a2e', color: '#ff6b6b', minHeight: '100vh' }}>
-          <h1 style={{ fontSize: 24, marginBottom: 16 }}>⚠️ BoutikOS — Erreur Runtime</h1>
+          <h1 style={{ fontSize: 24, marginBottom: 16 }}>⚠️ Sama Boutik — Erreur Runtime</h1>
           <p style={{ color: '#fff', marginBottom: 8 }}>L'application a planté. Voici l'erreur :</p>
           <pre style={{ background: '#2d2d44', padding: 16, borderRadius: 8, overflow: 'auto', fontSize: 12, color: '#ffa07a' }}>
             {this.state.error?.message}
@@ -67,6 +69,25 @@ function App() {
     };
   };
 
+  // Applies DEV role override to any session (real or fake)
+  const applyDevRoleOverride = (s: any) => {
+    if (!import.meta.env.DEV || !s) return s;
+    const devRole = localStorage.getItem('dev_role');
+    if (devRole) {
+      return {
+        ...s,
+        user: {
+          ...s.user,
+          user_metadata: {
+            ...s.user.user_metadata,
+            role: devRole,
+          }
+        }
+      };
+    }
+    return s;
+  };
+
   const getInitialSession = () => {
     try {
       const keys = Object.keys(localStorage);
@@ -95,9 +116,27 @@ function App() {
   const initialSession = getInitialSession();
   const [session, setSession] = useState<any>(initialSession);
   const [loading, setLoading] = useState(!initialSession);
-  const [activeTab, setActiveTab] = useState<TabType>('caisse');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    return (localStorage.getItem('active_tab') as TabType) || 'caisse';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('active_tab', activeTab);
+  }, [activeTab]);
+
   const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
+  const [trialStatus, setTrialStatus] = useState<any>(null);
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      supabase.rpc('get_trial_status').then(({ data }) => {
+        if (data?.has_trial) setTrialStatus(data);
+      });
+    }
+  }, [session]);
+
   const [liveTime, setLiveTime] = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -129,7 +168,8 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        setSession(session);
+        // In DEV, merge the dev_role override into the real session
+        setSession(applyDevRoleOverride(session));
       } else if (import.meta.env.DEV) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
@@ -157,7 +197,8 @@ function App() {
         }
         setSession(null);
       } else if (session) {
-        setSession(session);
+        // In DEV, merge the dev_role override into the real session
+        setSession(applyDevRoleOverride(session));
       } else if (import.meta.env.DEV) {
         const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
         if (!isSignedOut) {
@@ -187,10 +228,14 @@ function App() {
       <div className="min-h-screen bg-background text-on-background">
         <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
-              <span className="text-white text-sm font-black">OS</span>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm text-white">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
             </div>
-            <span className="text-lg font-black tracking-tight text-white">BoutikOS — Espace Client</span>
+            <span className="text-lg font-black tracking-tight text-white">Sama Boutik — Espace Client</span>
           </div>
           <button 
             onClick={() => setIsClientViewingPortal(false)}
@@ -216,11 +261,49 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
+  const isAdmin = session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
+
+  if (!loading && session?.user && isAdmin && showAdminConsole) {
+    return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col justify-center items-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-outline font-bold text-xs uppercase tracking-wider">Chargement de la session...</p>
+      <div className="min-h-screen bg-[#F5F7FA] flex flex-col justify-center items-center p-6 text-center select-none animate-fade-in">
+        <div className="flex flex-col items-center gap-5">
+          {/* Centered Logo */}
+          <div className="w-20 h-20 rounded-[24px] bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg text-white">
+            <svg className="w-11 h-11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-primary tracking-tight">Sama Boutik</h1>
+            <p className="text-[11px] text-outline font-bold uppercase tracking-wider mt-1">Point de Vente & Stock Intelligent</p>
+          </div>
+          
+          {/* Progressive Loading Bar */}
+          <div className="w-48 h-2 bg-slate-200 rounded-full overflow-hidden mt-3 shadow-inner relative">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" 
+              style={{
+                animation: 'loadingProgress 1.8s ease-in-out infinite',
+                width: '100%',
+                transformOrigin: 'left'
+              }} 
+            />
+          </div>
+          <style>{`
+            @keyframes loadingProgress {
+              0% { transform: scaleX(0); }
+              50% { transform: scaleX(0.6); }
+              100% { transform: scaleX(1); }
+            }
+          `}</style>
+          <p className="text-[10px] text-outline font-bold uppercase tracking-widest mt-1">Chargement de la session...</p>
+        </div>
       </div>
     );
   }
@@ -238,19 +321,17 @@ function App() {
   // Extract metadata safely with fallbacks if needed
   const user = session.user;
   const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
-  const boutiqueName = user.user_metadata?.boutique_name || 'BoutikOS';
+  const boutiqueName = user.user_metadata?.boutique_name || 'Sama Boutik';
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
 
-  if (userRole === 'super_admin') {
-    return <AdminLayout />;
-  }
+  // Super Admin check
 
 
   const appNotifications = [
     {
       id: 'welcome',
-      title: 'Bienvenue sur BoutikOS',
+      title: 'Bienvenue sur Sama Boutik',
       desc: 'Votre moteur de caisse et de stock intelligent est prêt et synchronisé localement.',
       icon: 'info',
       color: 'text-primary'
@@ -387,6 +468,10 @@ function App() {
         </div>
       </header>
 
+      {trialStatus && !trialStatus.is_expired && (
+        <TrialBanner trialStatus={trialStatus} />
+      )}
+
       {/* Offline Alert Banner */}
       {!isOnline && showOfflineBanner && (
         <div className="bg-error text-white text-center py-2 px-4 text-[10px] font-extrabold tracking-wider uppercase flex items-center justify-center gap-2 fixed top-16 left-0 w-full z-40 shadow-md animate-fade-in border-b border-white/10">
@@ -408,6 +493,13 @@ function App() {
             activePlan={activePlan}
             onManageSubscription={() => setActiveTab('subscription')}
             onNavigateToPortal={() => setIsClientViewingPortal(true)}
+            onActivateAdmin={isAdmin ? () => setShowAdminConsole(true) : undefined}
+          />
+        )}
+        {(activeTab === 'reglages' as any) && (
+          <Reglages
+            boutiqueId={boutiqueId}
+            onOpenAdmin={isAdmin ? () => setShowAdminConsole(true) : undefined}
           />
         )}
         {activeTab === 'subscription' && (

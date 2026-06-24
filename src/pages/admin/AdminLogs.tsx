@@ -15,6 +15,14 @@ export const AdminLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [isDemo, setIsDemo] = useState(false);
+
+  const DEMO_LOGS: AuditLogEntry[] = [
+    { id: 'log-001', actor_id: 'usr-004-dddd', action: 'boutique.created', target_type: 'boutique', target_id: 'demo-1', details: { nom: 'Boutique Medina' }, created_at: '2025-06-20T14:30:00Z' },
+    { id: 'log-002', actor_id: 'usr-004-dddd', action: 'boutique.suspended', target_type: 'boutique', target_id: 'demo-3', details: { reason: 'Facture impayée', suspended: true }, created_at: '2025-06-18T09:15:00Z' },
+    { id: 'log-003', actor_id: 'usr-004-dddd', action: 'subscription.updated', target_type: 'subscription', target_id: 'sub-001', details: { user_id: 'usr-001-aaaa', old_plan: 'starter', new_plan: 'pro' }, created_at: '2025-06-15T11:00:00Z' },
+  ];
+
   const fetchLogs = async () => {
     setLoading(true);
     try {
@@ -25,8 +33,11 @@ export const AdminLogs: React.FC = () => {
         .limit(100);
       if (error) throw error;
       setLogs(data || []);
+      setIsDemo(false);
     } catch (e) {
-      console.error("Error fetching audit logs:", e);
+      console.warn("[AdminLogs] Erreur fetch audit logs, utilisation données démo.", e);
+      setLogs(DEMO_LOGS);
+      setIsDemo(true);
     } finally {
       setLoading(false);
     }
@@ -65,6 +76,16 @@ export const AdminLogs: React.FC = () => {
           <span className="material-symbols-outlined text-lg">refresh</span>
         </button>
       </div>
+
+      {isDemo && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
+            <span className="text-[10px] text-amber-400/80">Données fictives. La table admin_audit_log n'est pas encore déployée.</span>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">

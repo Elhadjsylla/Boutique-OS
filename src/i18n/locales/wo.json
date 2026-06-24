@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "ventes": "Jaay",
+    "stock": "Nattu",
+    "ardoises": "Ñoñam",
+    "rapports": "Xam-xam",
+    "reglages": "Sett"
+  },
+  "common": {
+    "ajouter": "Yokk",
+    "modifier": "Soppi",
+    "supprimer": "Fecc",
+    "annuler": "Soppiku",
+    "confirmer": "Dëgg",
+    "sauvegarder": "Dox",
+    "fermer": "Tëj",
+    "rechercher": "Yëgël",
+    "chargement": "Yéeg...",
+    "enregistrement": "Bind...",
+    "aucun_resultat": "Dara amul",
+    "erreur": "Jafe-jafe bi am na",
+    "succes": "Dafa dëgg",
+    "oui": "Waaw",
+    "non": "Déedéet",
+    "retour": "Dellu",
+    "suivant": "Ci kanam",
+    "terminer": "Jeex"
+  },
+  "auth": {
+    "connexion": "Dugg",
+    "deconnexion": "Génn",
+    "email": "Imeel bi",
+    "email_placeholder": "sa@imeel.com",
+    "envoyer_lien": "Yónnee lien bi",
+    "lien_envoye": "Lien bi yónnee na! Xool sa imeel.",
+    "bienvenue": "Dalal jàmm ci BoutikOS"
+  },
+  "ventes": {
+    "titre": "Jaay",
+    "nouvelle_vente": "Jaay bu bees",
+    "total": "Total bi",
+    "quantite": "Yëg",
+    "produit": "Jëf-jëf",
+    "valider": "Seetlu jaay bi",
+    "historique": "Tariix jaay yi",
+    "aucune_vente": "Jaay amul fi"
+  },
+  "stock": {
+    "titre": "Nattu",
+    "nouveau_produit": "Jëf-jëf bu bees",
+    "nom": "Tur jëf-jëf bi",
+    "prix": "Prix bi",
+    "stock": "Nattu",
+    "categorie": "Wàll bi",
+    "aucun_produit": "Jëf-jëf amul"
+  },
+  "ardoises": {
+    "titre": "Ñoñam",
+    "nouvelle_ardoise": "Ñoñam bu bees",
+    "client": "Kliyaan bi",
+    "montant": "Xaalis bi",
+    "rembourser": "Fay na",
+    "aucune_ardoise": "Ñoñam amul"
+  },
+  "rapports": {
+    "titre": "Xam-xam",
+    "ca_jour": "Xaalis tey",
+    "ca_semaine": "Xaalis bes bu ndaw bi",
+    "ca_mois": "Xaalis weer wi",
+    "ventes_jour": "Jaay tey",
+    "top_produits": "Jëf-jëf yu bëgg bëgg"
+  },
+  "reglages": {
+    "titre": "Sett",
+    "boutique": "Sa boutique",
+    "langue": "Làkk",
+    "choisir_langue": "Tann làkk bi",
+    "abonnement": "Abonman",
+    "plan_actuel": "Plan bi",
+    "inviter": "Wéy ku tax"
+  },
+  "abonnement": {
+    "titre": "Abonman",
+    "essai_gratuit": "Essai bu yomb — 1 weer",
+    "essai_description": "Jebal yëgël bu xaalis amul",
+    "demarrer_essai": "Tambali essai bi",
+    "jours_restants": "{{count}} fan dëkk na",
+    "engagement": "Xaalis bi danu ko jëf ci kanam essai bi",
+    "essai_termine": "Sa essai bu yomb jeex na",
+    "contacter_support": "Seetaan support bi ngir musal abonman bi",
+    "annuler_essai": "Bañ essai bi",
+    "annuler_confirmation": "Dëgg nga? Sa accès dina jeex léegi léegi.",
+    "plan_starter": "Starter",
+    "plan_pro": "Pro",
+    "plan_annual": "Annuel"
+  },
+  "trial_banner": {
+    "actif_annulable": "Essai — {{days}} fan dëkk · Bañal ak {{cancel_days}} fan",
+    "engage": "Essai — {{days}} fan dëkk · Xaalis ci kanam"
+  }
+}

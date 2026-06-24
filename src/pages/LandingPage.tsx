@@ -64,10 +64,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <header className="fixed top-0 left-0 w-full z-50 bg-[#F5F7FA]/80 backdrop-blur-md border-b border-outline-variant/80">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md">
-              <span className="text-white text-sm font-black">OS</span>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md text-white">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
             </div>
-            <span className="text-lg font-black tracking-tight text-primary">BoutikOS</span>
+            <span className="text-lg font-black tracking-tight text-primary">Sama Boutik</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-texte-2">
@@ -145,19 +149,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Shiny badge */}
         <div className="reveal transition-all duration-1000 ease-out transform  delay-75 inline-flex items-center gap-2 px-3 py-1 bg-white border border-outline-variant rounded-full text-xs text-texte-2 mb-8 backdrop-blur-sm shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-ping" />
-          <span className="font-semibold">BoutikOS v2.0 est disponible hors-ligne</span>
+          <span className="font-semibold">Deviens le gérant qui contrôle tout</span>
         </div>
 
         <h1 className="reveal transition-all duration-1000 ease-out transform  delay-150 text-4xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-primary mb-6">
-          Ta caisse. Ton stock. <br />
+          Gère ta boutique <br />
           <span className="bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent">
-            Tes Crédits Clients.
-          </span> <br />
-          Enfin tout au même endroit.
+            comme un vrai patron.
+          </span>
         </h1>
 
         <p className="reveal transition-all duration-1000 ease-out transform  delay-200 text-base md:text-lg text-texte-2 max-w-2xl leading-relaxed mb-8">
-          Fini les crédits oubliés. Fini les stocks flous. Tout dans ton téléphone.
+          Caisse, stock, dettes clients — tout dans ta poche, en temps réel.
         </p>
 
         {/* Scattered floating money and retail icons */}
@@ -169,38 +172,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="absolute bottom-8 right-8 md:right-24 text-4xl md:text-5xl select-none animate-bounce opacity-80 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.06)]" style={{ animationDuration: '5.2s', animationDelay: '2s' }}>🛍️</div>
         
         {/* Additional icons */}
-        <div className="absolute top-12 left-1/3 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '4.2s', animationDelay: '0.6s' }}>📈</div>
+        <div className="absolute top-24 left-1/3 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '4.2s', animationDelay: '0.6s' }}>📈</div>
         <div className="absolute top-36 right-1/3 text-4xl select-none animate-bounce opacity-75 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '3.8s', animationDelay: '1s' }}>🏷️</div>
         <div className="absolute bottom-32 left-1/4 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '4.6s', animationDelay: '1.4s' }}>🧾</div>
         <div className="absolute top-1/3 left-2 text-4xl select-none animate-bounce opacity-75 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)]" style={{ animationDuration: '3.4s', animationDelay: '0.2s' }}>📦</div>
         <div className="absolute bottom-1/3 right-4 text-4xl select-none animate-bounce opacity-75 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)]" style={{ animationDuration: '4.5s', animationDelay: '1.8s' }}>💎</div>
         <div className="absolute bottom-20 right-1/4 text-4xl select-none animate-bounce opacity-70 filter drop-shadow-[0_8px_16px_rgba(26,60,94,0.05)] hidden md:block" style={{ animationDuration: '5s', animationDelay: '2.2s' }}>🔔</div>
 
-        <div className="reveal transition-all duration-1000 ease-out transform  delay-300 flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-lg mb-20 z-10">
+        <div className="reveal transition-all duration-1000 ease-out transform  delay-300 flex flex-col md:flex-row gap-3.5 justify-center items-stretch w-full max-w-4xl mb-20 z-10">
           {isLoggedIn ? (
             <button 
               onClick={onBackToApp}
-              className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-secondary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full md:w-auto px-6 py-4.5 text-xs font-black tracking-wide uppercase bg-secondary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
               Ouvrir ma caisse 🚀
             </button>
           ) : (
             <button 
               onClick={() => setShowLoginModal(true)}
-              className="w-full sm:w-auto px-8 h-13 text-sm font-black tracking-wide uppercase bg-primary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full md:w-auto px-6 py-4.5 text-xs font-black tracking-wide uppercase bg-primary text-white rounded-2xl shadow-lg hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
             >
-              Gérer ma boutique maintenant
+              Essayer maintenant — c'est gratuit
             </button>
           )}
           <button 
             onClick={onNavigateToPortal}
-            className="w-full sm:w-auto px-6 h-13 text-sm font-black tracking-wide uppercase bg-emerald-600 text-white rounded-2xl shadow-md hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full md:w-auto px-6 py-4.5 text-xs font-black tracking-wide uppercase bg-emerald-600 text-white rounded-2xl shadow-md hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
           >
             Consulter mes Dettes 👤
           </button>
           <a
             href="#demo"
-            className="w-full sm:w-auto px-6 h-13 text-sm font-bold tracking-wide uppercase bg-white hover:bg-surface-container border border-outline-variant rounded-2xl text-texte transition-all flex items-center justify-center gap-2"
+            className="w-full md:w-auto px-6 py-4.5 text-xs font-black tracking-wide uppercase bg-white hover:bg-surface-container border border-outline-variant rounded-2xl text-texte transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
             Tester sans compte (2s) ⚡
           </a>
@@ -216,8 +219,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {/* Header inside mockup */}
               <div className="flex items-center justify-between border-b border-outline-variant pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-primary flex items-center justify-center text-[10px] font-black text-white">OS</div>
-                  <span className="text-xs font-bold text-texte">BoutikOS - Aperçu</span>
+                  <div className="w-6 h-6 rounded bg-primary flex items-center justify-center text-white">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                      <line x1="3" y1="6" x2="21" y2="6"></line>
+                      <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-bold text-texte">Sama Boutik - Aperçu</span>
                 </div>
                 <div className="flex gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-outline-variant" />
@@ -302,7 +311,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="solution" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant text-center bg-secondary-container/10 rounded-[32px] my-10 border border-secondary-container/20">
         <div className="reveal transition-all duration-1000 ease-out transform  delay-75 mb-12">
           <span className="text-[10px] text-secondary font-extrabold uppercase tracking-widest bg-secondary-container px-3 py-1 rounded-full">La Solution</span>
-          <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">BoutikOS : Tout dans ton téléphone.</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-primary mt-3">Sama Boutik : Tout dans ton téléphone.</h2>
           <p className="text-sm text-texte-2 mt-2">Une application rapide, moderne et intelligente conçue pour simplifier la vie des commerçants.</p>
         </div>
 
@@ -318,14 +327,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="material-symbols-outlined text-secondary text-3xl">notifications_active</span>
             <h4 className="font-bold text-texte text-base">Alertes de stock bas</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
-              BoutikOS vous alerte dès qu'un produit passe sous le seuil critique. Vous réapprovisionnez à temps et ne ratez plus aucune vente.
+              Sama Boutik vous alerte dès qu'un produit passe sous le seuil critique. Vous réapprovisionnez à temps et ne ratez plus aucune vente.
             </p>
           </div>
           <div className="reveal transition-all duration-1000 ease-out transform  delay-300 bg-white/80 backdrop-blur-sm border border-outline-variant p-6 rounded-[24px] flex flex-col gap-3 hover:scale-[1.02] hover:shadow-md hover:border-secondary/20 transition-all duration-300">
             <span className="material-symbols-outlined text-secondary text-3xl">analytics</span>
             <h4 className="font-bold text-texte text-base">Caisse & Bilans automatiques</h4>
             <p className="text-xs text-texte-2 leading-relaxed">
-              Ajoutez les articles au panier, encaissez et laissez BoutikOS faire la comptabilité. Vos rapports d'activité sont prêts instantanément.
+              Ajoutez les articles au panier, encaissez et laissez Sama Boutik faire la comptabilité. Vos rapports d'activité sont prêts instantanément.
             </p>
           </div>
         </div>
@@ -437,7 +446,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="demo" className="py-20 px-4 max-w-5xl mx-auto border-t border-outline-variant relative">
         <div className="reveal transition-all duration-1000 ease-out transform  delay-75 text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-black text-primary mb-3">Démo interactive en un clic</h2>
-          <p className="text-sm text-texte-2">Interagissez avec le simulateur BoutikOS ci-dessous pour tester l'interface.</p>
+          <p className="text-sm text-texte-2">Interagissez avec le simulateur Sama Boutik ci-dessous pour tester l'interface.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -481,7 +490,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               {/* simulated OS Header */}
               <div className="bg-slate-900 text-slate-300 pt-8 pb-3 px-4 flex justify-between items-center border-b border-slate-800/50 text-[10px] font-bold">
-                <span>BoutikOS Demo</span>
+                <span>Sama Boutik Demo</span>
                 <span className="text-secondary flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" /> En ligne
                 </span>
@@ -700,7 +709,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-primary">Technologie Locale Sécurisée</h2>
           <p className="text-sm text-texte-2 leading-relaxed">
-            Grâce à l'utilisation d'une base de données locale synchronisée (Dexie), BoutikOS fonctionne à 100% même en cas de coupure Internet. Vos données de ventes et de stocks restent disponibles et s'actualisent en arrière-plan dès la reconnexion.
+            Grâce à l'utilisation d'une base de données locale synchronisée (Dexie), Sama Boutik fonctionne à 100% même en cas de coupure Internet. Vos données de ventes et de stocks restent disponibles et s'actualisent en arrière-plan dès la reconnexion.
           </p>
         </div>
       </section>
@@ -709,12 +718,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="py-12 border-t border-outline-variant bg-[#F5F7FA] text-center text-xs text-texte-2">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
-              <span className="text-white text-[9px] font-black">OS</span>
+            <div className="w-6 h-6 rounded bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
             </div>
-            <span className="font-extrabold text-primary">BoutikOS</span>
+            <span className="font-extrabold text-primary">Sama Boutik</span>
           </div>
-          <p>© 2026 BoutikOS. Le système d'exploitation de votre boutique.</p>
+          <p>© 2026 Sama Boutik. Le système d'exploitation de votre boutique.</p>
         </div>
       </footer>
 

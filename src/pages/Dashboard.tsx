@@ -11,16 +11,13 @@ import { getProductIconAndGradient } from '../lib/productHelper';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
 
 interface DashboardProps {
-  onNavigate?: (tab: 'caisse' | 'stock' | 'ardoise' | 'dashboard') => void;
+  onNavigate?: (tab: any) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
-  const { user } = useAuth();
   const metrics = useDashboardData();
   const { subscription } = useSubscription();
   const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || import.meta.env.DEV;
@@ -479,7 +476,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         const avgBasket = transactionsCount > 0 ? Math.round(totalRevenue / transactionsCount) : 0;
 
         const handleCopyBilan = () => {
-          const text = `🏆 BILAN DE PERFORMANCE BOUTIQUE OS\n` +
+          const text = `🏆 BILAN DE PERFORMANCE SAMA BOUTIK\n` +
             `Type : Bilan ${bilanPeriod === 'week' ? 'Hebdomadaire' : bilanPeriod === 'month' ? 'Mensuel' : 'Annuel'}\n` +
             `Période : ${periodName}\n` +
             `-----------------------------------\n` +
@@ -488,7 +485,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             `• Transactions de Vente : ${transactionsCount}\n` +
             `• Panier Moyen : ${fmtFr(avgBasket)} FCFA\n` +
             `-----------------------------------\n` +
-            `Généré automatiquement par BoutikOS.`;
+            `Généré automatiquement par Sama Boutik.`;
           navigator.clipboard.writeText(text);
           setToast({ message: "Bilan copié !", type: "success" });
         };
@@ -926,7 +923,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     const htmlText = `
                       <html>
                       <head>
-                        <title>Rapport de Stock — BoutikOS</title>
+                        <title>Rapport de Stock — Sama Boutik</title>
                         <style>
                           body { font-family: sans-serif; padding: 20px; color: #333; }
                           h1 { color: #1a3c5e; border-bottom: 2px solid #1a3c5e; padding-bottom: 10px; }
@@ -981,7 +978,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     const htmlText = `
                       <html>
                       <head>
-                        <title>Rapport des Ardoises — BoutikOS</title>
+                        <title>Rapport des Ardoises — Sama Boutik</title>
                         <style>
                           body { font-family: sans-serif; padding: 20px; color: #333; }
                           h1 { color: #ba1a1a; border-bottom: 2px solid #ba1a1a; padding-bottom: 10px; }
@@ -1036,7 +1033,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     const htmlText = `
                       <html>
                       <head>
-                        <title>Rapport des Ventes — BoutikOS</title>
+                        <title>Rapport des Ventes — Sama Boutik</title>
                         <style>
                           body { font-family: sans-serif; padding: 20px; color: #333; }
                           h1 { color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }

@@ -41,7 +41,7 @@ export const StyleGuide: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-on-background pb-32">
       <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-40 h-14 flex items-center justify-between px-margin-mobile">
-        <h1 className="font-headline-md text-headline-md">BoutikOS Guide de Style</h1>
+        <h1 className="font-headline-md text-headline-md">Sama Boutik Guide de Style</h1>
         <div className="flex items-center gap-sm">
           <span className={`w-3.5 h-3.5 rounded-full ${isOnline ? 'bg-secondary' : 'bg-error'}`} />
           <span className="text-xs uppercase font-bold opacity-80">

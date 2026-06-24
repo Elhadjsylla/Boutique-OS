@@ -22,6 +22,13 @@ export const AdminSubscriptions: React.FC = () => {
   const [newPlan, setNewPlan] = useState<'starter' | 'pro' | 'annual'>('starter');
   const [newExpiresAt, setNewExpiresAt] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+
+  const DEMO_SUBS: SubscriptionEntry[] = [
+    { id: 'sub-001', user_id: 'usr-001-aaaa', plan: 'pro', status: 'active', payment_method: 'wave', amount: 5000, starts_at: '2025-06-01T00:00:00Z', expires_at: '2025-07-01T00:00:00Z', created_at: '2025-06-01T00:00:00Z' },
+    { id: 'sub-002', user_id: 'usr-002-bbbb', plan: 'starter', status: 'active', payment_method: null, amount: 0, starts_at: '2025-05-15T00:00:00Z', expires_at: '2026-05-15T00:00:00Z', created_at: '2025-05-15T00:00:00Z' },
+    { id: 'sub-003', user_id: 'usr-003-cccc', plan: 'annual', status: 'expired', payment_method: 'orange_money', amount: 45000, starts_at: '2024-06-01T00:00:00Z', expires_at: '2025-06-01T00:00:00Z', created_at: '2024-06-01T00:00:00Z' },
+  ];
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -32,8 +39,11 @@ export const AdminSubscriptions: React.FC = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setSubscriptions(data || []);
+      setIsDemo(false);
     } catch (e) {
-      console.error("Error fetching subscriptions:", e);
+      console.warn("[AdminSubscriptions] Erreur fetch, utilisation données démo.", e);
+      setSubscriptions(DEMO_SUBS);
+      setIsDemo(true);
     } finally {
       setLoading(false);
     }
@@ -78,6 +88,16 @@ export const AdminSubscriptions: React.FC = () => {
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Abonnements</h1>
         <p className="text-xs text-admin-text-muted">Consultez l'historique et modifiez manuellement les formules d'abonnements.</p>
       </div>
+
+      {isDemo && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
+            <span className="text-[10px] text-amber-400/80">Données fictives. Les migrations backend ne sont pas encore déployées.</span>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">

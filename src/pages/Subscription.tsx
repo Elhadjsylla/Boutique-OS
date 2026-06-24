@@ -77,6 +77,23 @@ export const Subscription: React.FC<SubscriptionProps> = ({
     }
   ];
 
+  const [trialStatus, setTrialStatus] = useState<any>(null);
+  const [trialLoading, setTrialLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const { data } = await supabase.rpc('get_trial_status');
+        if (data) setTrialStatus(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTrialLoading(false);
+      }
+    };
+    fetchStatus();
+  }, []);
+
   const handleSubscribeClick = (plan: any) => {
     if (plan.id === 'starter' && currentPlan === 'Starter') {
       setToast({ message: 'Vous utilisez déjà le Plan Starter.', type: 'error' });
@@ -154,6 +171,91 @@ export const Subscription: React.FC<SubscriptionProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Free Trial Offer (First Block) */}
+      {!trialLoading && !trialStatus?.has_trial && (
+        <Card className="p-6 bg-gradient-to-r from-primary/10 to-secondary/15 border border-primary/20 flex flex-col md:flex-row justify-between items-center gap-6 rounded-[24px]">
+          <div className="flex flex-col text-left gap-2">
+            <h2 className="text-lg font-black text-primary uppercase tracking-wider flex items-center gap-2">
+              <span>🎁</span> Essai Gratuit — 1 Mois
+            </h2>
+            <p className="text-xs font-bold text-texte-2">Accès complet sans paiement immédiat</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+              <span className="text-[11px] font-bold text-texte-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                30 jours offerts
+              </span>
+              <span className="text-[11px] font-bold text-texte-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                Annulation libre pendant 7 jours
+              </span>
+              <span className="text-[11px] font-bold text-texte-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-secondary text-sm">check_circle</span>
+                Aucune carte bancaire requise
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                const { error } = await supabase.rpc('start_free_trial', { p_plan: 'starter' });
+                if (error) {
+                  if (error.message.includes('Un abonnement ou essai existe déjà')) {
+                    const { data: status } = await supabase.rpc('get_trial_status');
+                    if (status) setTrialStatus(status);
+                  }
+                  throw error;
+                }
+                setToast({ message: 'Essai gratuit démarré !', type: 'success' });
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } catch (err: any) {
+                setToast({ message: err.message || 'Erreur lors du démarrage.', type: 'error' });
+              }
+            }}
+            className="h-12 px-6 bg-primary hover:bg-primary/95 text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-md cursor-pointer whitespace-nowrap"
+          >
+            Démarrer l'essai gratuit (Starter)
+          </button>
+        </Card>
+      )}
+
+      {/* Paywall post-trial */}
+      {trialStatus?.has_trial && trialStatus?.is_expired && (
+        <Card className="p-6 bg-gradient-to-r from-red-500/10 to-transparent border border-red-500/20 flex flex-col items-center gap-4 text-center rounded-[24px]">
+          <h2 className="text-lg font-black text-red-400 uppercase tracking-wider flex items-center gap-2">
+            <span>⏰</span> Votre essai gratuit est terminé
+          </h2>
+          <p className="text-xs font-bold text-texte-2">Pour continuer, activez votre abonnement</p>
+          <p className="text-xs text-outline leading-relaxed max-w-md">
+            Contactez-nous pour recevoir votre lien de paiement Wave / Orange Money.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-2">
+            <a
+              href="https://wa.me/221XXXXXXXXX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-11 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-black rounded-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">chat</span>
+              WhatsApp
+            </a>
+            <a
+              href="mailto:support@boutikos.com"
+              className="h-11 px-6 border border-outline hover:bg-surface-container text-texte text-xs font-black rounded-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">mail</span>
+              Email support
+            </a>
+          </div>
+          <div className="w-full flex items-center gap-3 my-2">
+            <span className="flex-1 h-px bg-outline-variant/30" />
+            <span className="text-[10px] font-black uppercase text-outline tracking-wider">ou choisissez votre formule</span>
+            <span className="flex-1 h-px bg-outline-variant/30" />
+          </div>
+        </Card>
+      )}
 
       {/* Main Pricing Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 items-stretch">

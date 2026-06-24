@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
 
@@ -8,13 +9,21 @@ interface ReglagesProps {
   boutiqueId: string;
   activePlan?: string;
   onManageSubscription?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const Reglages: React.FC<ReglagesProps> = ({ 
   boutiqueId,
   activePlan = 'Starter',
-  onManageSubscription
+  onManageSubscription,
+  onOpenAdmin
 }) => {
+  const { t, i18n } = useTranslation();
+  const languages = [
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'wo', label: 'Wolof', flag: '🇸🇳' },
+  ];
+
   const { user, profile, boutique } = useAuthStore();
   const [boutiqueName, setBoutiqueName] = useState(boutique?.nom || '');
   const [stockThreshold, setStockThreshold] = useState(5);
@@ -50,7 +59,7 @@ export const Reglages: React.FC<ReglagesProps> = ({
     caissier: 'Caissier',
   };
 
-  const displayName = boutique?.nom || 'BoutikOS';
+  const displayName = boutique?.nom || 'Sama Boutik';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
@@ -132,6 +141,27 @@ export const Reglages: React.FC<ReglagesProps> = ({
           </p>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-black uppercase tracking-wider text-outline text-left">
+            {t('reglages.langue')}
+          </span>
+          <div className="flex gap-2">
+            {languages.map(lang => (
+              <button
+                key={lang.code}
+                onClick={() => i18n.changeLanguage(lang.code)}
+                className={`flex-1 h-11 rounded-xl border text-xs font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 ${
+                  i18n.language.startsWith(lang.code)
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-outline-variant bg-white text-outline hover:bg-slate-50'
+                }`}
+              >
+                {lang.flag} {lang.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Button
           onClick={saveSettings}
           disabled={isSaving || !boutiqueName.trim()}
@@ -140,6 +170,30 @@ export const Reglages: React.FC<ReglagesProps> = ({
           {isSaving ? 'Sauvegarde...' : 'SAUVEGARDER LES RÉGLAGES'}
         </Button>
       </div>
+
+      {/* Super Admin Console Access */}
+      {((userRole as string) === 'admin' || userRole === 'super_admin') && onOpenAdmin && (
+        <div className="bg-white border border-purple-200 rounded-2xl p-5 flex flex-col gap-4 premium-shadow-sm bg-gradient-to-r from-purple-500/5 to-transparent text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-600">
+              <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] text-outline font-black uppercase tracking-wider">Console d'Administration</span>
+              <span className="text-sm font-bold text-on-surface">Console Globale Super Admin</span>
+            </div>
+          </div>
+          <p className="text-xs text-outline">Accédez à la console d'administration plateforme Sama Boutik.</p>
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="h-9 px-4 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">security</span>
+            Ouvrir la Console Super Admin
+          </button>
+        </div>
+      )}
     </div>
   );
 };

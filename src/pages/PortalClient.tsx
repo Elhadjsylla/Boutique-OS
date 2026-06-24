@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { MoneyText } from '../components/ui/MoneyText';
 
 interface PortalClientProps {
@@ -18,6 +17,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null); // contains { ardoise: {...}, paiements: [...] }
+  const [isDemo, setIsDemo] = useState(false);
 
   // Auth State
   useEffect(() => {
@@ -29,7 +29,18 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   // Fetch ardoise by token
   useEffect(() => {
     if (!token) {
-      setError("Aucun jeton d'accès fourni.");
+      setIsDemo(true);
+      setData({
+        ardoise: {
+          client_nom: "Fatou Diop (Client Démo)",
+          montant_total: 75000,
+          statut: "en_cours",
+        },
+        paiements: [
+          { id: "p-1", montant: 25000, paid_at: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() },
+          { id: "p-2", montant: 15000, paid_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString() }
+        ]
+      });
       setLoading(false);
       return;
     }
@@ -55,7 +66,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   useEffect(() => {
     if (session?.user?.user_metadata?.user_type === 'client' && data && !claimed) {
       supabase.rpc('claim_ardoise', { p_token: token })
-        .then(({ data: claimRes, error: claimErr }) => {
+        .then(({ error: claimErr }) => {
           if (claimErr) console.error("Error claiming ardoise:", claimErr);
           else setClaimed(true);
         });
@@ -75,28 +86,248 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
     const { ardoise, paiements } = data;
     const paid = paiements.reduce((sum: number, p: any) => sum + p.montant, 0);
     const remaining = Math.max(0, ardoise.montant_total - paid);
-    const percent = ardoise.montant_total > 0 ? Math.round((paid / ardoise.montant_total) * 100) : 0;
 
-    const text = `==================================\n` +
-                 `      REÇU DE COMPTE - BOUTIKOS   \n` +
-                 `==================================\n` +
-                 `Client : ${ardoise.client_nom}\n` +
-                 `Date : ${new Date().toLocaleDateString('fr-FR')}\n\n` +
-                 `Statut : ${ardoise.statut === 'soldee' ? 'SOLDÉ' : 'EN COURS'}\n` +
-                 `Crédit Initial : ${new Intl.NumberFormat('fr-FR').format(ardoise.montant_total)} FCFA\n` +
-                 `Total Versé    : ${new Intl.NumberFormat('fr-FR').format(paid)} FCFA\n` +
-                 `Reste à Payer  : ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA\n` +
-                 `Remboursé à    : ${percent}%\n` +
-                 `==================================\n` +
-                 `Merci pour votre confiance !`;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Veuillez autoriser les pop-ups pour imprimer/télécharger votre reçu.");
+      return;
+    }
 
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `recu_ardoise_${ardoise.client_nom.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Recu_Ardoise_${ardoise.client_nom.replace(/\s+/g, '_')}</title>
+          <style>
+            body {
+              font-family: 'DM Sans', 'Inter', sans-serif;
+              color: #1A1A2E;
+              padding: 0;
+              margin: 0;
+              background-color: #F8FAFC;
+              display: flex;
+              justify-content: center;
+              align-items: flex-start;
+              min-height: 100vh;
+            }
+            .receipt-container {
+              background-color: #ffffff;
+              padding: 40px;
+              width: 100%;
+              max-width: 600px;
+              margin: 40px auto;
+              border-radius: 24px;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+              box-sizing: border-box;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px dashed #E2E8F0;
+              padding-bottom: 24px;
+              margin-bottom: 24px;
+            }
+            .logo {
+              font-size: 28px;
+              font-weight: 900;
+              color: #1A3C5E;
+              margin-bottom: 6px;
+              letter-spacing: -0.5px;
+            }
+            .subtitle {
+              font-size: 11px;
+              color: #94A3B8;
+              text-transform: uppercase;
+              letter-spacing: 1.5px;
+              font-weight: 800;
+            }
+            .details {
+              margin-bottom: 30px;
+              background-color: #F8FAFC;
+              padding: 16px;
+              border-radius: 16px;
+              border: 1px solid #F1F5F9;
+            }
+            .details-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+              font-size: 13px;
+            }
+            .details-row:last-child {
+              margin-bottom: 0;
+            }
+            .details-label {
+              font-weight: bold;
+              color: #64748B;
+            }
+            .details-value {
+              font-weight: 900;
+              color: #1A1A2E;
+            }
+            .table-title {
+              font-size: 11px;
+              font-weight: 800;
+              text-transform: uppercase;
+              color: #94A3B8;
+              margin-bottom: 12px;
+              letter-spacing: 1px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            th, td {
+              text-align: left;
+              padding: 12px;
+              font-size: 13px;
+              border-bottom: 1px solid #E2E8F0;
+            }
+            th {
+              font-weight: 800;
+              color: #475569;
+              background-color: #F1F5F9;
+              text-transform: uppercase;
+              font-size: 10px;
+              letter-spacing: 0.5px;
+            }
+            td {
+              color: #334155;
+            }
+            .total-card {
+              background: #F0F4F8;
+              border: 1px solid #E5E7EB;
+              border-radius: 16px;
+              padding: 20px;
+              margin-bottom: 30px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 14px;
+              margin-bottom: 10px;
+              color: #475569;
+            }
+            .total-row:last-child {
+              margin-bottom: 0;
+              padding-top: 12px;
+              border-top: 2px solid #E2E8F0;
+              font-size: 18px;
+              font-weight: 900;
+              color: #1A3C5E;
+            }
+            .footer {
+              text-align: center;
+              font-size: 11px;
+              color: #94A3B8;
+              margin-top: 50px;
+              border-top: 1px solid #E2E8F0;
+              padding-top: 24px;
+              line-height: 1.6;
+            }
+            @media print {
+              body {
+                background-color: #ffffff;
+                padding: 0;
+                margin: 0;
+                display: block;
+                min-height: auto;
+              }
+              .receipt-container {
+                max-width: 90%;
+                box-shadow: none;
+                padding: 20px;
+                margin: 0 auto;
+                border-radius: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            <div class="header">
+              <div class="logo">Sama Boutik</div>
+              <div class="subtitle">Reçu de Compte Client</div>
+            </div>
+            
+            <div class="details">
+              <div class="details-row">
+                <span class="details-label">Client :</span>
+                <span class="details-value">${ardoise.client_nom}</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Date d'édition :</span>
+                <span class="details-value">${new Date().toLocaleDateString('fr-FR')}</span>
+              </div>
+              <div class="details-row">
+                <span class="details-label">Statut du compte :</span>
+                <span class="details-value" style="color: ${ardoise.statut === 'soldee' ? '#27AE60' : '#BA1A1A'}">
+                  ${ardoise.statut === 'soldee' ? 'SOLDÉ' : 'EN COURS'}
+                </span>
+              </div>
+            </div>
+
+            <div class="table-title">Historique des Versements</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Date</th>
+                  <th style="text-align: right;">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${paiements.map((p: any, idx: number) => `
+                  <tr>
+                    <td>#${paiements.length - idx}</td>
+                    <td>${new Date(p.paid_at).toLocaleDateString('fr-FR')}</td>
+                    <td style="text-align: right; font-weight: 900; color: #27AE60;">+ ${new Intl.NumberFormat('fr-FR').format(p.montant)} FCFA</td>
+                  </tr>
+                `).join('')}
+                ${paiements.length === 0 ? `
+                  <tr>
+                    <td colspan="3" style="text-align: center; color: #94A3B8; font-style: italic; padding: 20px 0;">Aucun versement enregistré</td>
+                  </tr>
+                ` : ''}
+              </tbody>
+            </table>
+
+            <div class="total-card">
+              <div class="total-row">
+                <span>Total Dettes :</span>
+                <span style="font-weight: bold; color: #1A1A2E;">${new Intl.NumberFormat('fr-FR').format(ardoise.montant_total)} FCFA</span>
+              </div>
+              <div class="total-row">
+                <span>Total Versé :</span>
+                <span style="font-weight: bold; color: #27AE60;">${new Intl.NumberFormat('fr-FR').format(paid)} FCFA</span>
+              </div>
+              <div class="total-row">
+                <span>Reste à Payer :</span>
+                <span style="font-weight: 900;">${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              Reçu officiel généré par <strong>Sama Boutik</strong> — Le système de gestion intelligent pour votre boutique.<br>
+              Merci pour votre confiance !
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              // Optionnel : fermer la fenêtre après impression
+              // setTimeout(() => window.close(), 1000);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -152,6 +383,18 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
         <h1 className="font-headline-lg-mobile text-on-surface">Mon Ardoise</h1>
         <p className="font-body-md text-on-surface-variant">Consultez l'état de votre compte en toute transparence.</p>
       </div>
+
+      {isDemo && (
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/35 rounded-2xl flex items-center gap-3 text-left">
+          <span className="material-symbols-outlined text-amber-500 text-lg">visibility</span>
+          <div className="flex flex-col">
+            <span className="text-[11px] font-black text-amber-600 uppercase tracking-wide">Mode Aperçu Démo</span>
+            <span className="text-[9px] text-texte-2 leading-normal mt-0.5">
+              Cette page simule l'interface que verra votre client lorsqu'il cliquera sur son lien de suivi unique.
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-5 animate-scale-in">
         {/* Premium Client Dashboard Card */}

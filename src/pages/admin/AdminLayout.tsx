@@ -8,8 +8,18 @@ import { AdminLogs } from './AdminLogs';
 
 type AdminTab = 'dashboard' | 'boutiques' | 'users' | 'subscriptions' | 'logs';
 
-export const AdminLayout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+interface AdminLayoutProps {
+  onExit?: () => void;
+}
+
+export const AdminLayout: React.FC<AdminLayoutProps> = ({ onExit }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    return (localStorage.getItem('admin_active_tab') as AdminTab) || 'dashboard';
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('admin_active_tab', activeTab);
+  }, [activeTab]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -30,11 +40,15 @@ export const AdminLayout: React.FC = () => {
       <aside className="hidden md:flex flex-col w-64 bg-admin-card border-r border-admin-border p-5 gap-6 shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-admin-primary to-admin-primary-light flex items-center justify-center shadow-sm">
-            <span className="text-white text-sm font-black">OS</span>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-admin-primary to-admin-primary-light flex items-center justify-center shadow-sm text-white">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
           </div>
           <div className="flex flex-col text-left">
-            <span className="text-sm font-black tracking-tight text-admin-text uppercase">BoutikOS</span>
+            <span className="text-sm font-black tracking-tight text-admin-text uppercase">Sama Boutik</span>
             <span className="text-[9px] font-black uppercase text-admin-primary-light tracking-widest leading-none">Super Admin</span>
           </div>
         </div>
@@ -57,6 +71,17 @@ export const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
+        {/* Back to App */}
+        {onExit && (
+          <button
+            onClick={onExit}
+            className="h-11 px-3.5 border border-admin-border hover:bg-admin-surface text-xs font-black uppercase tracking-wide rounded-xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] cursor-pointer text-admin-text-muted mb-2"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            Retour App
+          </button>
+        )}
+
         {/* Footer Logout */}
         <button
           onClick={handleLogout}
@@ -70,18 +95,33 @@ export const AdminLayout: React.FC = () => {
       {/* Header - Mobile */}
       <header className="md:hidden bg-admin-card border-b border-admin-border h-16 px-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-admin-primary to-admin-primary-light flex items-center justify-center">
-            <span className="text-white text-xs font-black">OS</span>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-admin-primary to-admin-primary-light flex items-center justify-center text-white">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
           </div>
-          <span className="text-sm font-black uppercase tracking-tight text-admin-text">BoutikOS Admin</span>
+          <span className="text-sm font-black uppercase tracking-tight text-admin-text">Sama Boutik Admin</span>
         </div>
-        <button
-          onClick={handleLogout}
-          className="material-symbols-outlined text-admin-text-muted hover:text-admin-text p-1.5 cursor-pointer"
-          title="Se déconnecter"
-        >
-          logout
-        </button>
+        <div className="flex items-center gap-2">
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="material-symbols-outlined text-admin-primary-light hover:text-admin-text p-1.5 cursor-pointer"
+              title="Retour boutique"
+            >
+              arrow_back
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            className="material-symbols-outlined text-admin-text-muted hover:text-admin-text p-1.5 cursor-pointer"
+            title="Se déconnecter"
+          >
+            logout
+          </button>
+        </div>
       </header>
 
       {/* Main Panel Content */}

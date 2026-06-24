@@ -73,8 +73,12 @@ export const MonEspace: React.FC = () => {
       {/* Header */}
       <header className="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-16 flex justify-between items-center px-4 border-b border-white/5 shadow-md">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
-            <span className="text-white text-sm font-black">OS</span>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm text-white">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
           </div>
           <span className="text-lg font-black tracking-tight text-white">Mon Espace</span>
         </div>
@@ -179,7 +183,7 @@ export const MonEspace: React.FC = () => {
 
         {/* Footer */}
         <footer className="text-center text-[10px] text-outline font-medium tracking-wide mt-6">
-          Espace gratuit fourni par BoutikOS
+          Espace gratuit fourni par Sama Boutik
         </footer>
       </main>
     </div>

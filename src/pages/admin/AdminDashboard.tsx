@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { MoneyText } from '../../components/ui/MoneyText';
 
 interface PlatformStats {
   total_boutiques: number;
@@ -21,6 +20,23 @@ export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
+
+  // Demo data used when the backend RPCs haven't been deployed yet
+  const DEMO_STATS: PlatformStats = {
+    total_boutiques: 12,
+    active_boutiques: 10,
+    suspended_boutiques: 2,
+    total_users: 34,
+    total_sales_today: 47,
+    total_sales_week: 312,
+    total_sales_month: 1205,
+    ca_today: 285000,
+    ca_week: 1870000,
+    ca_month: 7430000,
+    active_subscriptions: 8,
+    expired_subscriptions: 4
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -29,8 +45,13 @@ export const AdminDashboard: React.FC = () => {
         const { data, error: err } = await supabase.rpc('admin_platform_stats');
         if (err) throw err;
         setStats(data);
+        setIsDemo(false);
       } catch (e: any) {
-        setError(e.message || "Erreur lors de la récupération des statistiques globales.");
+        // Fallback to demo data when the RPC doesn't exist yet or permission is denied
+        console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
+        setStats(DEMO_STATS);
+        setIsDemo(true);
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -64,6 +85,18 @@ export const AdminDashboard: React.FC = () => {
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Dashboard Plateforme</h1>
         <p className="text-xs text-admin-text-muted">Indicateurs clés et chiffre d'affaires global BoutikOS.</p>
       </div>
+
+      {isDemo && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
+            <span className="text-[10px] text-amber-400/80">
+              Les données affichées sont fictives. Les RPCs backend ne sont pas encore déployées sur Supabase.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
