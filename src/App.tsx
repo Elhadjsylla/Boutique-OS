@@ -172,6 +172,18 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
+        // Check if session JWT is expired
+        try {
+          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+          if (payload.exp && Date.now() / 1000 >= payload.exp) {
+            console.warn('[App] Session JWT expired on load, signing out.');
+            supabase.auth.signOut().then(() => {
+              setSession(null);
+              setLoading(false);
+            });
+            return;
+          }
+        } catch (e) {}
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
       } else if (devBypassEnabled) {
@@ -201,6 +213,17 @@ function App() {
         }
         setSession(null);
       } else if (session) {
+        // Check if session JWT is expired
+        try {
+          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+          if (payload.exp && Date.now() / 1000 >= payload.exp) {
+            console.warn('[App] Session JWT expired on auth change, signing out.');
+            supabase.auth.signOut().then(() => {
+              setSession(null);
+            });
+            return;
+          }
+        } catch (e) {}
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
       } else if (devBypassEnabled) {

@@ -105,6 +105,16 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
+          // Check if session JWT is expired
+          try {
+            const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+            if (payload.exp && Date.now() / 1000 >= payload.exp) {
+              console.warn('[useAuth] Session JWT expired on auth change, signing out.');
+              await supabase.auth.signOut();
+              clearAuth();
+              return;
+            }
+          } catch (e) {}
           await fetchProfileAndBoutique(session.user)
         } else {
           clearAuth()
@@ -113,8 +123,18 @@ export function useAuth() {
     )
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        // Check if session JWT is expired
+        try {
+          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+          if (payload.exp && Date.now() / 1000 >= payload.exp) {
+            console.warn('[useAuth] Session JWT expired on load, signing out.');
+            await supabase.auth.signOut();
+            clearAuth();
+            return;
+          }
+        } catch (e) {}
         fetchProfileAndBoutique(session.user)
       } else {
         clearAuth()
