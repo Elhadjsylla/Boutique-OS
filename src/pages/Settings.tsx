@@ -28,7 +28,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
   const initialBoutiqueName = user.user_metadata?.boutique_name || 'Ma Boutique';
   // Use role from profils table (Zustand store) first, fallback to user_metadata
-  const storeProfile = useAuthStore.getState().profile;
+  const storeProfile = useAuthStore(state => state.profile);
   const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
   const userEmail = user.email;
 

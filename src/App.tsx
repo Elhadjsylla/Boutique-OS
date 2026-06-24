@@ -18,6 +18,7 @@ import { BottomSheet } from './components/ui/BottomSheet';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/dexie';
 import { useAuthStore } from './store/useAuthStore';
+import { useAuth } from './hooks/useAuth';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -55,6 +56,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function App() {
+  // Initialize auth listener and fetch profile/boutique
+  useAuth();
+
   // Respect VITE_DEV_BYPASS=false to disable ALL dev session injection
   const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
 
@@ -289,7 +293,7 @@ function App() {
   if (espaceParam === 'client') return <MonEspace />;
 
   // Check role from Zustand store (loaded from profils table) first, fallback to user_metadata
-  const storeProfile = useAuthStore.getState().profile;
+  const storeProfile = useAuthStore(state => state.profile);
   const isAdmin = storeProfile?.role === 'super_admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
 
   if (!loading && session?.user && isAdmin && showAdminConsole) {
