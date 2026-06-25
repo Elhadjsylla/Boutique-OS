@@ -1,4 +1,4 @@
-import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
+import { useState, useEffect, useRef, Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
@@ -265,10 +265,13 @@ function App() {
   // Auto-open admin console if the user is an admin
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
-  // Effect to automatically show admin console when admin role is detected
+  const hasAutoOpenedAdmin = useRef(false);
+
+  // Effect to automatically show admin console when admin role is detected (only once)
   useEffect(() => {
-    if (isAdmin && !showAdminConsole) {
+    if (isAdmin && !showAdminConsole && !hasAutoOpenedAdmin.current) {
       setShowAdminConsole(true);
+      hasAutoOpenedAdmin.current = true;
     }
   }, [isAdmin, showAdminConsole]);
 
