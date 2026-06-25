@@ -13,7 +13,6 @@ import { Abonnement } from './pages/Abonnement';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { TrialBanner } from './components/ui/TrialBanner';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
-import { TrialBanner } from './components/ui/TrialBanner';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
 import { BottomSheet } from './components/ui/BottomSheet';
@@ -264,8 +263,12 @@ function App() {
   useEffect(() => {
     if (!session) return;
 
-    const role = session.user?.user_metadata?.role || 'caissier';
-    if (role === 'super_admin') {
+    // Check role from Zustand store (profils table) first, then fallback to JWT user_metadata
+    const profileRole = storeProfile?.role;
+    const metadataRole = session.user?.user_metadata?.role;
+    const effectiveRole = profileRole || metadataRole || 'caissier';
+
+    if (effectiveRole === 'super_admin' || effectiveRole === 'admin') {
       setSubStatus('active');
       setActivePlan('Plan MAX');
       return;
@@ -289,7 +292,7 @@ function App() {
         .maybeSingle();
       setSubStatus(sub ? 'active' : 'paywall');
     })();
-  }, [session]);
+  }, [session, storeProfile]);
 
   if (isClientViewingPortal) {
     return (
