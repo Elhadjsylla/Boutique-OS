@@ -440,13 +440,7 @@ function App() {
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
 
-  useEffect(() => {
-    console.log('[DEBUG] Current App boutiqueId:', boutiqueId);
-    db.produits.toArray().then(prods => {
-      const bIds = new Set(prods.map(p => p.boutique_id));
-      console.log('[DEBUG] Dexie contains products for boutique_ids:', Array.from(bIds));
-    });
-  }, [boutiqueId]);
+
 
   // Super Admin check
 
