@@ -12,7 +12,7 @@ const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'f
 
 const DEV_USER: User = {
   id: 'dev-admin-000-0000-0000-000000000000',
-  email: 'admin@boutikos.dev',
+  email: 'admin@samaboutik.dev',
   app_metadata: {},
   user_metadata: { full_name: 'Admin DEV' },
   aud: 'authenticated',

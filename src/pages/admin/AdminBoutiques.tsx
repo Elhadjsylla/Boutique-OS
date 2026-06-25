@@ -155,7 +155,7 @@ export const AdminBoutiques: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Boutiques</h1>
-          <p className="text-xs text-admin-text-muted">Créez, suspendez et inspectez les points de vente BoutikOS.</p>
+          <p className="text-xs text-admin-text-muted">Créez, suspendez et inspectez les points de vente Sama Boutik.</p>
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}

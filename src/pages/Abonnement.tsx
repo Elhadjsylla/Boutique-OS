@@ -80,7 +80,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess }) => {
           <span className="material-symbols-outlined text-white" style={{ fontSize: '28px' }}>storefront</span>
         </div>
         <h1 className="font-headline-lg text-on-surface">Choisissez votre plan</h1>
-        <p className="font-body-md text-on-surface-variant mt-1">Accédez à toutes les fonctionnalités de BoutikOS</p>
+        <p className="font-body-md text-on-surface-variant mt-1">Accédez à toutes les fonctionnalités de Sama Boutik</p>
       </div>
 
       {/* ÉTAPE 1 — Plans */}
@@ -245,7 +245,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess }) => {
           </div>
           <h2 className="font-headline-sm text-on-surface">Abonnement activé !</h2>
           <p className="font-body-md text-on-surface-variant">
-            Bienvenue dans BoutikOS. Votre boutique est prête.
+            Bienvenue dans Sama Boutik. Votre boutique est prête.
           </p>
         </div>
       )}

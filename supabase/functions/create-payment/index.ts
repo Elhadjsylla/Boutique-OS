@@ -8,9 +8,9 @@ const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const PLANS = {
-  starter: { amount: 2900,  label: "BoutikOS Starter" },
-  pro:     { amount: 5900,  label: "BoutikOS Pro" },
-  annual:  { amount: 52900, label: "BoutikOS Annuel" },
+  starter: { amount: 2900,  label: "Sama Boutik Starter" },
+  pro:     { amount: 5900,  label: "Sama Boutik Pro" },
+  annual:  { amount: 52900, label: "Sama Boutik Annuel" },
 };
 
 serve(async (req) => {
@@ -53,7 +53,7 @@ serve(async (req) => {
     } else {
       unitechRes = await callUnitech("create_orange_qr", UNITECH_OM_KEY, {
         amount: selectedPlan.amount,
-        reference: `boutikos_${subscription.id}`,
+        reference: `samaboutik_${subscription.id}`,
         description: selectedPlan.label,
         callback_success: `${baseUrl}/payment/success?sub=${subscription.id}`,
         callback_cancel: `${baseUrl}/payment/cancel?sub=${subscription.id}`,

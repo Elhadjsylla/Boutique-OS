@@ -242,7 +242,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
               WhatsApp
             </a>
             <a
-              href="mailto:support@boutikos.com"
+              href="mailto:support@samaboutik.com"
               className="h-11 px-6 border border-outline hover:bg-surface-container text-texte text-xs font-black rounded-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
             >
               <span className="material-symbols-outlined text-base">mail</span>

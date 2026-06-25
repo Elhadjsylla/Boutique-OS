@@ -443,7 +443,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
             Télécharger Reçu
           </button>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur BoutikOS. Solde restant dû : ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA.`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur Sama Boutik. Solde restant dû : ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.97]"

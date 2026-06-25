@@ -104,7 +104,7 @@ serve(async (req) => {
         htmlContent = `
           <html>
           <head>
-            <title>Rapport de Stock — BoutikOS</title>
+            <title>Rapport de Stock — Sama Boutik</title>
             <style>
               body { font-family: sans-serif; padding: 20px; color: #333; }
               h1 { color: #1a3c5e; border-bottom: 2px solid #1a3c5e; padding-bottom: 10px; }
@@ -137,7 +137,7 @@ serve(async (req) => {
         htmlContent = `
           <html>
           <head>
-            <title>Rapport des Ardoises — BoutikOS</title>
+            <title>Rapport des Ardoises — Sama Boutik</title>
             <style>
               body { font-family: sans-serif; padding: 20px; color: #333; }
               h1 { color: #ba1a1a; border-bottom: 2px solid #ba1a1a; padding-bottom: 10px; }
@@ -170,7 +170,7 @@ serve(async (req) => {
         htmlContent = `
           <html>
           <head>
-            <title>Rapport des Ventes — BoutikOS</title>
+            <title>Rapport des Ventes — Sama Boutik</title>
             <style>
               body { font-family: sans-serif; padding: 20px; color: #333; }
               h1 { color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }

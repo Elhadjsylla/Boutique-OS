@@ -14,8 +14,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'icons.svg', 'pwa-icon-192.png', 'pwa-icon-512.png'],
       manifest: {
-        name: 'BoutikOS',
-        short_name: 'BoutikOS',
+        name: 'Sama Boutik',
+        short_name: 'Sama Boutik',
         description: 'Logiciel de gestion de boutique offline-first moderne',
         theme_color: '#1a3c5e',
         background_color: '#f7f9fc',

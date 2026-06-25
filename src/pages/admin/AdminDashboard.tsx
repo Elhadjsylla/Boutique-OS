@@ -85,7 +85,7 @@ export const AdminDashboard: React.FC = () => {
     <div className="flex flex-col gap-6 text-left">
       <div>
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Dashboard Plateforme</h1>
-        <p className="text-xs text-admin-text-muted">Indicateurs clés et chiffre d'affaires global BoutikOS.</p>
+        <p className="text-xs text-admin-text-muted">Indicateurs clés et chiffre d'affaires global Sama Boutik.</p>
       </div>
 
       {isDemo && (

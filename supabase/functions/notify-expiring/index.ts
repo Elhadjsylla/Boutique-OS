@@ -5,7 +5,7 @@ const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY    = Deno.env.get("RESEND_API_KEY")!;
 const CRON_SECRET       = Deno.env.get("CRON_SECRET")!;
-const FROM_EMAIL        = "BoutikOS <onboarding@resend.dev>";
+const FROM_EMAIL        = "Sama Boutik <onboarding@resend.dev>";
 
 const PLAN_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -44,22 +44,22 @@ serve(async (req) => {
       const isUrgent  = daysLeft <= 1;
 
       const subject = isUrgent
-        ? `⚠️ Dernier jour — votre abonnement BoutikOS expire aujourd'hui`
-        : `🔔 Votre abonnement BoutikOS expire dans ${daysLeft} jours`;
+        ? `⚠️ Dernier jour — votre abonnement Sama Boutik expire aujourd'hui`
+        : `🔔 Votre abonnement Sama Boutik expire dans ${daysLeft} jours`;
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
-          <h2 style="color: #1A3C5E;">BoutikOS</h2>
+          <h2 style="color: #1A3C5E;">Sama Boutik</h2>
           <p>Bonjour,</p>
           <p>Votre abonnement <strong>${planLabel}</strong> ${
             isUrgent ? "expire <strong>aujourd'hui</strong>" : `expire dans <strong>${daysLeft} jours</strong>`
           } (le ${expiresAt.toLocaleDateString('fr-FR')}).</p>
-          <p>Pour continuer à utiliser BoutikOS sans interruption, renouvelez votre abonnement dès maintenant.</p>
+          <p>Pour continuer à utiliser Sama Boutik sans interruption, renouvelez votre abonnement dès maintenant.</p>
           <a href="${Deno.env.get('APP_URL') ?? 'https://boutikos.app'}/abonnement"
              style="display:inline-block;background:#27AE60;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:16px;">
             Renouveler mon abonnement
           </a>
-          <p style="color:#888;font-size:12px;margin-top:32px;">BoutikOS — Votre caisse intelligente</p>
+          <p style="color:#888;font-size:12px;margin-top:32px;">Sama Boutik — Votre caisse intelligente</p>
         </div>
       `;
 

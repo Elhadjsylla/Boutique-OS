@@ -68,10 +68,10 @@ function App() {
     return {
       user: {
         id: 'dev-admin-id',
-        email: 'admin@boutikos.dev',
+        email: 'admin@samaboutik.dev',
         user_metadata: {
           boutique_id: 'boutique-dev',
-          boutique_name: 'BoutikOS Dev',
+          boutique_name: 'Sama Boutik Dev',
           role: devRole,
         }
       }
@@ -146,10 +146,8 @@ function App() {
     }
   }, [session]);
 
-  // 'checking' in prod only — skipped in dev with fake session
-  const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>(
-    import.meta.env.DEV ? 'active' : 'checking'
-  );
+  // Always start as 'checking' — resolved by useEffect once profile loads
+  const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>('checking');
   const [liveTime, setLiveTime] = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -279,6 +277,12 @@ function App() {
 
     const isDevFake = import.meta.env.DEV && session.user?.id === 'dev-admin-id';
     if (isDevFake) { setSubStatus('active'); return; }
+
+    // Profile hasn't loaded from DB yet — keep 'checking', don't decide paywall prematurely
+    if (!storeProfile) {
+      setSubStatus('checking');
+      return;
+    }
 
     (async () => {
       const { data: trial } = await supabase.rpc('get_trial_status');
