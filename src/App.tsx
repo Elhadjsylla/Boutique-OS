@@ -287,6 +287,7 @@ function App() {
       }
 
       // 2. Admin bypass — no subscription needed
+      console.log('[App] Subscription check — effectiveRole:', effectiveRole, '| storeProfile:', storeProfile?.role, '| user_metadata:', session.user?.user_metadata?.role);
       if (effectiveRole === 'super_admin' || effectiveRole === 'admin') {
         setSubStatus('active');
         setActivePlan('Plan MAX');
@@ -428,12 +429,18 @@ function App() {
       <div className="min-h-screen bg-background flex flex-col justify-center items-center">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         <p className="mt-4 text-outline font-bold text-xs uppercase tracking-wider">Vérification de l'abonnement...</p>
+        <button
+          onClick={handleLogout}
+          className="mt-6 px-6 py-2 text-xs font-bold text-outline border border-outline-variant rounded-xl hover:bg-surface-container transition-all active:scale-95"
+        >
+          Se déconnecter
+        </button>
       </div>
     );
   }
 
   if (subStatus === 'paywall') {
-    return <Abonnement onSuccess={() => setSubStatus('active')} />;
+    return <Abonnement onSuccess={() => setSubStatus('active')} onLogout={handleLogout} />;
   }
 
 

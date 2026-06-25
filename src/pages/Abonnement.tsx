@@ -4,6 +4,7 @@ import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubs
 
 interface AbonnementProps {
   onSuccess?: () => void;
+  onLogout?: () => void;
 }
 
 type Step = 'plans' | 'payment' | 'waiting' | 'success';
@@ -13,7 +14,7 @@ const PAYMENT_ICONS: Record<PaymentMethod, string> = {
   orange_money: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23FF6600"/><text y=".9em" font-size="60" x="10" fill="white">O</text></svg>',
 };
 
-export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess }) => {
+export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) => {
   const [step, setStep]               = useState<Step>('plans');
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wave');
@@ -74,6 +75,18 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess }) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-16 pb-10 px-4 animate-fade-in">
+      {/* Bouton Déconnexion */}
+      {onLogout && (
+        <div className="w-full max-w-sm flex justify-end mt-2 mb-2">
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-on-surface-variant border border-outline-variant rounded-xl hover:bg-surface-container-low transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>logout</span>
+            Se déconnecter
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="text-center mt-8 mb-8">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-4 shadow-md">
