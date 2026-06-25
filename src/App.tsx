@@ -287,8 +287,13 @@ function App() {
       }
 
       // 2. Admin bypass — no subscription needed
-      console.log('[App] Subscription check — effectiveRole:', effectiveRole, '| storeProfile:', storeProfile?.role, '| user_metadata:', session.user?.user_metadata?.role);
-      if (effectiveRole === 'super_admin' || effectiveRole === 'admin') {
+      console.log('[App] Final effectiveRole:', effectiveRole);
+      
+      // Force admin bypass for known admin emails just in case DB is out of sync
+      const isAdminEmail = session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
+      
+      if (effectiveRole === 'super_admin' || effectiveRole === 'admin' || isAdminEmail) {
+        console.log('[App] ✅ ADMIN DETECTED — bypassing paywall');
         setSubStatus('active');
         setActivePlan('Plan MAX');
         return;
