@@ -157,14 +157,13 @@ function App() {
 
   // Auto-open admin console if the user is an admin
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
-  const [showAdminConsole, setShowAdminConsole] = useState(false);
 
   // Effect to automatically show admin console when admin role is detected
   useEffect(() => {
     if (isAdmin && !showAdminConsole) {
       setShowAdminConsole(true);
     }
-  }, [isAdmin]);
+  }, [isAdmin, showAdminConsole]);
 
   useEffect(() => {
     if (!isOnline) {
