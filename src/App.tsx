@@ -155,15 +155,7 @@ function App() {
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
   const [isClientViewingPortal, setIsClientViewingPortal] = useState(false);
 
-  // Auto-open admin console if the user is an admin
-  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
-  // Effect to automatically show admin console when admin role is detected
-  useEffect(() => {
-    if (isAdmin && !showAdminConsole) {
-      setShowAdminConsole(true);
-    }
-  }, [isAdmin, showAdminConsole]);
 
   useEffect(() => {
     if (!isOnline) {
@@ -269,6 +261,16 @@ function App() {
 
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
+
+  // Auto-open admin console if the user is an admin
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
+
+  // Effect to automatically show admin console when admin role is detected
+  useEffect(() => {
+    if (isAdmin && !showAdminConsole) {
+      setShowAdminConsole(true);
+    }
+  }, [isAdmin, showAdminConsole]);
 
   // Check subscription status for real (non-dev) sessions
   useEffect(() => {
