@@ -11,6 +11,7 @@ import { getProductIconAndGradient } from '../lib/productHelper';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../hooks/useAuth';
 
 interface DashboardProps {
   onNavigate?: (tab: any) => void;
