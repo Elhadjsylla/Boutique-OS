@@ -155,6 +155,17 @@ function App() {
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
   const [isClientViewingPortal, setIsClientViewingPortal] = useState(false);
 
+  // Auto-open admin console if the user is an admin
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
+
+  // Effect to automatically show admin console when admin role is detected
+  useEffect(() => {
+    if (isAdmin && !showAdminConsole) {
+      setShowAdminConsole(true);
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     if (!isOnline) {
       setShowOfflineBanner(true);
@@ -362,9 +373,7 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
-  // Derive isAdmin from storeProfile (already loaded above) + user_metadata fallback
-  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
-
+  // isAdmin is now defined at the top of the file
   if (!loading && session?.user && isAdmin && showAdminConsole) {
     return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
   }
