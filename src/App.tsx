@@ -259,6 +259,9 @@ function App() {
     await supabase.auth.signOut();
   };
 
+  // Check role from Zustand store (loaded from profils table)
+  const storeProfile = useAuthStore(state => state.profile);
+
   // Check subscription status for real (non-dev) sessions
   useEffect(() => {
     if (!session) return;
@@ -332,8 +335,7 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
-  // Check role from Zustand store (loaded from profils table) first, fallback to user_metadata
-  const storeProfile = useAuthStore(state => state.profile);
+  // Derive isAdmin from storeProfile (already loaded above) + user_metadata fallback
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin';
 
   if (!loading && session?.user && isAdmin && showAdminConsole) {
