@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 
 export interface Profile {
   id: string
-  role: 'caissier' | 'gerant' | 'super_admin'
+  role: 'caissier' | 'gerant' | 'admin' | 'super_admin'
   boutique_id: string | null
 }
 

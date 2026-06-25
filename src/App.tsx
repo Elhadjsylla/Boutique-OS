@@ -264,32 +264,47 @@ function App() {
   useEffect(() => {
     if (!session) return;
 
-    // Check role from Zustand store (profils table) first, then fallback to JWT user_metadata
-    const profileRole = storeProfile?.role;
-    const metadataRole = session.user?.user_metadata?.role;
-    const effectiveRole = profileRole || metadataRole || 'caissier';
+    const checkSubscription = async () => {
+      // 1. Determine effective role — try Zustand store first, then query DB directly
+      let effectiveRole: string = session.user?.user_metadata?.role || 'caissier';
 
-    if (effectiveRole === 'super_admin' || effectiveRole === 'admin') {
-      setSubStatus('active');
-      setActivePlan('Plan MAX');
-      return;
-    }
+      if (storeProfile?.role) {
+        effectiveRole = storeProfile.role;
+      } else {
+        // Profile not yet in store — query DB directly as a fallback
+        try {
+          const { data: dbProfile } = await supabase
+            .from('profils')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          if (dbProfile?.role) {
+            effectiveRole = dbProfile.role;
+          }
+        } catch (e) {
+          console.warn('[App] Could not fetch profile from DB:', e);
+        }
+      }
 
-    const isDevFake = import.meta.env.DEV && session.user?.id === 'dev-admin-id';
-    if (isDevFake) { setSubStatus('active'); return; }
+      // 2. Admin bypass — no subscription needed
+      if (effectiveRole === 'super_admin' || effectiveRole === 'admin') {
+        setSubStatus('active');
+        setActivePlan('Plan MAX');
+        return;
+      }
 
-    // Profile hasn't loaded from DB yet — keep 'checking', don't decide paywall prematurely
-    if (!storeProfile) {
-      setSubStatus('checking');
-      return;
-    }
+      // 3. Dev fake session bypass
+      const isDevFake = import.meta.env.DEV && session.user?.id === 'dev-admin-id';
+      if (isDevFake) { setSubStatus('active'); return; }
 
-    (async () => {
+      // 4. Check trial
       const { data: trial } = await supabase.rpc('get_trial_status');
       if (trial?.has_trial && trial.status === 'trial' && !trial.is_expired) {
         setSubStatus('trial');
         return;
       }
+
+      // 5. Check active subscription
       const { data: sub } = await supabase
         .from('subscriptions')
         .select('id')
@@ -298,7 +313,9 @@ function App() {
         .limit(1)
         .maybeSingle();
       setSubStatus(sub ? 'active' : 'paywall');
-    })();
+    };
+
+    checkSubscription();
   }, [session, storeProfile]);
 
   if (isClientViewingPortal) {
