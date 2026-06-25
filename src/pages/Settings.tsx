@@ -32,6 +32,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
   const userEmail = user.email;
 
+  const roleLabels: Record<string, string> = {
+    super_admin: 'SUPER ADMIN',
+    admin: 'SUPER ADMIN',
+    gerant: 'Gérant',
+    caissier: 'Caissier',
+  };
+
   const [teamProfiles, setTeamProfiles] = useState<any[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -113,7 +120,7 @@ export const Settings: React.FC<SettingsProps> = ({
             <h3 className="text-base font-black text-on-surface leading-tight">{boutiqueName}</h3>
             <span className="text-xs text-outline font-medium mt-0.5">{userEmail}</span>
             <span className="text-[9px] uppercase font-black text-primary bg-primary-container/30 px-2 py-0.5 rounded-full w-fit mt-1.5 border border-primary/10">
-              Role: {userRole}
+              Role: {roleLabels[userRole] || userRole}
             </span>
           </div>
         </div>
@@ -153,7 +160,7 @@ export const Settings: React.FC<SettingsProps> = ({
             const activeCount = teamProfiles.filter(p => p.role === 'caissier').length;
             const pendingCount = pendingInvitations.filter(i => i.role === 'caissier').length;
             const total = activeCount + pendingCount;
-            const limit = activePlan.toLowerCase() === 'pro' ? 3 : activePlan.toLowerCase() === 'annual' ? 9999 : 1;
+            const limit = activePlan.toLowerCase() === 'pro' ? 3 : (activePlan.toLowerCase() === 'annual' || activePlan.toLowerCase().includes('max')) ? 9999 : 1;
             const isLimit = total >= limit;
             return (
               <span className={`px-2.5 py-1 rounded-full text-[9px] font-black border ${
@@ -222,7 +229,7 @@ export const Settings: React.FC<SettingsProps> = ({
             const activeCount = teamProfiles.filter(p => p.role === 'caissier').length;
             const pendingCount = pendingInvitations.filter(i => i.role === 'caissier').length;
             const total = activeCount + pendingCount;
-            const limit = activePlan.toLowerCase() === 'pro' ? 3 : activePlan.toLowerCase() === 'annual' ? 9999 : 1;
+            const limit = activePlan.toLowerCase() === 'pro' ? 3 : (activePlan.toLowerCase() === 'annual' || activePlan.toLowerCase().includes('max')) ? 9999 : 1;
             const isLimit = total >= limit;
 
             if (isLimit && inviteRole === 'caissier') {
@@ -267,7 +274,7 @@ export const Settings: React.FC<SettingsProps> = ({
             disabled={
               isInviting || 
               !inviteEmail.trim() || 
-              (inviteRole === 'caissier' && (teamProfiles.filter(p => p.role === 'caissier').length + pendingInvitations.filter(i => i.role === 'caissier').length) >= (activePlan.toLowerCase() === 'pro' ? 3 : activePlan.toLowerCase() === 'annual' ? 9999 : 1))
+              (inviteRole === 'caissier' && (teamProfiles.filter(p => p.role === 'caissier').length + pendingInvitations.filter(i => i.role === 'caissier').length) >= (activePlan.toLowerCase() === 'pro' ? 3 : (activePlan.toLowerCase() === 'annual' || activePlan.toLowerCase().includes('max')) ? 9999 : 1))
             }
             className="h-10 bg-primary hover:bg-primary/95 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >

@@ -53,8 +53,8 @@ export const Reglages: React.FC<ReglagesProps> = ({
 
   const userRole = profile?.role || 'caissier';
   const roleLabels: Record<string, string> = {
-    super_admin: 'Admin',
-    admin: 'Admin',
+    super_admin: 'SUPER ADMIN',
+    admin: 'SUPER ADMIN',
     gerant: 'Gérant',
     caissier: 'Caissier',
   };

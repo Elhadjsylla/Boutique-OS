@@ -18,9 +18,10 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
+  const { profile } = useAuth();
   const metrics = useDashboardData();
   const { subscription } = useSubscription();
-  const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || import.meta.env.DEV;
+  const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || profile?.role === 'super_admin' || import.meta.env.DEV;
 
   const [period, setPeriod] = useState<'24h' | '7j' | '30j' | '1an'>('7j');
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);

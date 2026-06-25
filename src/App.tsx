@@ -9,7 +9,9 @@ import { Reglages } from './pages/Reglages';
 import { Subscription } from './pages/Subscription';
 import { PortalClient } from './pages/PortalClient';
 import { MonEspace } from './pages/MonEspace';
+import { Abonnement } from './pages/Abonnement';
 import { AdminLayout } from './pages/admin/AdminLayout';
+import { TrialBanner } from './components/ui/TrialBanner';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { TrialBanner } from './components/ui/TrialBanner';
 import { LandingPage } from './pages/LandingPage';
@@ -145,6 +147,10 @@ function App() {
     }
   }, [session]);
 
+  // 'checking' in prod only — skipped in dev with fake session
+  const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>(
+    import.meta.env.DEV ? 'active' : 'checking'
+  );
   const [liveTime, setLiveTime] = useState(new Date());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -254,6 +260,37 @@ function App() {
     await supabase.auth.signOut();
   };
 
+  // Check subscription status for real (non-dev) sessions
+  useEffect(() => {
+    if (!session) return;
+
+    const role = session.user?.user_metadata?.role || 'caissier';
+    if (role === 'super_admin') {
+      setSubStatus('active');
+      setActivePlan('Plan MAX');
+      return;
+    }
+
+    const isDevFake = import.meta.env.DEV && session.user?.id === 'dev-admin-id';
+    if (isDevFake) { setSubStatus('active'); return; }
+
+    (async () => {
+      const { data: trial } = await supabase.rpc('get_trial_status');
+      if (trial?.has_trial && trial.status === 'trial' && !trial.is_expired) {
+        setSubStatus('trial');
+        return;
+      }
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
+      setSubStatus(sub ? 'active' : 'paywall');
+    })();
+  }, [session]);
+
   if (isClientViewingPortal) {
     return (
       <div className="min-h-screen bg-background text-on-background">
@@ -360,6 +397,19 @@ function App() {
 
   // Super Admin check
 
+  if (subStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-outline font-bold text-xs uppercase tracking-wider">Vérification de l'abonnement...</p>
+      </div>
+    );
+  }
+
+  if (subStatus === 'paywall') {
+    return <Abonnement onSuccess={() => setSubStatus('active')} />;
+  }
+
 
   const appNotifications = [
     {
@@ -400,9 +450,10 @@ function App() {
 
   // Role badge config — couleurs sur fond sombre (top bar bg-primary)
   const roleConfig: Record<string, { label: string; bg: string; text: string; icon: string }> = {
-    admin:    { label: 'Admin',    bg: 'bg-purple-400/25',  text: 'text-purple-200',  icon: 'shield_person' },
-    gerant:   { label: 'Gérant',   bg: 'bg-sky-400/20',     text: 'text-sky-200',     icon: 'manage_accounts' },
-    caissier: { label: 'Caissier', bg: 'bg-emerald-400/20', text: 'text-emerald-200', icon: 'point_of_sale' },
+    super_admin: { label: 'SUPER ADMIN', bg: 'bg-amber-400/25',  text: 'text-amber-200',  icon: 'military_tech' },
+    admin:       { label: 'SUPER ADMIN', bg: 'bg-amber-400/25',  text: 'text-amber-200',  icon: 'military_tech' },
+    gerant:      { label: 'Gérant',      bg: 'bg-sky-400/20',     text: 'text-sky-200',     icon: 'manage_accounts' },
+    caissier:    { label: 'Caissier',    bg: 'bg-emerald-400/20', text: 'text-emerald-200', icon: 'point_of_sale' },
   };
   const role = roleConfig[userRole] ?? { label: userRole, bg: 'bg-white/10', text: 'text-white/70', icon: 'person' };
 
@@ -515,6 +566,9 @@ function App() {
 
       {/* Pages Switcher */}
       <main className="w-full">
+        {subStatus === 'trial' && (
+          <TrialBanner onTrialExpired={() => setSubStatus('paywall')} />
+        )}
         {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
