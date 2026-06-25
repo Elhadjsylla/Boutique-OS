@@ -435,10 +435,18 @@ function App() {
 
   // Extract metadata safely with fallbacks if needed
   const user = session.user;
-  const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
-  const boutiqueName = user.user_metadata?.boutique_name || 'Sama Boutik';
+  const boutiqueId = storeProfile?.boutique_id || user.user_metadata?.boutique_id || 'boutique-1';
+  const boutiqueName = storeProfile?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
+
+  useEffect(() => {
+    console.log('[DEBUG] Current App boutiqueId:', boutiqueId);
+    db.produits.toArray().then(prods => {
+      const bIds = new Set(prods.map(p => p.boutique_id));
+      console.log('[DEBUG] Dexie contains products for boutique_ids:', Array.from(bIds));
+    });
+  }, [boutiqueId]);
 
   // Super Admin check
 
