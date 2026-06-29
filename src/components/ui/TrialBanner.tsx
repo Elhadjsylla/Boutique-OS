@@ -18,13 +18,18 @@ interface TrialStatus {
 
 interface TrialBannerProps {
   trialStatus: TrialStatus;
+  onTrialExpired?: () => void;
 }
 
-export const TrialBanner: React.FC<TrialBannerProps> = ({ trialStatus }) => {
+export const TrialBanner: React.FC<TrialBannerProps> = ({ trialStatus, onTrialExpired }) => {
   const { t } = useTranslation();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  React.useEffect(() => {
+    if (trialStatus.is_expired) onTrialExpired?.();
+  }, [trialStatus.is_expired]);
 
   if (trialStatus.is_expired) return null;
 
