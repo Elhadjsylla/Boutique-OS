@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -43,6 +44,10 @@ serve(async (req) => {
       return json({ error: 'Permission refusée — seul un gérant ou admin peut inviter' }, 403);
     }
 
+    // 10 invitations max par heure par utilisateur
+    const { allowed } = await checkRateLimit(`invite-user:${user.id}`, 10, 3600);
+    if (!allowed) return json({ error: 'Trop de requêtes, réessayez dans une heure' }, 429);
+
     const payload = await req.json();
     const parseResult = InviteUserSchema.safeParse(payload);
     if (!parseResult.success) {
@@ -84,6 +89,15 @@ serve(async (req) => {
       await supabase.from('invitations').delete().eq('id', invitation.id);
       throw inviteError;
     }
+
+    // Audit log
+    await supabase.from('admin_audit_log').insert({
+      actor_id: user.id,
+      action: 'invite_user',
+      target_type: 'invitation',
+      target_id: invitation.id,
+      details: { email, role, boutique_id: targetBoutiqueId },
+    });
 
     return json({ success: true, invitation_id: invitation.id });
 

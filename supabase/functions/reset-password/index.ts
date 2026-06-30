@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -11,7 +12,7 @@ const corsHeaders = {
 };
 
 const ResetPasswordSchema = z.object({
-  user_id: z.string().min(1, 'user_id requis'),
+  user_id: z.string().uuid('user_id doit être un UUID valide'),
 });
 
 serve(async (req) => {
@@ -38,6 +39,10 @@ serve(async (req) => {
     if (profil?.role !== 'super_admin') {
       return json({ error: 'Réservé aux super_admins' }, 403);
     }
+
+    // 10 resets max par heure par super_admin
+    const { allowed } = await checkRateLimit(`reset-password:${user.id}`, 10, 3600);
+    if (!allowed) return json({ error: 'Trop de requêtes, réessayez dans une heure' }, 429);
 
     // ── Récupérer le user cible ──
     const payload = await req.json();
