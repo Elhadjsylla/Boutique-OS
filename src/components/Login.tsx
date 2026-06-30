@@ -61,8 +61,14 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         setToast({ message: "Connexion réussie !", type: 'success' });
       }
     } catch (err: any) {
-      const isFetchError = err.message?.toLowerCase().includes('failed to fetch') || err.message?.toLowerCase().includes('fetch');
-      if (isFetchError) {
+      console.error('[Login] Erreur Supabase:', err);
+      const errorMsg = err?.message || String(err);
+      const isNetworkError = 
+        err instanceof TypeError || 
+        errorMsg.toLowerCase().includes('failed to fetch') || 
+        errorMsg.toLowerCase().includes('fetch failed') ||
+        err?.name === 'AuthRetryableFetchError';
+      if (isNetworkError) {
         if (import.meta.env.DEV) {
           localStorage.removeItem('dev_signed_out');
           setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });

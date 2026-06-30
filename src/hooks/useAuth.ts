@@ -36,20 +36,25 @@ const DEV_BOUTIQUE: Boutique = {
 export function useAuth() {
   const { setAuth, clearAuth, setLoading, user, profile, boutique, isLoading } = useAuthStore()
 
-  const getRoleFromJWT = useCallback(async (): Promise<string | null> => {
+  const getRoleFromJWT = useCallback((accessToken: string): string | null => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return null
-      const payload = JSON.parse(atob(session.access_token.split('.')[1]))
+      if (!accessToken) return null
+      const payload = JSON.parse(atob(accessToken.split('.')[1]))
       return payload.role ?? null
     } catch {
       return null
     }
   }, [])
 
-  const fetchProfileAndBoutique = useCallback(async (authUser: User) => {
+  const fetchProfileAndBoutique = useCallback(async (session: any) => {
+    const authUser = session.user;
     try {
       setLoading(true)
+
+      // Failsafe timeout to prevent infinite loading
+      const failsafe = setTimeout(() => {
+        setLoading(false);
+      }, 8000);
 
       // Fetch public profile
       const { data: profileData, error: profileError } = await supabase
@@ -59,13 +64,14 @@ export function useAuth() {
         .single()
 
       if (profileError) {
-        // Fallback: build a minimal profile from JWT claims (role injected by custom_access_token_hook)
-        const jwtRole = await getRoleFromJWT()
+        // Fallback: build a minimal profile from JWT claims
+        const jwtRole = getRoleFromJWT(session.access_token)
         if (jwtRole) {
           setAuth(authUser, { id: authUser.id, role: jwtRole, boutique_id: null } as Profile, null)
         } else {
           setAuth(authUser, null, null)
         }
+        clearTimeout(failsafe);
         return
       }
 
@@ -88,9 +94,10 @@ export function useAuth() {
       }
 
       setAuth(authUser, userProfile, userBoutique)
+      clearTimeout(failsafe);
     } catch (err) {
       console.error('Unexpected error in fetchProfileAndBoutique:', err)
-      setAuth(authUser, null, null)
+      setAuth(session?.user || null, null, null)
     }
   }, [setAuth, setLoading, getRoleFromJWT])
 
@@ -105,43 +112,31 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          // Check if session JWT is expired
-          try {
-            const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-            if (payload.exp && Date.now() / 1000 >= payload.exp) {
-              console.warn('[useAuth] Session JWT expired on auth change, signing out.');
-              await supabase.auth.signOut();
-              clearAuth();
-              return;
-            }
-          } catch (e) {}
-          await fetchProfileAndBoutique(session.user)
+          await fetchProfileAndBoutique(session)
         } else {
           clearAuth()
         }
       }
     )
 
+    // ── MASTER FAILSAFE: Ensure we never load indefinitely ──
+    const masterFailsafe = setTimeout(() => {
+      setLoading(false)
+    }, 8000);
+
     // Initial session check
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        // Check if session JWT is expired
-        try {
-          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-          if (payload.exp && Date.now() / 1000 >= payload.exp) {
-            console.warn('[useAuth] Session JWT expired on load, signing out.');
-            await supabase.auth.signOut();
-            clearAuth();
-            return;
-          }
-        } catch (e) {}
-        fetchProfileAndBoutique(session.user)
+        fetchProfileAndBoutique(session)
       } else {
         clearAuth()
       }
+    }).catch(() => {
+      clearAuth()
     })
 
     return () => {
+      clearTimeout(masterFailsafe)
       subscription.unsubscribe()
     }
   }, [fetchProfileAndBoutique, clearAuth, setAuth])

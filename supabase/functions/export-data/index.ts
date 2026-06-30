@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,6 +9,12 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const ExportDataSchema = z.object({
+  type: z.enum(['pdf', 'excel']),
+  scope: z.enum(['ventes', 'stock', 'ardoises']),
+  boutique_id: z.string().min(1, 'ID de boutique requis'),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -39,13 +46,12 @@ serve(async (req) => {
       return json({ error: 'Fonctionnalité réservée aux abonnés Pro ou Annuel' }, 403);
     }
 
-    const { type, scope, boutique_id } = await req.json() as {
-      type: 'pdf' | 'excel';
-      scope: 'ventes' | 'stock' | 'ardoises';
-      boutique_id: string;
-    };
-
-    if (!boutique_id) return json({ error: 'ID de boutique requis' }, 400);
+    const payload = await req.json();
+    const parseResult = ExportDataSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: 'Données invalides' }, 400);
+    }
+    const { type, scope, boutique_id } = parseResult.data;
 
     if (type === 'excel') {
       let csvContent = '\ufeff'; // UTF-8 BOM for Excel compatibility
@@ -205,7 +211,8 @@ serve(async (req) => {
     }
 
   } catch (err) {
-    return json({ error: String(err) }, 500);
+    console.error('export-data error:', err);
+    return json({ error: 'Une erreur interne est survenue' }, 500);
   }
 });
 

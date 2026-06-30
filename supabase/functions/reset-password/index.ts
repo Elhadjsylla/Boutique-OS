@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUPABASE_URL         = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,6 +9,10 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const ResetPasswordSchema = z.object({
+  user_id: z.string().min(1, 'user_id requis'),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -35,8 +40,12 @@ serve(async (req) => {
     }
 
     // ── Récupérer le user cible ──
-    const { user_id } = await req.json() as { user_id: string };
-    if (!user_id) return json({ error: 'user_id requis' }, 400);
+    const payload = await req.json();
+    const parseResult = ResetPasswordSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: parseResult.error.errors[0].message }, 400);
+    }
+    const { user_id } = parseResult.data;
 
     const { data: targetUser, error: userError } = await supabase.auth.admin.getUserById(user_id);
     if (userError || !targetUser?.user?.email) {
@@ -67,7 +76,7 @@ serve(async (req) => {
 
   } catch (err) {
     console.error('reset-password error:', err);
-    return json({ error: String(err) }, 500);
+    return json({ error: 'Une erreur interne est survenue' }, 500);
   }
 });
 

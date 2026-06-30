@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Select } from '../../components/ui/Select';
 
 interface Profile {
   id: string;
@@ -194,34 +195,28 @@ export const AdminUsers: React.FC = () => {
               ID : {editingUser.id}
             </p>
             
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Rôle Assigné</label>
-                <select
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value as any)}
-                  className="w-full h-11 px-4 text-xs bg-admin-surface border border-admin-border rounded-xl text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/40"
-                >
-                  <option value="caissier">Caissier</option>
-                  <option value="gerant">Gérant</option>
-                  <option value="super_admin">Super Admin</option>
-                </select>
-              </div>
+              <Select
+                label="Rôle Assigné"
+                value={editRole}
+                onChange={(val) => setEditRole(val as any)}
+                options={[
+                  { value: 'caissier', label: 'Caissier' },
+                  { value: 'gerant', label: 'Gérant' },
+                  { value: 'super_admin', label: 'Super Admin' },
+                ]}
+                isAdmin={true}
+              />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Boutique d'Affiliation</label>
-                <select
-                  value={editBoutiqueId}
-                  onChange={(e) => setEditBoutiqueId(e.target.value)}
-                  className="w-full h-11 px-4 text-xs bg-admin-surface border border-admin-border rounded-xl text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/40"
-                >
-                  <option value="null">Aucune boutique</option>
-                  {boutiques.map(b => (
-                    <option key={b.id} value={b.id}>{b.nom}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+              <Select
+                label="Boutique d'Affiliation"
+                value={editBoutiqueId}
+                onChange={(val) => setEditBoutiqueId(val)}
+                options={[
+                  { value: 'null', label: 'Aucune boutique' },
+                  ...boutiques.map(b => ({ value: b.id, label: b.nom }))
+                ]}
+                isAdmin={true}
+              />
 
             <div className="flex gap-2.5 mt-2">
               <button

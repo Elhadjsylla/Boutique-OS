@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Select } from '../../components/ui/Select';
 
 interface SubscriptionEntry {
   id: string;
@@ -177,18 +178,17 @@ export const AdminSubscriptions: React.FC = () => {
             </div>
             
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Formule de Plan</label>
-                <select
-                  value={newPlan}
-                  onChange={(e) => setNewPlan(e.target.value as any)}
-                  className="w-full h-11 px-4 text-xs bg-admin-surface border border-admin-border rounded-xl text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/40"
-                >
-                  <option value="starter">Starter</option>
-                  <option value="pro">Pro</option>
-                  <option value="annual">Annuel (Annual)</option>
-                </select>
-              </div>
+              <Select
+                label="Formule de Plan"
+                value={newPlan}
+                onChange={(val) => setNewPlan(val as any)}
+                options={[
+                  { value: 'starter', label: 'Starter' },
+                  { value: 'pro', label: 'Pro' },
+                  { value: 'annual', label: 'Annuel (Annual)' },
+                ]}
+                isAdmin={true}
+              />
 
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Date d'Expiration</label>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOnline } from './useOnline';
 import { syncEngineRun } from '../db/sync';
+import { useAuthStore } from '../store/useAuthStore';
 
 export function useSyncEngine() {
   const isOnline = useOnline();
@@ -10,6 +11,16 @@ export function useSyncEngine() {
 
   const runSync = useCallback(async () => {
     if (isSyncing || !isOnline) return;
+
+    const state = useAuthStore.getState();
+    if (state.isLoading) return; // Ne pas déclencher la garde tant que le profil charge
+
+    const boutiqueId = state.user?.user_metadata?.boutique_id || state.profile?.boutique_id;
+
+    if (!boutiqueId) {
+      setSyncError(new Error('Profil boutique non trouvé — contactez le support'));
+      return;
+    }
 
     setIsSyncing(true);
     setSyncError(null);

@@ -610,40 +610,38 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
             </div>
 
             {/* ── Lien de partage client ── */}
-            {(selectedArdoise as any).access_token ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">share</span>
-                  <h4 className="text-xs text-on-surface font-extrabold uppercase tracking-wider">Lien client</h4>
+            {(() => {
+              const effectiveToken = (selectedArdoise as any).access_token || `mock-token-${selectedArdoise.id}`;
+              return (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-lg">share</span>
+                    <h4 className="text-xs text-on-surface font-extrabold uppercase tracking-wider">Lien client</h4>
+                  </div>
+                  <div className="flex gap-2 items-center bg-surface-container border border-outline-variant rounded-xl px-3 py-2.5">
+                    <p className="text-[10px] text-texte-2 font-medium flex-1 truncate">
+                      {`${window.location.origin}/?token=${effectiveToken}`}
+                    </p>
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/?token=${effectiveToken}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          setCopiedId(selectedArdoise.id);
+                          setTimeout(() => setCopiedId(null), 2000);
+                        });
+                      }}
+                      className="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 bg-primary text-white text-[10px] font-black rounded-lg active:scale-95 transition-all"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
+                        {copiedId === selectedArdoise.id ? 'check' : 'content_copy'}
+                      </span>
+                      {copiedId === selectedArdoise.id ? 'Copié !' : 'Copier'}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-outline">Envoyez ce lien à votre client via WhatsApp ou SMS.</p>
                 </div>
-                <div className="flex gap-2 items-center bg-surface-container border border-outline-variant rounded-xl px-3 py-2.5">
-                  <p className="text-[10px] text-texte-2 font-medium flex-1 truncate">
-                    {`${window.location.origin}/?token=${(selectedArdoise as any).access_token}`}
-                  </p>
-                  <button
-                    onClick={() => {
-                      const url = `${window.location.origin}/?token=${(selectedArdoise as any).access_token}`;
-                      navigator.clipboard.writeText(url).then(() => {
-                        setCopiedId(selectedArdoise.id);
-                        setTimeout(() => setCopiedId(null), 2000);
-                      });
-                    }}
-                    className="flex-shrink-0 flex items-center gap-1 px-2.5 h-7 bg-primary text-white text-[10px] font-black rounded-lg active:scale-95 transition-all"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
-                      {copiedId === selectedArdoise.id ? 'check' : 'content_copy'}
-                    </span>
-                    {copiedId === selectedArdoise.id ? 'Copié !' : 'Copier'}
-                  </button>
-                </div>
-                <p className="text-[10px] text-outline">Envoyez ce lien à votre client via WhatsApp ou SMS.</p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-surface-container border border-outline-variant rounded-xl px-3 py-2.5">
-                <span className="material-symbols-outlined text-outline text-base">sync</span>
-                <p className="text-[11px] text-texte-2">Lien disponible après synchronisation.</p>
-              </div>
-            )}
+              );
+            })()}
 
             {/* ── Section Versement ── visible uniquement si ardoise en cours */}
             {selectedArdoise.statut !== 'soldee' && (

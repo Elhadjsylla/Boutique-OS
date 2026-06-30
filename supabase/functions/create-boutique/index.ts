@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,6 +9,12 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const CreateBoutiqueSchema = z.object({
+  nom: z.string().min(1, 'Nom de boutique requis'),
+  adresse: z.string().optional().nullable(),
+  gerant_email: z.string().email('Email invalide').optional().nullable(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -34,13 +41,13 @@ serve(async (req) => {
       return json({ error: 'Réservé aux super_admins' }, 403);
     }
 
-    const { nom, adresse, gerant_email } = await req.json() as {
-      nom: string;
-      adresse?: string;
-      gerant_email?: string;
-    };
+    const payload = await req.json();
+    const parseResult = CreateBoutiqueSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: parseResult.error.errors[0].message }, 400);
+    }
 
-    if (!nom?.trim()) return json({ error: 'Nom de boutique requis' }, 400);
+    const { nom, adresse, gerant_email } = parseResult.data;
 
     // Créer la boutique
     const { data: boutique, error: boutiqueError } = await supabase
@@ -86,7 +93,7 @@ serve(async (req) => {
 
   } catch (err) {
     console.error('create-boutique error:', err);
-    return json({ error: String(err) }, 500);
+    return json({ error: 'Une erreur interne est survenue' }, 500);
   }
 });
 

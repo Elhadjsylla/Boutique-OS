@@ -9,11 +9,6 @@ interface AbonnementProps {
 
 type Step = 'plans' | 'payment' | 'waiting' | 'success';
 
-const PAYMENT_ICONS: Record<PaymentMethod, string> = {
-  wave:         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%231A73E8"/><text y=".9em" font-size="60" x="10" fill="white">W</text></svg>',
-  orange_money: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23FF6600"/><text y=".9em" font-size="60" x="10" fill="white">O</text></svg>',
-};
-
 export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) => {
   const [step, setStep]               = useState<Step>('plans');
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);

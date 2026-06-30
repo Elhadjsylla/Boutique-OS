@@ -6,9 +6,20 @@ export function isBrowserOnline(): boolean {
   return typeof navigator !== 'undefined' && navigator.onLine;
 }
 
+import { useAuthStore } from '../store/useAuthStore';
+
 // Push local changes to Supabase
 export async function pushLocalChanges(): Promise<void> {
   if (!isBrowserOnline()) return;
+
+  const state = useAuthStore.getState();
+  if (state.isLoading) return; // Ne pas bloquer ou fausser la garde si en cours de chargement
+  const boutiqueId = state.user?.user_metadata?.boutique_id || state.profile?.boutique_id;
+
+  if (!boutiqueId) {
+    console.error('[Sync Engine] Synchro annulée (push) : boutique_id invalide ou absent.');
+    return;
+  }
 
   const unsynced = await db.outbox.where('synced').equals(0).sortBy('updatedAt');
 
@@ -45,6 +56,15 @@ export async function pushLocalChanges(): Promise<void> {
 // Pull changes from Supabase since the last sync timestamp
 export async function pullServerChanges(): Promise<void> {
   if (!isBrowserOnline()) return;
+
+  const state = useAuthStore.getState();
+  if (state.isLoading) return; // Ne pas bloquer ou fausser la garde si en cours de chargement
+  const boutiqueId = state.user?.user_metadata?.boutique_id || state.profile?.boutique_id;
+
+  if (!boutiqueId) {
+    console.error('[Sync Engine] Synchro annulée (pull) : boutique_id invalide ou absent.');
+    throw new Error('Profil boutique non trouvé — contactez le support');
+  }
 
   const tablesToSync = ['produits', 'ventes', 'vente_items', 'ardoises', 'ardoise_paiements'];
 

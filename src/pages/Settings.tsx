@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -6,6 +6,8 @@ import { Input } from '../components/ui/Input';
 import { Toast } from '../components/ui/Toast';
 import { db } from '../db/dexie';
 import { useAuthStore } from '../store/useAuthStore';
+import { Select } from '../components/ui/Select';
+
 
 interface SettingsProps {
   session: any;
@@ -25,10 +27,10 @@ export const Settings: React.FC<SettingsProps> = ({
   onActivateAdmin
 }) => {
   const user = session.user;
-  const boutiqueId = user.user_metadata?.boutique_id || 'boutique-1';
+  const storeProfile = useAuthStore(state => state.profile);
+  const boutiqueId = user.user_metadata?.boutique_id || storeProfile?.boutique_id;
   const initialBoutiqueName = user.user_metadata?.boutique_name || 'Ma Boutique';
   // Use role from profils table (Zustand store) first, fallback to user_metadata
-  const storeProfile = useAuthStore(state => state.profile);
   const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
   const userEmail = user.email;
 
@@ -74,15 +76,102 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Profile management states
+  const [userFullName, setUserFullName] = useState(user.user_metadata?.full_name || '');
+  const [avatarUrl, setAvatarUrl] = useState(user.user_metadata?.avatar_url || '');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Password reset states
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Extra preference states
+  const [soundAlerts, setSoundAlerts] = useState(() => localStorage.getItem('pref_sound_alerts') !== 'false');
+  const [weeklyReport, setWeeklyReport] = useState(() => localStorage.getItem('pref_weekly_report') === 'true');
+  const [receiptGreeting, setReceiptGreeting] = useState(() => localStorage.getItem('pref_receipt_greeting') || 'Merci de votre visite !');
+
   const handleSaveSettings = () => {
     setIsSaving(true);
     localStorage.setItem('seuil_alerte_global', seuilAlerte.toString());
+    localStorage.setItem('pref_sound_alerts', soundAlerts.toString());
+    localStorage.setItem('pref_weekly_report', weeklyReport.toString());
+    localStorage.setItem('pref_receipt_greeting', receiptGreeting);
     
     // Simulate savings animation
     setTimeout(() => {
       setIsSaving(false);
       setToast({ message: "Paramètres enregistrés avec succès !", type: "success" });
     }, 800);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setToast({ message: "L'image ne doit pas dépasser 2 Mo.", type: "error" });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setIsUpdatingProfile(true);
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          full_name: userFullName.trim(),
+          avatar_url: avatarUrl
+        }
+      });
+      if (error) throw error;
+      
+      // Update local store user object immediately
+      if (data.user) {
+        useAuthStore.getState().setAuth(data.user, storeProfile, useAuthStore.getState().boutique);
+      }
+      setToast({ message: "Profil mis à jour avec succès !", type: "success" });
+    } catch (e: any) {
+      setToast({ message: e.message || "Erreur lors de la mise à jour.", type: "error" });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setToast({ message: "Les mots de passe ne correspondent pas.", type: "error" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setToast({ message: "Le mot de passe doit contenir au moins 6 caractères.", type: "error" });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+
+      setNewPassword('');
+      setConfirmPassword('');
+      setToast({ message: "Mot de passe modifié avec succès !", type: "success" });
+    } catch (e: any) {
+      setToast({ message: e.message || "Erreur de mot de passe.", type: "error" });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleExportDB = async () => {
@@ -110,18 +199,68 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="font-body-md text-on-surface-variant">Ajustez vos préférences et gérez les détails de votre compte.</p>
       </div>
 
+      {/* Hidden File Input for Avatar */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        accept="image/*" 
+        className="hidden" 
+      />
+
       {/* Account Profile Card */}
-      <Card elevation={1} className="p-4 flex flex-col gap-4 relative overflow-hidden bg-gradient-to-r from-primary-container/20 to-transparent border border-outline-variant/40">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-lg shadow-md">
-            {boutiqueName.slice(0, 2).toUpperCase()}
+      <Card elevation={1} className="p-4 flex flex-col gap-5 relative overflow-hidden bg-gradient-to-r from-primary-container/20 to-transparent border border-outline-variant/40">
+        <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          {/* Avatar container with custom overlay and styling */}
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-xl shadow-md relative group cursor-pointer border-2 border-white/50"
+            title="Cliquez pour changer votre photo de profil"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span>{(userFullName || userEmail || 'U').slice(0, 2).toUpperCase()}</span>
+            )}
+            
+            {/* Smooth hover state overlay */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200">
+              <span className="material-symbols-outlined text-white text-base">photo_camera</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <h3 className="text-base font-black text-on-surface leading-tight">{boutiqueName}</h3>
-            <span className="text-xs text-outline font-medium mt-0.5">{userEmail}</span>
-            <span className="text-[9px] uppercase font-black text-primary bg-primary-container/30 px-2 py-0.5 rounded-full w-fit mt-1.5 border border-primary/10">
-              Role: {roleLabels[userRole] || userRole}
-            </span>
+
+          <div className="flex flex-col flex-1 w-full gap-3 sm:gap-1">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+              <div className="flex flex-col text-center sm:text-left">
+                <h3 className="text-base font-black text-on-surface leading-tight">
+                  {userFullName || userEmail}
+                </h3>
+                <span className="text-xs text-outline font-medium mt-0.5">{userEmail}</span>
+              </div>
+              <span className="text-[9px] uppercase font-black text-primary bg-primary-container/40 px-2.5 py-1 rounded-full border border-primary/10">
+                Role: {roleLabels[userRole] || userRole}
+              </span>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 items-end mt-2">
+              <div className="flex-1 w-full">
+                <Input 
+                  label="Votre Nom Complet" 
+                  value={userFullName} 
+                  onChange={(e) => setUserFullName(e.target.value)} 
+                  placeholder="Ex: Babacar Diop"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={isUpdatingProfile || !userFullName.trim()}
+                className="w-full sm:w-auto h-11 px-4 bg-primary hover:bg-primary/95 disabled:opacity-50 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">save</span>
+                {isUpdatingProfile ? 'ENREGISTREMENT...' : 'Enregistrer'}
+              </button>
+            </div>
           </div>
         </div>
       </Card>
@@ -145,6 +284,83 @@ export const Settings: React.FC<SettingsProps> = ({
           <span className="material-symbols-outlined text-base">credit_card</span>
           Gérer / Mettre à niveau
         </button>
+      </Card>
+
+      {/* Security: Password Update Card */}
+      <Card elevation={1} className="p-4 flex flex-col gap-4 text-left">
+        <style>{`
+          @keyframes emojiBounce {
+            0% { transform: scale(0.3) rotate(-25deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+          }
+          .animate-emoji-change {
+            animation: emojiBounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+            display: inline-block;
+          }
+        `}</style>
+
+        <div className="border-b border-outline-variant/40 pb-2 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-sm">security</span>
+          <h3 className="text-xs text-outline font-extrabold uppercase tracking-wider">
+            Sécurité du Compte
+          </h3>
+        </div>
+
+        <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Input
+                label="Nouveau mot de passe"
+                type={showPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimum 6 caractères"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-9 text-xl select-none focus:outline-none transition-all active:scale-90"
+                title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              >
+                <span key={showPassword ? "eyes" : "monkey"} className="animate-emoji-change">
+                  {showPassword ? "👀" : "🙈"}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex-1 relative">
+              <Input
+                label="Confirmer le mot de passe"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Ressaisir le mot de passe"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3.5 top-9 text-xl select-none focus:outline-none transition-all active:scale-90"
+                title={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              >
+                <span key={showConfirmPassword ? "eyes" : "monkey"} className="animate-emoji-change">
+                  {showConfirmPassword ? "👀" : "🙈"}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isUpdatingPassword || !newPassword}
+            className="w-full sm:w-auto self-end h-10 px-5 bg-primary hover:bg-primary/95 disabled:opacity-50 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">vpn_key</span>
+            {isUpdatingPassword ? 'MISE À JOUR...' : 'Modifier le mot de passe'}
+          </button>
+        </form>
       </Card>
 
       {/* Team Management Card */}
@@ -212,16 +428,17 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="email"
               />
             </div>
-            <div className="flex-[2] flex flex-col gap-1.5 text-left">
-              <label className="text-[9px] text-outline font-black uppercase tracking-wider">Rôle</label>
-              <select
+            <div className="flex-[2]">
+              <Select
+                label="Rôle"
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as any)}
-                className="h-10 px-3 bg-white border border-outline-variant rounded-xl text-xs font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="caissier">Caissier</option>
-                <option value="gerant">Gérant</option>
-              </select>
+                onChange={(val) => setInviteRole(val as any)}
+                options={[
+                  { value: 'caissier', label: 'Caissier' },
+                  { value: 'gerant', label: 'Gérant' },
+                ]}
+                isAdmin={false}
+              />
             </div>
           </div>
 
@@ -287,7 +504,7 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Settings Form */}
       <Card elevation={1} className="p-4 flex flex-col gap-5">
         <h3 className="text-xs text-outline font-extrabold uppercase tracking-wider border-b border-outline-variant/40 pb-2">
-          Réglages de la Boutique
+          Réglages de la Boutique & Préférences
         </h3>
 
         <Input 
@@ -297,7 +514,7 @@ export const Settings: React.FC<SettingsProps> = ({
           placeholder="Ex: Supermarché du Centre"
         />
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 border-b border-outline-variant/30 pb-4">
           <label className="text-[11px] font-bold text-outline uppercase tracking-wider">
             Seuil d'alerte de stock par défaut ({seuilAlerte} unités)
           </label>
@@ -310,6 +527,58 @@ export const Settings: React.FC<SettingsProps> = ({
             className="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary"
           />
           <p className="text-[10px] text-outline italic">Les produits dont le stock descend sous cette valeur apparaîtront en rupture/alerte.</p>
+        </div>
+
+        {/* Receipt Custom Message Preference */}
+        <div className="flex flex-col gap-2 border-b border-outline-variant/30 pb-4">
+          <Input 
+            label="Message personnalisé sur les tickets de caisse" 
+            value={receiptGreeting} 
+            onChange={(e) => setReceiptGreeting(e.target.value)} 
+            placeholder="Ex: Merci pour votre visite ! À bientôt."
+          />
+          <p className="text-[10px] text-outline italic">Ce texte apparaîtra en bas de chaque ticket de caisse généré.</p>
+        </div>
+
+        {/* Toggles Preferences */}
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-outline">volume_up</span>
+                Alertes sonores
+              </span>
+              <span className="text-[10px] text-outline mt-0.5">Émettre un son lors de la validation d'une vente</span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={soundAlerts} 
+                onChange={(e) => setSoundAlerts(e.target.checked)} 
+                className="sr-only peer" 
+              />
+              <div className="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+            </label>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-outline">mail</span>
+                Rapport hebdomadaire par e-mail
+              </span>
+              <span className="text-[10px] text-outline mt-0.5">Recevoir un résumé d'activité chaque dimanche soir</span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={weeklyReport} 
+                onChange={(e) => setWeeklyReport(e.target.checked)} 
+                className="sr-only peer" 
+              />
+              <div className="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+            </label>
+          </div>
         </div>
       </Card>
 

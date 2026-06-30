@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const UNITECH_API       = "https://api.unitech.sn/api.php";
 const UNITECH_WAVE_KEY  = Deno.env.get("UNITECH_WAVE_API_KEY")!;
@@ -13,11 +14,24 @@ const PLANS = {
   annual:  { amount: 52900, label: "Sama Boutik Annuel" },
 };
 
+const CreatePaymentSchema = z.object({
+  plan: z.string(),
+  payment_method: z.string(),
+  customer_number: z.string().optional().nullable(),
+});
+
 serve(async (req) => {
   try {
-    const { plan, payment_method, customer_number } = await req.json();
+    const payload = await req.json();
+    const parseResult = CreatePaymentSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: "Données invalides" }, 400);
+    }
+    const { plan, payment_method, customer_number } = parseResult.data;
 
     const authHeader = req.headers.get("Authorization")!;
+    if (!authHeader) return json({ error: "Authorization requise" }, 401);
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: { user } } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", "")
@@ -81,7 +95,8 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    return json({ error: String(err) }, 500);
+    console.error('create-payment error:', err);
+    return json({ error: "Une erreur interne est survenue" }, 500);
   }
 });
 

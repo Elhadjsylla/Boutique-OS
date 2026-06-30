@@ -503,7 +503,8 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                           <button
                             key={a.id}
                             type="button"
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                              e.preventDefault();
                               setClientNom(a.client_nom);
                               setSelectedArdoiseId(a.id);
                               setShowClientSuggestions(false);

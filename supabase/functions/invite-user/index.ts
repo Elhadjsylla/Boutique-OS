@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,6 +9,12 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const InviteUserSchema = z.object({
+  email: z.string().email('Email requis et doit être valide'),
+  role: z.enum(['caissier', 'gerant']).optional().default('caissier'),
+  boutique_id: z.string().optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -36,14 +43,12 @@ serve(async (req) => {
       return json({ error: 'Permission refusée — seul un gérant ou admin peut inviter' }, 403);
     }
 
-    const { email, role = 'caissier', boutique_id } = await req.json() as {
-      email: string;
-      role?: string;
-      boutique_id?: string;
-    };
-
-    if (!email) return json({ error: 'Email requis' }, 400);
-    if (!['caissier', 'gerant'].includes(role)) return json({ error: 'Rôle invalide' }, 400);
+    const payload = await req.json();
+    const parseResult = InviteUserSchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: parseResult.error.errors[0].message }, 400);
+    }
+    const { email, role, boutique_id } = parseResult.data;
 
     // La boutique cible : celle passée en param ou celle du gérant
     const targetBoutiqueId = boutique_id ?? callerProfil.boutique_id;
@@ -84,7 +89,7 @@ serve(async (req) => {
 
   } catch (err) {
     console.error('invite-user error:', err);
-    return json({ error: String(err) }, 500);
+    return json({ error: 'Une erreur interne est survenue' }, 500);
   }
 });
 

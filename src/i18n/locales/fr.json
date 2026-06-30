@@ -3,7 +3,7 @@
     "ventes": "Ventes",
     "stock": "Stock",
     "ardoises": "Ardoises",
-    "rapports": "Rapports",
+    "rapports": "Dashboard",
     "reglages": "Réglages"
   },
   "common": {
@@ -63,7 +63,7 @@
     "aucune_ardoise": "Aucune ardoise en cours"
   },
   "rapports": {
-    "titre": "Rapports",
+    "titre": "Dashboard",
     "ca_jour": "CA aujourd'hui",
     "ca_semaine": "CA cette semaine",
     "ca_mois": "CA ce mois",

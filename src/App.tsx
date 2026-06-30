@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component, type ErrorInfo, type ReactNode } from 'react';
+import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
@@ -179,20 +179,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const failsafe = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 8000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(failsafe);
       if (session) {
-        // Check if session JWT is expired
-        try {
-          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-          if (payload.exp && Date.now() / 1000 >= payload.exp) {
-            console.warn('[App] Session JWT expired on load, signing out.');
-            supabase.auth.signOut().then(() => {
-              setSession(null);
-              setLoading(false);
-            });
-            return;
-          }
-        } catch (e) {}
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
       } else if (devBypassEnabled) {
@@ -222,17 +216,6 @@ function App() {
         }
         setSession(null);
       } else if (session) {
-        // Check if session JWT is expired
-        try {
-          const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-          if (payload.exp && Date.now() / 1000 >= payload.exp) {
-            console.warn('[App] Session JWT expired on auth change, signing out.');
-            supabase.auth.signOut().then(() => {
-              setSession(null);
-            });
-            return;
-          }
-        } catch (e) {}
         // In DEV, merge the dev_role override into the real session
         setSession(applyDevRoleOverride(session));
       } else if (devBypassEnabled) {
@@ -248,7 +231,11 @@ function App() {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(failsafe);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -265,15 +252,8 @@ function App() {
   // Auto-open admin console if the user is an admin
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
-  const hasAutoOpenedAdmin = useRef(false);
-
-  // Effect to automatically show admin console when admin role is detected (only once)
-  useEffect(() => {
-    if (isAdmin && !showAdminConsole && !hasAutoOpenedAdmin.current) {
-      setShowAdminConsole(true);
-      hasAutoOpenedAdmin.current = true;
-    }
-  }, [isAdmin, showAdminConsole]);
+  // We no longer automatically open the admin console on login.
+  // The user will land on the 'caisse' tab, and can open the admin console manually from Settings.
 
   // Check subscription status for real (non-dev) sessions
   useEffect(() => {
@@ -339,6 +319,18 @@ function App() {
     checkSubscription();
   }, [session, storeProfile]);
 
+  const isProfileLoading = useAuthStore(state => state.isLoading);
+  const [forceUnlock, setForceUnlock] = useState(false);
+  
+  useEffect(() => {
+    // ── HARD FAILSAFE ──
+    // Unblock the UI automatically after 5 seconds, no matter what.
+    const timer = setTimeout(() => {
+      setForceUnlock(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (isClientViewingPortal) {
     return (
       <div className="min-h-screen bg-background text-on-background">
@@ -377,12 +369,14 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
+  const isSessionOrProfileLoading = !forceUnlock && (loading || (session && isProfileLoading));
+
   // isAdmin is now defined at the top of the file
-  if (!loading && session?.user && isAdmin && showAdminConsole) {
+  if (!isSessionOrProfileLoading && session?.user && isAdmin && showAdminConsole) {
     return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
   }
 
-  if (loading) {
+  if (isSessionOrProfileLoading) {
     return (
       <div className="min-h-screen bg-[#F5F7FA] flex flex-col justify-center items-center p-6 text-center select-none animate-fade-in">
         <div className="flex flex-col items-center gap-5">
@@ -436,9 +430,29 @@ function App() {
   // Extract metadata safely with fallbacks if needed
   const user = session.user;
   const boutiqueId = storeProfile?.boutique_id || user.user_metadata?.boutique_id || 'boutique-1';
-  const boutiqueName = storeProfile?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
+  const boutiqueName = (storeProfile as any)?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
   const caissierId = user.id;
   const userRole = user.user_metadata?.role || 'caissier';
+
+  if (!boutiqueId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center p-6 text-center">
+        <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-6">
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        </div>
+        <h1 className="text-2xl font-bold text-on-background mb-4">Profil Incomplet</h1>
+        <p className="text-outline max-w-md mb-8">
+          Votre compte n'est pas associé à une boutique valide. Veuillez contacter le support technique ou un administrateur pour configurer votre boutique.
+        </p>
+        <button
+          onClick={handleLogout}
+          className="px-6 py-3 bg-primary text-on-primary font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95"
+        >
+          Se déconnecter
+        </button>
+      </div>
+    );
+  }
 
 
 
@@ -519,10 +533,14 @@ function App() {
           className="flex items-center gap-3 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all"
           title="Paramètres du compte"
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
-            <span className="text-white text-xs font-black">
-              {boutiqueName.slice(0, 2).toUpperCase()}
-            </span>
+          <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-tr from-secondary to-secondary/80 flex items-center justify-center shadow-sm">
+            {user.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white text-xs font-black">
+                {boutiqueName.slice(0, 2).toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="flex flex-col text-left">
             <div className="flex items-center gap-2">
@@ -620,7 +638,7 @@ function App() {
       {/* Pages Switcher */}
       <main className="w-full">
         {subStatus === 'trial' && (
-          <TrialBanner onTrialExpired={() => setSubStatus('paywall')} />
+          <TrialBanner trialStatus={trialStatus!} />
         )}
         {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}
