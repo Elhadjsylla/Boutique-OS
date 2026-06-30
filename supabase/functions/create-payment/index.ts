@@ -8,29 +8,42 @@ const UNITECH_OM_KEY    = Deno.env.get("UNITECH_OM_API_KEY")!;
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 const PLANS = {
   starter: { amount: 2900,  label: "Sama Boutik Starter" },
   pro:     { amount: 5900,  label: "Sama Boutik Pro" },
   annual:  { amount: 52900, label: "Sama Boutik Annuel" },
-};
+} as const;
+
+// Numéros Sénégal : optionnellement préfixés +221 ou 221, puis 9 chiffres
+const SENEGAL_PHONE_RE = /^(\+221|221)?[0-9]{9}$/;
 
 const CreatePaymentSchema = z.object({
-  plan: z.string(),
-  payment_method: z.string(),
-  customer_number: z.string().optional().nullable(),
+  plan: z.enum(['starter', 'pro', 'annual']),
+  payment_method: z.enum(['wave', 'orange_money']),
+  customer_number: z.string()
+    .regex(SENEGAL_PHONE_RE, 'Numéro invalide — format Sénégal requis (ex: 77XXXXXXX)')
+    .optional()
+    .nullable(),
 });
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Authorization requise" }, 401);
+
     const payload = await req.json();
     const parseResult = CreatePaymentSchema.safeParse(payload);
     if (!parseResult.success) {
-      return json({ error: "Données invalides" }, 400);
+      return json({ error: parseResult.error.errors[0].message }, 400);
     }
     const { plan, payment_method, customer_number } = parseResult.data;
-
-    const authHeader = req.headers.get("Authorization")!;
-    if (!authHeader) return json({ error: "Authorization requise" }, 401);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: { user } } = await supabase.auth.getUser(
@@ -38,10 +51,11 @@ serve(async (req) => {
     );
     if (!user) return json({ error: "Non autorisé" }, 401);
 
-    const selectedPlan = PLANS[plan as keyof typeof PLANS];
-    if (!selectedPlan) return json({ error: "Plan invalide" }, 400);
+    const selectedPlan = PLANS[plan];
+    if (selectedPlan.amount <= 0) return json({ error: "Montant invalide" }, 400);
 
-    const { data: subscription } = await supabase
+    // Créer la subscription en pending
+    const { data: subscription, error: subInsertErr } = await supabase
       .from("subscriptions")
       .insert({
         user_id: user.id,
@@ -53,8 +67,12 @@ serve(async (req) => {
       .select()
       .single();
 
-    let unitechRes;
+    if (subInsertErr || !subscription) {
+      return json({ error: "Impossible de créer la souscription" }, 500);
+    }
+
     const baseUrl = Deno.env.get("APP_URL") ?? "https://boutikos.app";
+    let unitechRes;
 
     if (payment_method === "wave") {
       unitechRes = await callUnitech("create_wave_payment", UNITECH_WAVE_KEY, {
@@ -74,8 +92,11 @@ serve(async (req) => {
       });
     }
 
-    if (!unitechRes.success) {
-      return json({ error: "Erreur UnitechPay", detail: unitechRes }, 500);
+    if (!unitechRes?.success) {
+      // Annuler la subscription pending si UnitechPay échoue
+      await supabase.from("subscriptions").delete().eq("id", subscription.id);
+      console.error('create-payment: Unitech error', JSON.stringify(unitechRes));
+      return json({ error: "Erreur de paiement, veuillez réessayer" }, 502);
     }
 
     await supabase
@@ -101,20 +122,27 @@ serve(async (req) => {
 });
 
 async function callUnitech(action: string, apiKey: string, body: object) {
-  const res = await fetch(`${UNITECH_API}?action=${action}`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  return res.json();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const res = await fetch(`${UNITECH_API}?action=${action}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    return res.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function json(data: object, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }

@@ -85,6 +85,15 @@ serve(async (req) => {
       throw inviteError;
     }
 
+    // Audit log
+    await supabase.from('admin_audit_log').insert({
+      actor_id: user.id,
+      action: 'invite_user',
+      target_type: 'invitation',
+      target_id: invitation.id,
+      details: { email, role, boutique_id: targetBoutiqueId },
+    });
+
     return json({ success: true, invitation_id: invitation.id });
 
   } catch (err) {
