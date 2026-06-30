@@ -43,27 +43,24 @@ export const AdminUsers: React.FC = () => {
   const fetchUsersAndBoutiques = async () => {
     setLoading(true);
     try {
-      const { data: profs, error: profsErr } = await supabase
-        .from('profils')
-        .select('id, role, boutique_id, created_at, boutiques(nom)')
-        .order('created_at', { ascending: false });
-      if (profsErr) throw profsErr;
+      const [{ data: profs, error: profsErr }, { data: bouts, error: boutsErr }] = await Promise.all([
+        supabase.from('profils').select('id, role, boutique_id, created_at').order('created_at', { ascending: false }),
+        supabase.from('boutiques').select('id, nom').order('nom'),
+      ]);
 
-      const { data: bouts, error: boutsErr } = await supabase
-        .from('boutiques')
-        .select('id, nom')
-        .order('nom');
+      if (profsErr) throw profsErr;
       if (boutsErr) throw boutsErr;
 
+      const boutiquesMap = Object.fromEntries((bouts || []).map(b => [b.id, b]));
       const formattedProfs = (profs || []).map((p: any) => ({
         ...p,
-        boutiques: Array.isArray(p.boutiques) ? p.boutiques[0] || null : p.boutiques
+        boutiques: boutiquesMap[p.boutique_id] ?? null,
       }));
       setUsers(formattedProfs);
       setBoutiques(bouts || []);
       setIsDemo(false);
-    } catch (e) {
-      console.warn("[AdminUsers] Erreur fetch, utilisation données démo.", e);
+    } catch (e: any) {
+      console.error("[AdminUsers] Erreur fetch:", e?.message ?? e);
       setUsers(DEMO_USERS);
       setBoutiques(DEMO_BOUTIQUES);
       setIsDemo(true);

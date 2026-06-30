@@ -29,7 +29,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
           return;
         }
 
-        const generatedBoutiqueId = `boutique-${crypto.randomUUID().slice(0, 8)}`;
+        const generatedBoutiqueId = crypto.randomUUID();
 
         const { error } = await supabase.auth.signUp({
           email,
@@ -38,7 +38,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
             data: {
               boutique_id: generatedBoutiqueId,
               boutique_name: boutiqueName.trim(),
-              role: 'caissier',
+              role: 'gerant',
             },
           },
         });
