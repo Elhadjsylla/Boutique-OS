@@ -141,6 +141,9 @@ export const Settings: React.FC<SettingsProps> = ({
         return;
       }
 
+      // Automatically refresh the session/JWT if expired before calling updateUser
+      await supabase.auth.getSession();
+
       const { data, error } = await supabase.auth.updateUser({
         data: {
           full_name: userFullName.trim(),
@@ -181,6 +184,9 @@ export const Settings: React.FC<SettingsProps> = ({
         setIsUpdatingPassword(false);
         return;
       }
+
+      // Automatically refresh the session/JWT if expired before calling updateUser
+      await supabase.auth.getSession();
 
       const { error } = await supabase.auth.updateUser({
         password: newPassword
