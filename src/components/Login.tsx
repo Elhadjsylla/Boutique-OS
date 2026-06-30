@@ -63,21 +63,18 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     } catch (err: any) {
       console.error('[Login] Erreur Supabase:', err);
       const errorMsg = err?.message || String(err);
-      const isNetworkError = 
-        err instanceof TypeError || 
-        errorMsg.toLowerCase().includes('failed to fetch') || 
+      const isNetworkError =
+        err instanceof TypeError ||
+        errorMsg.toLowerCase().includes('failed to fetch') ||
         errorMsg.toLowerCase().includes('fetch failed') ||
         err?.name === 'AuthRetryableFetchError';
-      if (isNetworkError) {
-        if (import.meta.env.DEV) {
-          localStorage.removeItem('dev_signed_out');
-          setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        } else {
-          setToast({ message: "Connexion impossible. Vous semblez hors ligne. Veuillez vérifier votre connexion Internet.", type: 'error' });
-        }
+      const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
+      if (isNetworkError && devBypassEnabled) {
+        localStorage.removeItem('dev_signed_out');
+        setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });
+        setTimeout(() => { window.location.reload(); }, 1000);
+      } else if (isNetworkError) {
+        setToast({ message: "Connexion impossible. Vérifiez votre connexion Internet.", type: 'error' });
       } else {
         setToast({ message: err.message || "Une erreur est survenue.", type: 'error' });
       }

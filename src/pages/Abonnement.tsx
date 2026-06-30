@@ -29,27 +29,16 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Non connecté');
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/initiate-payment`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            plan:           selectedPlan,
-            payment_method: paymentMethod,
-            phone:          phone.trim(),
-          }),
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          plan:            selectedPlan,
+          payment_method:  paymentMethod,
+          customer_number: phone.trim(),
         },
-      );
+      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Erreur de paiement');
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error ?? 'Erreur de paiement');
 
       if (data.payment_url) {
         setPaymentUrl(data.payment_url);
@@ -63,9 +52,30 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
     }
   };
 
-  const handleConfirmPayment = () => {
-    setStep('success');
-    setTimeout(() => onSuccess?.(), 2000);
+  const handleConfirmPayment = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Vérifie que le webhook a bien activé la subscription en base
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('id, status')
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (sub) {
+        setStep('success');
+        setTimeout(() => onSuccess?.(), 2000);
+      } else {
+        setError('Paiement non encore confirmé. Patientez quelques secondes et réessayez.');
+        setStep('waiting');
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur de vérification');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

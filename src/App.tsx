@@ -138,14 +138,6 @@ function App() {
   const [trialStatus, setTrialStatus] = useState<any>(null);
   const [showAdminConsole, setShowAdminConsole] = useState(false);
 
-  useEffect(() => {
-    if (session?.user) {
-      supabase.rpc('get_trial_status').then(({ data }) => {
-        if (data?.has_trial) setTrialStatus(data);
-      });
-    }
-  }, [session]);
-
   // Always start as 'checking' — resolved by useEffect once profile loads
   const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>('checking');
   const [liveTime, setLiveTime] = useState(new Date());
@@ -301,6 +293,7 @@ function App() {
       // 4. Check trial
       const { data: trial } = await supabase.rpc('get_trial_status');
       if (trial?.has_trial && trial.status === 'trial' && !trial.is_expired) {
+        setTrialStatus(trial);
         setSubStatus('trial');
         return;
       }
@@ -623,10 +616,6 @@ function App() {
         </div>
       </header>
 
-      {trialStatus && !trialStatus.is_expired && (
-        <TrialBanner trialStatus={trialStatus} />
-      )}
-
       {/* Offline Alert Banner */}
       {!isOnline && showOfflineBanner && (
         <div className="bg-error text-white text-center py-2 px-4 text-[10px] font-extrabold tracking-wider uppercase flex items-center justify-center gap-2 fixed top-16 left-0 w-full z-40 shadow-md animate-fade-in border-b border-white/10">
@@ -637,8 +626,8 @@ function App() {
 
       {/* Pages Switcher */}
       <main className="w-full">
-        {subStatus === 'trial' && (
-          <TrialBanner trialStatus={trialStatus!} />
+        {subStatus === 'trial' && trialStatus && (
+          <TrialBanner trialStatus={trialStatus} onTrialExpired={() => setSubStatus('paywall')} />
         )}
         {activeTab === 'caisse' && <Caisse boutiqueId={boutiqueId} caissierId={caissierId} />}
         {activeTab === 'stock' && <Stock boutiqueId={boutiqueId} />}

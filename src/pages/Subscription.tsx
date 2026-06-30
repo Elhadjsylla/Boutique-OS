@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Toast } from '../components/ui/Toast';
 import { supabase } from '../lib/supabase';
+import { PLAN_CONFIG } from '../hooks/useSubscription';
+
+// TODO: remplacer par le vrai numéro WhatsApp support
+const WHATSAPP_SUPPORT = '221700000000';
 
 interface SubscriptionProps {
   onBack: () => void;
@@ -18,12 +22,13 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState<'wave' | 'orange'>('wave');
   const [isPaying, setIsPaying] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
 
   const plans = [
     {
       id: 'starter',
       name: 'Plan Starter',
-      price: '2 900 FCFA',
+      price: `${PLAN_CONFIG.starter.amount.toLocaleString('fr-FR')} FCFA`,
       period: 'mois',
       popular: false,
       description: 'Idéal pour démarrer et tester la gestion de votre boutique.',
@@ -41,7 +46,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
     {
       id: 'pro',
       name: 'Plan Pro',
-      price: '5 900 FCFA',
+      price: `${PLAN_CONFIG.pro.amount.toLocaleString('fr-FR')} FCFA`,
       period: 'mois',
       popular: true,
       description: 'Pour les boutiques en croissance qui veulent éliminer toutes les limites.',
@@ -59,7 +64,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
     {
       id: 'annuel',
       name: 'Plan Annuel',
-      price: '52 900 FCFA',
+      price: `${PLAN_CONFIG.annual.amount.toLocaleString('fr-FR')} FCFA`,
       period: 'an',
       popular: false,
       fomo: '🔥 Plus que 12 places au tarif de lancement — prix définitif après',
@@ -125,14 +130,10 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       if (error) throw error;
 
       if (data && data.success) {
-        setToast({ message: 'Redirection vers la passerelle de paiement...', type: 'success' });
-        
-        // redirect to payment url (Wave redirect or checkout page)
         if (data.payment_url) {
           window.location.href = data.payment_url;
         } else if (data.qr_code) {
-          // Orange money QR or payment instruction fallback
-          setToast({ message: 'Paiement initié. Veuillez scanner le code QR ou suivre les instructions reçues.', type: 'success' });
+          setQrCode(data.qr_code);
         }
       } else {
         throw new Error(data?.error || 'Erreur lors de la création du paiement.');
@@ -233,7 +234,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
           </p>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-2">
             <a
-              href="https://wa.me/221XXXXXXXXX"
+              href={`https://wa.me/${WHATSAPP_SUPPORT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="h-11 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-black rounded-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
@@ -385,15 +386,33 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                 <p className="text-[13px] text-slate-500 mt-1.5">Passerelle de paiement sécurisée</p>
               </div>
               <button
-                onClick={() => setSelectedPlanForPayment(null)}
+                onClick={() => { setSelectedPlanForPayment(null); setQrCode(null); }}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center"
               >
                 <span className="material-symbols-outlined text-[28px] font-light">close</span>
               </button>
             </div>
 
+            {/* QR Code Orange Money */}
+            {qrCode && (
+              <div className="flex flex-col items-center gap-5 text-center pb-2">
+                <p className="text-sm font-bold text-slate-700">Scannez avec Orange Money</p>
+                <img src={qrCode} alt="QR Code Orange Money" className="w-52 h-52 border border-slate-200 rounded-2xl shadow-sm object-contain" />
+                <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                  Après paiement, votre abonnement sera activé automatiquement dans quelques secondes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedPlanForPayment(null); setQrCode(null); }}
+                  className="w-full h-12 rounded-2xl bg-primary text-white text-sm font-black active:scale-95 transition-all"
+                >
+                  Fermer
+                </button>
+              </div>
+            )}
+
             {/* Content */}
-            <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-7 text-left">
+            {!qrCode && <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-7 text-left">
               {/* Plan Recap */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 flex justify-between items-center shadow-sm">
                 <div className="flex flex-col">
@@ -478,7 +497,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                   )}
                 </button>
               </div>
-            </form>
+            </form>}
           </div>
         </div>
       )}
