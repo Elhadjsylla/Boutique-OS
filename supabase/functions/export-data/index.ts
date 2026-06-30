@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -63,6 +64,10 @@ serve(async (req) => {
     if (callerProfil.role !== 'super_admin' && callerProfil.boutique_id !== boutique_id) {
       return json({ error: 'Accès refusé à cette boutique' }, 403);
     }
+
+    // 20 exports max par heure par utilisateur
+    const { allowed } = await checkRateLimit(`export-data:${user.id}`, 20, 3600);
+    if (!allowed) return json({ error: 'Trop de requêtes, réessayez dans une heure' }, 429);
 
     if (type === 'excel') {
       let csvContent = '﻿'; // UTF-8 BOM for Excel compatibility

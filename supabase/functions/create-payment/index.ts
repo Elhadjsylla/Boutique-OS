@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const UNITECH_API       = "https://api.unitech.sn/api.php";
 const UNITECH_WAVE_KEY  = Deno.env.get("UNITECH_WAVE_API_KEY")!;
@@ -50,6 +51,10 @@ serve(async (req) => {
       authHeader.replace("Bearer ", "")
     );
     if (!user) return json({ error: "Non autorisé" }, 401);
+
+    // 5 tentatives de paiement max par tranche de 10 minutes
+    const { allowed } = await checkRateLimit(`create-payment:${user.id}`, 5, 600);
+    if (!allowed) return json({ error: "Trop de requêtes, réessayez dans quelques minutes" }, 429);
 
     const selectedPlan = PLANS[plan];
     if (selectedPlan.amount <= 0) return json({ error: "Montant invalide" }, 400);
