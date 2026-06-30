@@ -7,7 +7,7 @@ import { Toast } from '../components/ui/Toast';
 import { db } from '../db/dexie';
 import { useAuthStore } from '../store/useAuthStore';
 import { Select } from '../components/ui/Select';
-
+const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
 
 interface SettingsProps {
   session: any;
@@ -126,6 +126,21 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleSaveProfile = async () => {
     setIsUpdatingProfile(true);
     try {
+      if (DEV_BYPASS && user) {
+        const updatedUser = {
+          ...user,
+          user_metadata: {
+            ...user.user_metadata,
+            full_name: userFullName.trim(),
+            avatar_url: avatarUrl
+          }
+        };
+        useAuthStore.getState().setAuth(updatedUser as any, storeProfile, useAuthStore.getState().boutique);
+        setToast({ message: "Profil mis à jour avec succès (Local) !", type: "success" });
+        setIsUpdatingProfile(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.updateUser({
         data: {
           full_name: userFullName.trim(),
@@ -159,6 +174,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
     setIsUpdatingPassword(true);
     try {
+      if (DEV_BYPASS) {
+        setNewPassword('');
+        setConfirmPassword('');
+        setToast({ message: "Mot de passe modifié avec succès (Local) !", type: "success" });
+        setIsUpdatingPassword(false);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
