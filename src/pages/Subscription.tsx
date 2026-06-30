@@ -4,7 +4,7 @@ import { Toast } from '../components/ui/Toast';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG } from '../hooks/useSubscription';
 
-// TODO: remplacer par le vrai numéro WhatsApp support
+// ⚠️ PRODUCTION: remplacer par le vrai numéro WhatsApp avant le lancement
 const WHATSAPP_SUPPORT = '221700000000';
 
 interface SubscriptionProps {

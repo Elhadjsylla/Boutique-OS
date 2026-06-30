@@ -88,6 +88,8 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Extra preference states
   const [soundAlerts, setSoundAlerts] = useState(() => localStorage.getItem('pref_sound_alerts') !== 'false');
@@ -185,21 +187,55 @@ export const Settings: React.FC<SettingsProps> = ({
         return;
       }
 
-      // Automatically refresh the session/JWT if expired before calling updateUser
-      await supabase.auth.getSession();
+      // Explicitly read the current session from storage (may have expired access token)
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      if (!currentSession?.refresh_token) {
+        setSessionExpired(true);
+        return;
+      }
+
+      // Force refresh — GoTrue accepts the refresh token even when access token is expired
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession(currentSession);
+
+      if (refreshError || !refreshData.session) {
+        setSessionExpired(true);
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
       setNewPassword('');
       setConfirmPassword('');
+      setSessionExpired(false);
       setToast({ message: "Mot de passe modifié avec succès !", type: "success" });
     } catch (e: any) {
-      setToast({ message: e.message || "Erreur de mot de passe.", type: "error" });
+      const isJwtIssue = /expired|invalid.*jwt|jwt.*invalid|bad_jwt/i.test(e?.message ?? '');
+      if (isJwtIssue) {
+        setSessionExpired(true);
+      } else {
+        setToast({ message: e.message || "Erreur lors de la modification du mot de passe.", type: "error" });
+      }
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!userEmail) return;
+    setIsSendingResetEmail(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setToast({ message: `Email de réinitialisation envoyé à ${userEmail}. Cliquez sur le lien dans l'email.`, type: "success" });
+      setSessionExpired(false);
+    } catch (e: any) {
+      setToast({ message: e.message || "Erreur lors de l'envoi de l'email.", type: "error" });
+    } finally {
+      setIsSendingResetEmail(false);
     }
   };
 
@@ -380,6 +416,20 @@ export const Settings: React.FC<SettingsProps> = ({
               </button>
             </div>
           </div>
+
+          {sessionExpired && (
+            <div className="flex flex-col gap-2 p-3 bg-error/10 border border-error/30 rounded-xl text-left">
+              <p className="text-xs text-error font-bold">Votre session a expiré. Vous pouvez vous déconnecter et vous reconnecter, ou recevoir un email de réinitialisation.</p>
+              <button
+                type="button"
+                onClick={handleSendResetEmail}
+                disabled={isSendingResetEmail}
+                className="self-start h-9 px-4 bg-error/20 hover:bg-error/30 text-error text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isSendingResetEmail ? 'ENVOI...' : `Envoyer un email à ${userEmail}`}
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"
