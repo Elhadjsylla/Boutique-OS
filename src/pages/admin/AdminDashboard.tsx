@@ -16,7 +16,11 @@ interface PlatformStats {
   expired_subscriptions: number;
 }
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  onNavigate?: (tab: 'dashboard' | 'boutiques' | 'users' | 'subscriptions' | 'logs') => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,13 +107,18 @@ export const AdminDashboard: React.FC = () => {
       {/* Main KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Boutiques", val: stats.total_boutiques, sub: `${stats.active_boutiques} actives / ${stats.suspended_boutiques} suspendues`, icon: "store", color: "text-admin-primary-light bg-admin-primary/10" },
-          { label: "Utilisateurs", val: stats.total_users, sub: "Comptes créés", icon: "people", color: "text-blue-400 bg-blue-500/10" },
-          { label: "Abonnements Actifs", val: stats.active_subscriptions, sub: `${stats.expired_subscriptions} expirés`, icon: "credit_card", color: "text-emerald-400 bg-emerald-500/10" },
-          { label: "Ventes (Aujourd'hui)", val: stats.total_sales_today, sub: `${stats.total_sales_week} cette semaine`, icon: "shopping_cart", color: "text-amber-400 bg-amber-500/10" }
+          { label: "Total Boutiques", val: stats.total_boutiques, sub: `${stats.active_boutiques} actives / ${stats.suspended_boutiques} suspendues`, icon: "store", color: "text-admin-primary-light bg-admin-primary/10", targetTab: 'boutiques' as const },
+          { label: "Utilisateurs", val: stats.total_users, sub: "Comptes créés", icon: "people", color: "text-blue-400 bg-blue-500/10", targetTab: 'users' as const },
+          { label: "Abonnements Actifs", val: stats.active_subscriptions, sub: `${stats.expired_subscriptions} expirés`, icon: "credit_card", color: "text-emerald-400 bg-emerald-500/10", targetTab: 'subscriptions' as const },
+          { label: "Ventes (Aujourd'hui)", val: stats.total_sales_today, sub: `${stats.total_sales_week} cette semaine`, icon: "shopping_cart", color: "text-amber-400 bg-amber-500/10", targetTab: 'logs' as const }
         ].map((item, idx) => (
-          <div key={idx} className="p-4 bg-admin-card border border-admin-border rounded-2xl flex flex-col gap-2 shadow-sm">
-            <div className="flex justify-between items-center">
+          <button
+            key={idx}
+            type="button"
+            onClick={() => onNavigate?.(item.targetTab)}
+            className="p-4 bg-admin-card border border-admin-border rounded-2xl flex flex-col gap-2 shadow-sm text-left hover:border-admin-primary-light/40 hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
+          >
+            <div className="flex justify-between items-center w-full">
               <span className="text-[10px] font-black uppercase tracking-wider text-admin-text-muted">{item.label}</span>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.color}`}>
                 <span className="material-symbols-outlined text-lg">{item.icon}</span>
@@ -117,7 +126,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <span className="text-2xl font-black text-admin-text font-numeric-display">{formatNum(item.val)}</span>
             <span className="text-[9px] font-bold text-admin-text-muted">{item.sub}</span>
-          </div>
+          </button>
         ))}
       </div>
 
