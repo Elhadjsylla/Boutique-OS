@@ -1,0 +1,370 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@theme {
+  /* Colors */
+  --color-primary: #1A3C5E;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #F0F4F8;
+  --color-on-primary-container: #1A3C5E;
+  --color-secondary: #27AE60;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #E8F8F0;
+  --color-on-secondary-container: #27AE60;
+  --color-tertiary: #E69200;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #FFF7EB;
+  --color-on-tertiary-container: #E69200;
+  --color-error: #BA1A1A;
+  --color-on-error: #ffffff;
+  --color-error-container: #FFEBEE;
+  --color-on-error-container: #BA1A1A;
+  --color-background: #F5F7FA;
+  --color-on-background: #1A1A2E;
+  --color-surface: #F5F7FA;
+  --color-on-surface: #1A1A2E;
+  --color-card: #FFFFFF;
+  --color-outline: #9CA3AF;
+  --color-outline-variant: #E5E7EB;
+  --color-border: #E5E7EB;
+  --color-texte: #1A1A2E;
+  --color-texte-2: #43474E;
+
+  /* Admin Theme Colors */
+  --color-admin-primary: #1A3C5E;
+  --color-admin-primary-light: #27AE60;
+  --color-admin-surface: #F5F7FA;
+  --color-admin-card: #FFFFFF;
+  --color-admin-border: #E5E7EB;
+  --color-admin-text: #1A1A2E;
+  --color-admin-text-muted: #43474E;
+
+  /* Surface containers (backward compat) */
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #F0F4F8;
+  --color-surface-container: #E8ECF0;
+  --color-surface-container-high: #E0E4E8;
+  --color-surface-container-highest: #D8DCE0;
+
+  /* Border Radius */
+  --border-radius-DEFAULT: 0.25rem;
+  --border-radius-lg: 0.75rem;
+  --radius-lg: 0.75rem;
+  --border-radius-xl: 16px;
+  --radius-xl: 16px;
+  --border-radius-2xl: 24px;
+  --radius-2xl: 24px;
+  --border-radius-3xl: 32px;
+  --radius-3xl: 32px;
+  --border-radius-full: 9999px;
+  --border-radius-button: 14px;
+  --radius-button: 14px;
+  --border-radius-card: 28px;
+  --radius-card: 28px;
+  --border-radius-pill: 999px;
+
+  /* Spacing */
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-gutter: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 48px;
+
+  /* Container Max-Widths */
+  --container-xs: 20rem;
+  --container-sm: 24rem;
+  --container-md: 28rem;
+  --container-lg: 32rem;
+  --container-xl: 36rem;
+  --container-2xl: 42rem;
+  --container-3xl: 48rem;
+  --container-4xl: 56rem;
+  --container-5xl: 64rem;
+  --container-6xl: 72rem;
+  --container-7xl: 80rem;
+
+  /* Width scale */
+  --width-sm: 24rem;
+  --width-md: 28rem;
+  --width-lg: 32rem;
+  --width-xl: 36rem;
+  --width-3xl: 48rem;
+  --width-5xl: 64rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-3xl: 48rem;
+  --max-width-5xl: 64rem;
+
+  /* Typography Families */
+  --font-headline-lg: "DM Sans", sans-serif;
+  --font-numeric-display: "DM Sans", sans-serif;
+  --font-headline-lg-mobile: "DM Sans", sans-serif;
+  --font-headline-sm: "DM Sans", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-label-md: "Inter", sans-serif;
+  --font-headline-md: "DM Sans", sans-serif;
+
+  /* Micro-Animations & Transitions */
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-fade-in-down: fade-in-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-pulse-subtle: pulse-subtle 2s infinite ease-in-out;
+}
+
+/* T-shirt spacing aliases as plain CSS custom properties (not in @theme)
+   This prevents Tailwind v4 from mapping max-w-sm/md/lg/xl to these values */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+/* Explicit spacing utility overrides for T-shirt sizes
+   Since --spacing-sm/md/lg/xl are no longer in @theme, we define
+   every spacing utility class explicitly with hardcoded values */
+@layer utilities {
+  /* XS = 4px */
+  .p-xs  { padding: 4px; }
+  .px-xs { padding-left: 4px; padding-right: 4px; }
+  .py-xs { padding-top: 4px; padding-bottom: 4px; }
+  .pt-xs { padding-top: 4px; }
+  .pb-xs { padding-bottom: 4px; }
+  .pl-xs { padding-left: 4px; }
+  .pr-xs { padding-right: 4px; }
+  .m-xs  { margin: 4px; }
+  .mx-xs { margin-left: 4px; margin-right: 4px; }
+  .my-xs { margin-top: 4px; margin-bottom: 4px; }
+  .mt-xs { margin-top: 4px; }
+  .mb-xs { margin-bottom: 4px; }
+  .ml-xs { margin-left: 4px; }
+  .mr-xs { margin-right: 4px; }
+  .gap-xs { gap: 4px; }
+  .w-xs { width: 4px; }
+  .h-xs { height: 4px; }
+
+  /* SM = 8px */
+  .p-sm  { padding: 8px; }
+  .px-sm { padding-left: 8px; padding-right: 8px; }
+  .py-sm { padding-top: 8px; padding-bottom: 8px; }
+  .pt-sm { padding-top: 8px; }
+  .pb-sm { padding-bottom: 8px; }
+  .pl-sm { padding-left: 8px; }
+  .pr-sm { padding-right: 8px; }
+  .m-sm  { margin: 8px; }
+  .mx-sm { margin-left: 8px; margin-right: 8px; }
+  .my-sm { margin-top: 8px; margin-bottom: 8px; }
+  .mt-sm { margin-top: 8px; }
+  .mb-sm { margin-bottom: 8px; }
+  .ml-sm { margin-left: 8px; }
+  .mr-sm { margin-right: 8px; }
+  .gap-sm { gap: 8px; }
+  .space-y-sm > * + * { margin-top: 8px; }
+
+  /* MD = 16px */
+  .p-md  { padding: 16px; }
+  .px-md { padding-left: 16px; padding-right: 16px; }
+  .py-md { padding-top: 16px; padding-bottom: 16px; }
+  .pt-md { padding-top: 16px; }
+  .pb-md { padding-bottom: 16px; }
+  .pl-md { padding-left: 16px; }
+  .pr-md { padding-right: 16px; }
+  .m-md  { margin: 16px; }
+  .mx-md { margin-left: 16px; margin-right: 16px; }
+  .my-md { margin-top: 16px; margin-bottom: 16px; }
+  .mt-md { margin-top: 16px; }
+  .mb-md { margin-bottom: 16px; }
+  .ml-md { margin-left: 16px; }
+  .mr-md { margin-right: 16px; }
+  .gap-md { gap: 16px; }
+  .space-y-md > * + * { margin-top: 16px; }
+
+  /* LG = 24px */
+  .p-lg  { padding: 24px; }
+  .px-lg { padding-left: 24px; padding-right: 24px; }
+  .py-lg { padding-top: 24px; padding-bottom: 24px; }
+  .pt-lg { padding-top: 24px; }
+  .pb-lg { padding-bottom: 24px; }
+  .pl-lg { padding-left: 24px; }
+  .pr-lg { padding-right: 24px; }
+  .m-lg  { margin: 24px; }
+  .mx-lg { margin-left: 24px; margin-right: 24px; }
+  .my-lg { margin-top: 24px; margin-bottom: 24px; }
+  .mt-lg { margin-top: 24px; }
+  .mb-lg { margin-bottom: 24px; }
+  .ml-lg { margin-left: 24px; }
+  .mr-lg { margin-right: 24px; }
+  .gap-lg { gap: 24px; }
+  .space-y-lg > * + * { margin-top: 24px; }
+
+  /* XL = 32px */
+  .p-xl  { padding: 32px; }
+  .px-xl { padding-left: 32px; padding-right: 32px; }
+  .py-xl { padding-top: 32px; padding-bottom: 32px; }
+  .pt-xl { padding-top: 32px; }
+  .pb-xl { padding-bottom: 32px; }
+  .pl-xl { padding-left: 32px; }
+  .pr-xl { padding-right: 32px; }
+  .m-xl  { margin: 32px; }
+  .mx-xl { margin-left: 32px; margin-right: 32px; }
+  .my-xl { margin-top: 32px; margin-bottom: 32px; }
+  .mt-xl { margin-top: 32px; }
+  .mb-xl { margin-bottom: 32px; }
+  .ml-xl { margin-left: 32px; }
+  .mr-xl { margin-right: 32px; }
+  .gap-xl { gap: 32px; }
+  .space-y-xl > * + * { margin-top: 32px; }
+
+  /* Margin-mobile / margin-desktop */
+  .px-margin-mobile { padding-left: 16px; padding-right: 16px; }
+  .px-margin-desktop { padding-left: 48px; padding-right: 48px; }
+}
+
+
+@layer base {
+  body {
+    @apply font-body-md bg-background text-on-background antialiased selection:bg-primary-container selection:text-primary;
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+
+@layer utilities {
+  .font-headline-lg {
+    font-family: var(--font-headline-lg);
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  .font-numeric-display {
+    font-family: var(--font-numeric-display);
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-headline-lg-mobile {
+    font-family: var(--font-headline-lg-mobile);
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  .font-headline-sm {
+    font-family: var(--font-headline-sm);
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .font-body-md {
+    font-family: var(--font-body-md);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+  .font-body-lg {
+    font-family: var(--font-body-lg);
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+  }
+  .font-label-md {
+    font-family: var(--font-label-md);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .font-headline-md {
+    font-family: var(--font-headline-md);
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 700;
+  }
+  
+  .cart-shadow {
+    box-shadow: 0px -8px 32px rgba(26, 60, 94, 0.12);
+  }
+  .product-card-shadow {
+    box-shadow: 0px 4px 16px rgba(26, 60, 94, 0.06);
+  }
+  .premium-shadow-sm {
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .premium-shadow-md {
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.06);
+  }
+  .premium-shadow-lg {
+    box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.08);
+  }
+  .scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Material Symbols Outlined Custom Styling */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom premium scrollbar for lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}
+
+/* Keyframes for micro-animations */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.015); }
+}

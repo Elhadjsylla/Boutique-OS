@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bottom-sheet-active {
+            transform: translateY(0);
+        }
+        .bottom-sheet-inactive {
+            transform: translateY(100%);
+        }
+        .overlay-active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .overlay-inactive {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* Custom scrollbar for inventory */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#382000",
+                        "error": "#ba1a1a",
+                        "secondary": "#006d37",
+                        "on-surface": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#a9c9f2",
+                        "on-secondary-container": "#007239",
+                        "surface-container-highest": "#e0e3e6",
+                        "on-background": "#191c1e",
+                        "outline": "#73777f",
+                        "on-primary-fixed": "#001d36",
+                        "on-surface-variant": "#43474e",
+                        "on-secondary-fixed-variant": "#005228",
+                        "tertiary-container": "#553300",
+                        "secondary-fixed-dim": "#61de8a",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#c3c6cf",
+                        "primary-fixed": "#d1e4ff",
+                        "primary-container": "#1a3c5e",
+                        "on-tertiary-fixed": "#2b1700",
+                        "on-tertiary-container": "#e69200",
+                        "surface-container": "#eceef1",
+                        "surface-dim": "#d8dadd",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#7bf8a1",
+                        "surface-container-low": "#f2f4f7",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#28496b",
+                        "on-primary-container": "#87a7ce",
+                        "on-secondary-fixed": "#00210c",
+                        "surface-bright": "#f7f9fc",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e8eb",
+                        "tertiary-fixed-dim": "#ffb961",
+                        "on-secondary": "#ffffff",
+                        "primary": "#002645",
+                        "surface": "#f7f9fc",
+                        "inverse-on-surface": "#eff1f4",
+                        "inverse-surface": "#2d3133",
+                        "primary-fixed-dim": "#a9c9f2",
+                        "surface-variant": "#e0e3e6",
+                        "secondary-fixed": "#7efba4",
+                        "on-tertiary-fixed-variant": "#663e00",
+                        "surface-tint": "#416084",
+                        "tertiary-fixed": "#ffddb9",
+                        "background": "#f7f9fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["DM Sans"],
+                        "numeric-display": ["DM Sans"],
+                        "headline-lg-mobile": ["DM Sans"],
+                        "headline-sm": ["DM Sans"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["DM Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "numeric-display": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body-md text-on-background min-h-screen">
+<!-- Top App Bar -->
+<header class="bg-primary text-on-primary fixed top-0 w-full z-40 flex justify-between items-center h-14 px-margin-mobile">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed font-bold text-label-md">
+                AD
+            </div>
+<h1 class="font-headline-md text-headline-md text-on-primary">BoutikOS</h1>
+</div>
+<button class="material-symbols-outlined p-2 hover:bg-primary-container/20 rounded-full transition-transform active:scale-95">
+            notifications
+        </button>
+</header>
+<!-- Main Content (Inventory Background) -->
+<main class="pt-20 pb-20 px-margin-mobile">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-sm text-headline-sm">Caisse</h2>
+<div class="bg-surface-container-high px-3 py-1 rounded-full flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">search</span>
+<span class="text-label-md">Rechercher...</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Mock Product Cards to show behind the bottom sheet -->
+<div class="bg-surface-container-lowest border border-outline-variant p-3 rounded-xl">
+<div class="w-full aspect-square bg-surface-container rounded-lg mb-2 relative overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A premium minimalist watch with a leather strap, photographed in high-contrast professional studio lighting on a neutral grey background. The style is modern and high-end retail, matching a corporate fintech aesthetic with clean lines and sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXPqNDXMo0rk3lRPVih1FdHNkajHLYXCyD97LaX6NJhWi0DVaO6uwo9JmMNwvIsbZmk-MOTMiUpuD4h6BGjqflEFqrOE8-_PxxNKOt2-Dt6axOmz7Z9xDNg9XaGXUXRDnmtRplFCRothrADfVPcgjHQI-i4XxftJNzhqf474BGUtomltx8-_noF_0aSeUO_yUSH3zMu5WgeKVn4QoUYs4WpetasmhSpcmAiVWyYxF1U4nswLi77YEfii1TiWOS3f1WUGQO4YglXhw"/>
+<span class="absolute top-2 right-2 bg-secondary text-on-secondary text-[10px] px-2 py-0.5 rounded-full font-bold">DISPONIBLE</span>
+</div>
+<h3 class="font-bold text-body-md truncate">Montre Quartz</h3>
+<p class="text-secondary font-bold text-body-md mt-1">45 000 FCFA</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-3 rounded-xl opacity-40">
+<div class="w-full aspect-square bg-surface-container rounded-lg mb-2 relative overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Vibrant red athletic sneakers positioned in a dynamic hero shot. The lighting is crisp and commercial-grade, emphasizing the textures of the fabric against a clean white backdrop. The color palette remains professional yet energetic, suitable for a modern inventory management interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJSe0cxUIiruwS9yFhzB32clt4OZypzNdT4cl37wnewwsbhtOfxnxMJI4hGO_TxRYO8f3jzjf9akj1ePY7qKLCCGISzmfzakFHRwyuDg9EJq9OodGR4_MTTMDW9sYfXN7Ii3HTe3QPu3bP-aOvyr-LRwa2j6ElwOMaeZk4Ws5UJwpskrxUNB79bxAT1CC9BUZbO9f9QgF_jYuqkJxq-aXWMWLwjz_xSe5JIdrYGjF0TReYTtXc00cMtB-mzGcdUV4_xiDmfhcpFwg"/>
+<span class="absolute top-2 right-2 bg-error text-on-error text-[10px] px-2 py-0.5 rounded-full font-bold">RUPTURE</span>
+</div>
+<h3 class="font-bold text-body-md truncate">Nike Air Max</h3>
+<p class="text-secondary font-bold text-body-md mt-1">82 500 FCFA</p>
+</div>
+</div>
+</main>
+<!-- Dark Overlay -->
+<div class="fixed inset-0 bg-black/60 z-45 transition-opacity duration-300 overlay-active" id="overlay" onclick="toggleCart()"></div>
+<!-- Bottom Sheet Cart (60% height) -->
+<section class="fixed bottom-0 left-0 right-0 h-[70%] bg-surface-container-lowest z-50 rounded-t-[32px] shadow-2xl transition-transform duration-300 ease-out bottom-sheet-active flex flex-col" id="cart-sheet">
+<!-- Handle -->
+<div class="w-full flex justify-center py-3" onclick="toggleCart()">
+<div class="w-10 h-1.5 bg-outline-variant rounded-full"></div>
+</div>
+<!-- Header -->
+<div class="px-6 pb-4 flex justify-between items-center">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">Mon Panier</h2>
+<p class="text-label-md text-outline">3 articles sélectionnés</p>
+</div>
+<button class="material-symbols-outlined text-outline p-2 hover:bg-surface-variant rounded-full">delete</button>
+</div>
+<!-- Cart Items -->
+<div class="flex-1 overflow-y-auto px-6 space-y-4 no-scrollbar">
+<!-- Item 1 -->
+<div class="flex items-center gap-4 bg-surface-container-low p-3 rounded-2xl">
+<div class="w-14 h-14 rounded-xl bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close-up of a luxury wristwatch on a white pedestal, soft ambient studio lighting, high contrast and professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX8y07bauVyLLiuYx4Q3mtnIVqvdVUkjppqqVkZdFtD0sZyRcopvAZlHhQ5ORcuK-gLH--cePxxIFENV1z5VyBkqbrhIuzI1S5L3nkPp6JO4RelunlrKBwdHv1NAelBoF_WNY0PLIEAR4Hle0ZcqZ3lU2DzDOaj0jTt4U8x5-h_e8G3gcJ77GSOvt2zrA6Idt_cFinXHMSh_2jzgBzwuS7F0Z6rNP8IKP3Q9ZBXHdzcp6P9eDkBBGd7G2ThksOm2qYe2UR84Lndjw"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-body-md">Montre Quartz</h4>
+<p class="text-secondary font-bold text-label-md">45 000 FCFA</p>
+</div>
+<div class="flex items-center bg-white rounded-full border border-outline-variant">
+<button class="w-11 h-11 flex items-center justify-center text-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="px-2 font-bold text-body-md">1</span>
+<button class="w-11 h-11 flex items-center justify-center text-primary active:scale-90 transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-4 bg-surface-container-low p-3 rounded-2xl">
+<div class="w-14 h-14 rounded-xl bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="High-quality black studio headphones on a minimalist wooden stand, sophisticated lighting with deep shadows and clean highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVG2uiyv59f6ZFp4O6FK1pceZQNWRjOO6TiV0fCN4Ou6hj3fvBuSedPHlzX50QtM_2MNl0Y9-gX_CyG1TEYfHe0k7m7VBXAJZQ5dog8AgHRxxAiZg4idsYf-p3DehuPzEH4F2qn9ej_H_uCn8Wr9jd0kqi2nUa_kxkNo_IjCHJrA6SIUAJCzP9loI9Ny_Js-P8ut7Hp5OqOeRZXyfF-T4dJRaH5Hl84LukJUmIRhj0vAb9ficoCAyl9b3YAlDWPjC94mNCI4HaiUk"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-body-md">Casque Audio Pro</h4>
+<p class="text-secondary font-bold text-label-md">12 500 FCFA</p>
+</div>
+<div class="flex items-center bg-white rounded-full border border-outline-variant">
+<button class="w-11 h-11 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="px-2 font-bold text-body-md">2</span>
+<button class="w-11 h-11 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center gap-4 bg-surface-container-low p-3 rounded-2xl">
+<div class="w-14 h-14 rounded-xl bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Single red designer sneaker isolated against a crisp white background, professional e-commerce lighting style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7mGv7z86YGh5b9LG8blj2L2alVxJKhNHaYADHlZT42ErJqYemFdIoQXcJApLF7lCRXpXzf-2L06-OvyT_RJOW3SCQzI0td479Qgl8F91Z2YeANzRyEJf2wTKNnd-HkK62kMvBcF9XPpVQI0AGIjJmGTc4yIVyUdLrsmpLUA7vCyJ4YX-hGVimVVEcsn2uwXXluZVZgUgMQpE9tLzaJ6XwlUD43Z7mi41AJInZiTd8eN32Gulosk2tDMXMLx1PpVMY9x2c8tgrarM"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-body-md">Sneakers Sport</h4>
+<p class="text-secondary font-bold text-label-md">35 000 FCFA</p>
+</div>
+<div class="flex items-center bg-white rounded-full border border-outline-variant">
+<button class="w-11 h-11 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="px-2 font-bold text-body-md">1</span>
+<button class="w-11 h-11 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Checkout Calculation -->
+<div class="p-6 bg-surface-container border-t border-outline-variant">
+<div class="flex justify-between items-center mb-4">
+<span class="font-bold text-body-lg text-outline">Total à payer</span>
+<span class="font-headline-sm text-headline-sm text-primary">105 000 FCFA</span>
+</div>
+<div class="space-y-3">
+<div class="relative">
+<label class="absolute -top-2 left-3 bg-surface-container px-1 text-[10px] font-bold text-primary uppercase tracking-wider">Montant reçu</label>
+<input class="w-full bg-transparent border-2 border-primary-container rounded-xl h-14 px-4 font-headline-sm text-primary focus:ring-0 focus:border-primary transition-all outline-none" id="amount-received" oninput="calculateChange()" type="number" value="110000"/>
+</div>
+<div class="flex justify-between items-center bg-secondary-container/20 p-4 rounded-xl border border-secondary/20">
+<span class="text-body-md font-semibold text-on-secondary-container">Monnaie à rendre</span>
+<span class="font-headline-md text-headline-md text-secondary" id="change-display">5 000 FCFA</span>
+</div>
+</div>
+<button class="w-full h-14 mt-6 bg-secondary text-on-secondary font-headline-sm text-headline-sm rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 shadow-lg">
+<span class="material-symbols-outlined">check_circle</span>
+                Valider la vente
+            </button>
+</div>
+</section>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 bg-primary px-2 pb-safe shadow-lg">
+<a class="flex flex-col items-center justify-center text-secondary-fixed font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale" style="font-variation-settings: 'FILL' 1;">point_of_sale</span>
+<span class="text-label-md">Caisse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-label-md">Stock</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="text-label-md">Ardoise</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 px-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="text-label-md">Dashboard</span>
+</a>
+</nav>
+<script>
+        function calculateChange() {
+            const total = 105000;
+            const input = document.getElementById('amount-received');
+            const display = document.getElementById('change-display');
+            const val = parseInt(input.value) || 0;
+            const change = val - total;
+            
+            if (change >= 0) {
+                display.innerText = change.toLocaleString() + " FCFA";
+                display.className = "font-headline-md text-headline-md text-secondary";
+            } else {
+                display.innerText = "Insuffisant";
+                display.className = "font-headline-md text-headline-md text-error";
+            }
+        }
+
+        function toggleCart() {
+            const sheet = document.getElementById('cart-sheet');
+            const overlay = document.getElementById('overlay');
+            
+            if (sheet.classList.contains('bottom-sheet-active')) {
+                sheet.classList.remove('bottom-sheet-active');
+                sheet.classList.add('bottom-sheet-inactive');
+                overlay.classList.remove('overlay-active');
+                overlay.classList.add('overlay-inactive');
+            } else {
+                sheet.classList.remove('bottom-sheet-inactive');
+                sheet.classList.add('bottom-sheet-active');
+                overlay.classList.remove('overlay-inactive');
+                overlay.classList.add('overlay-active');
+            }
+        }
+    </script>
+</body></html>

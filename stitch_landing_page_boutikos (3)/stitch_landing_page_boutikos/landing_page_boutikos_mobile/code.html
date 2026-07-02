@@ -1,0 +1,427 @@
+<!DOCTYPE html><html class="light" lang="fr" style=""><head>
+<meta charset="utf-8">
+<meta content="width=390, initial-scale=1.0" name="viewport">
+<title>BoutikOS - La gestion simplifiée pour le commerce de proximité</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2b1700",
+                        "primary-container": "#1a3c5e",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#d1e4ff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#dad7f3",
+                        "on-secondary-fixed": "#00210c",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#28496b",
+                        "surface-container-low": "#f5f2ff",
+                        "surface-tint": "#416084",
+                        "surface-container-high": "#e8e5ff",
+                        "inverse-on-surface": "#f2efff",
+                        "on-primary-container": "#87a7ce",
+                        "on-secondary-fixed-variant": "#005228",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#007239",
+                        "outline": "#73777f",
+                        "tertiary-fixed-dim": "#ffb961",
+                        "tertiary": "#382000",
+                        "secondary-fixed": "#7efba4",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#efecff",
+                        "surface-container-highest": "#e2e0fc",
+                        "primary-fixed-dim": "#a9c9f2",
+                        "secondary-container": "#7bf8a1",
+                        "on-surface": "#1a1a2e",
+                        "tertiary-fixed": "#ffddb9",
+                        "on-tertiary-fixed-variant": "#663e00",
+                        "on-tertiary-container": "#e69200",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1a1a2e",
+                        "inverse-primary": "#a9c9f2",
+                        "primary": "#002645",
+                        "secondary-fixed-dim": "#61de8a",
+                        "secondary": "#006d37",
+                        "tertiary-container": "#553300",
+                        "surface-bright": "#fcf8ff",
+                        "inverse-surface": "#2f2e43",
+                        "surface-variant": "#e2e0fc",
+                        "surface": "#fcf8ff",
+                        "background": "#fcf8ff",
+                        "on-surface-variant": "#43474e",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001d36",
+                        "outline-variant": "#c3c6cf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "10px",
+                        "xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "touch-target": "48px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["DM Sans"],
+                        "headline-section-mobile": ["DM Sans"],
+                        "label-sm": ["DM Sans"],
+                        "body-main": ["DM Sans"],
+                        "headline-section": ["DM Sans"],
+                        "headline-hero": ["DM Sans"],
+                        "headline-hero-mobile": ["DM Sans"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "700"}],
+                        "headline-section-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                        "body-main": ["17px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-section": ["36px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-hero": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-hero-mobile": ["36px", {"lineHeight": "1.2", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-surface flex justify-between items-center px-margin-mobile py-4 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="storefront">storefront</span>
+<span class="font-headline-section-mobile text-[22px] font-bold text-primary">BoutikOS</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-bold text-label-bold transition-opacity active:opacity-80">
+            Essai Gratuit
+        </button>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="px-margin-mobile pt-10 pb-16 bg-surface overflow-hidden">
+<div class="flex flex-col items-center text-center">
+<div class="inline-flex items-center gap-2 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full mb-6 border border-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm">Fonctionne sans internet</span>
+</div>
+<h1 class="font-headline-hero-mobile text-headline-hero-mobile text-primary mb-4">
+                    Gérez votre boutique. Même sans connexion.
+                </h1>
+<p class="text-[20px] text-on-surface-variant mb-8 px-4">
+                    La solution de caisse et de stock robuste, conçue pour les commerçants d'Afrique de l'Ouest.
+                </p>
+<button class="w-full bg-secondary text-on-secondary h-touch-target rounded-lg font-label-bold text-[18px] mb-4 shadow-lg active:scale-[0.98] transition-transform">
+                    Essayer gratuitement — C'est gratuit
+                </button>
+<div class="flex items-center gap-1 mb-12">
+<span class="text-secondary font-bold">⭐⭐⭐⭐⭐</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">200+ boutiques à Dakar</span>
+</div>
+<!-- Hero Visual -->
+<div class="relative w-full max-w-[320px] mt-4">
+<div class="absolute -inset-10 bg-primary-container/10 rounded-full blur-3xl"></div>
+<div class="relative transform -rotate-2">
+<img alt="https://lh3.googleusercontent.com/aida-public/AB6AXuAzP8U-ycievecUuX_U7Sojni7zYvICY9X2GUhDI7Q1YjRNLsjiUIKtZPovD5_oeiDsbemcyrI_j6Q224jqGdIGIGEBFKkB1lLZbtGvXCQEdPRPgfSOiIVQSSCXLzv-9dh9LiA12IZroduULyjHmcNFJdIWRzPRh7LjMBlR7wxh9ns7e7i_tHkx0XC5EIjxGIEw5B8tnyMoRHoEhKamH83CqZ_x45lRo-EahXw2EGfyBKBZbZW2x0DQ0jU7qKB4Az7maxIpxxlzpA" class="rounded-[32px] border-8 border-primary shadow-2xl w-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzP8U-ycievecUuX_U7Sojni7zYvICY9X2GUhDI7Q1YjRNLsjiUIKtZPovD5_oeiDsbemcyrI_j6Q224jqGdIGIGEBFKkB1lLZbtGvXCQEdPRPgfSOiIVQSSCXLzv-9dh9LiA12IZroduULyjHmcNFJdIWRzPRh7LjMBlR7wxh9ns7e7i_tHkx0XC5EIjxGIEw5B8tnyMoRHoEhKamH83CqZ_x45lRo-EahXw2EGfyBKBZbZW2x0DQ0jU7qKB4Az7maxIpxxlzpA">
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Bar -->
+<section class="py-8 bg-surface-container-low">
+<p class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-6">Ils nous font confiance</p>
+<div class="flex flex-wrap justify-center gap-x-8 gap-y-4 px-margin-mobile grayscale opacity-70">
+<span class="font-bold text-outline text-lg italic">Diouf Distribution</span>
+<span class="font-bold text-outline text-lg italic">Groupe Sahel</span>
+<span class="font-bold text-outline text-lg italic">UNACOIS Dakar</span>
+<span class="font-bold text-outline text-lg italic">MBaye &amp; Frères</span>
+</div>
+</section>
+<!-- Problem Section -->
+<section class="px-margin-mobile py-20 bg-surface">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-primary text-center mb-12">
+                Combien vous perdez vraiment chaque mois ?
+            </h2>
+<div class="space-y-6">
+<!-- Card 1 -->
+<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl flex items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="inventory_2">inventory_2</span>
+</div>
+<div>
+<h3 class="font-label-bold text-label-bold text-primary mb-1">Démarque inconnue</h3>
+<p class="text-on-surface-variant text-sm">Finissez-en avec les produits qui disparaissent sans explication.</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl flex items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<h3 class="font-label-bold text-label-bold text-primary mb-1">Ardoises impayées</h3>
+<p class="text-on-surface-variant text-sm">Oubliez les carnets de crédit perdus ou mal tenus.</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl flex items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="visibility_off">visibility_off</span>
+</div>
+<div>
+<h3 class="font-label-bold text-label-bold text-primary mb-1">Zéro visibilité</h3>
+<p class="text-on-surface-variant text-sm">Arrêtez de piloter votre commerce à l'aveugle sans chiffres clairs.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Solution Section -->
+<section class="px-margin-mobile py-20 bg-primary-container text-on-primary">
+<div class="text-center mb-12">
+<h2 class="font-headline-section-mobile text-headline-section-mobile mb-4">
+                    Tout ce qu'il vous faut. Rien de superflu.
+                </h2>
+</div>
+<div class="space-y-8">
+<!-- Horizontal Feature 1 -->
+<div class="space-y-4">
+<div class="w-full aspect-video rounded-xl overflow-hidden bg-surface/10 border border-white/10">
+<img alt="Caisse rapide" class="w-full h-full object-cover" data-alt="A clean, high-resolution interface of a retail checkout system displayed on a tablet screen. The UI features large touch-friendly buttons for product categories, a clear running total, and a prominent 'Complete Sale' button in emerald green. The background is a soft-focus interior of a modern boutique with natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzP8U-ycievecUuX_U7Sojni7zYvICY9X2GUhDI7Q1YjRNLsjiUIKtZPovD5_oeiDsbemcyrI_j6Q224jqGdIGIGEBFKkB1lLZbtGvXCQEdPRPgfSOiIVQSSCXLzv-9dh9LiA12IZroduULyjHmcNFJdIWRzPRh7LjMBlR7wxh9ns7e7i_tHkx0XC5EIjxGIEw5B8tnyMoRHoEhKamH83CqZ_x45lRo-EahXw2EGfyBKBZbZW2x0DQ0jU7qKB4Az7maxIpxxlzpA">
+</div>
+<div>
+<h3 class="font-headline-section-mobile text-[20px] mb-2">Caisse ultra-rapide</h3>
+<p class="text-on-primary-container text-sm">Enregistrez une vente en moins de 5 secondes, même quand la boutique est pleine.</p>
+</div>
+</div>
+<!-- Horizontal Feature 2 -->
+<div class="space-y-4">
+<div class="w-full aspect-video rounded-xl overflow-hidden bg-surface/10 border border-white/10">
+<img alt="Stock temps réel" class="w-full h-full object-cover" data-alt="A sophisticated digital dashboard showing real-time inventory levels with colorful progress bars and alert icons for low stock items. The interface is displayed on a mobile device held by a shop owner. The lighting is professional and warm, conveying a sense of order and business control." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW3ta_ss2B5zxgcdsczxhD6d4NNrxsSHnG1b--ay3TOkfblXf5ta4XG7dASrrb9p_imk2PaBDokgJFCqlQXaO_0nwKbaSfuMt5QAf_O7yf-XfDHl3E9meazRDOFRsNPbZVJDG9NR2UJKWif3N6GQCtU0XF1NsVo6v4u0znLXtwKDLiBiR8di10Sh8tXWzWGEXROFtJp5PTI9eTT5UdLFBgrtYGgm6OUFWjNhVQfv5nOEEdyj1gpOBED4_AAkPpuDsG4uXMBbY45g">
+</div>
+<div>
+<h3 class="font-headline-section-mobile text-[20px] mb-2">Stock en temps réel</h3>
+<p class="text-on-primary-container text-sm">Soyez alerté quand un produit manque. Plus jamais de rupture de stock imprévue.</p>
+</div>
+</div>
+<!-- Horizontal Feature 3 -->
+<div class="space-y-4">
+<div class="w-full aspect-video rounded-xl overflow-hidden bg-surface/10 border border-white/10">
+<img alt="Ardoise digitale" class="w-full h-full object-cover" data-alt="A detailed digital ledger screen on a mobile app showing a list of customer names with their outstanding balances and payment history. The UI uses clean typography and soft red and green indicators for financial status. The background is a blurred corporate office environment with a professional and trustworthy atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwUltMPOgnylpl0D1QA89dq8aDoCXunUGxFbwGqTzsy_wzaxBVTMXd7lOalVRbApSpfiBtylgaTk_PS71wX_oLAfjAtFh6BpIWOZEnJ00bpcU0cdmavnEnGP6XblKfTSJb7QtqCmp9gZN1W5Du7O324j01VX1dBhF6eotBB08mnliL58sNVoKUK9FwLsa5Iv_Mzui4dDoaG2a3NcSLFpD0M64L2ulsDCXwhXeIskk2Hme-ggvQisLr4ZejsqFxMHxLxoZJ6pMfKg">
+</div>
+<div>
+<h3 class="font-headline-section-mobile text-[20px] mb-2">Ardoise digitale</h3>
+<p class="text-on-primary-container text-sm">Gérez les crédits clients proprement. Envoyez des rappels SMS en un clic.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Visual Demo (Horizontal Scroll) -->
+<section class="py-20 bg-surface overflow-hidden">
+<div class="px-margin-mobile mb-10">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-primary text-center">Conçu pour votre téléphone.</h2>
+</div>
+<div class="flex gap-6 overflow-x-auto px-margin-mobile hide-scrollbar snap-x">
+<div class="shrink-0 w-[280px] snap-center">
+<img class="rounded-[40px] border-[10px] border-primary shadow-xl" data-alt="A vertical smartphone mockup showing a modern retail inventory management screen with bright product photos and clear pricing text. The UI is designed for one-handed use in a bustling market. Deep navy header and clean white card layout." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzP8U-ycievecUuX_U7Sojni7zYvICY9X2GUhDI7Q1YjRNLsjiUIKtZPovD5_oeiDsbemcyrI_j6Q224jqGdIGIGEBFKkB1lLZbtGvXCQEdPRPgfSOiIVQSSCXLzv-9dh9LiA12IZroduULyjHmcNFJdIWRzPRh7LjMBlR7wxh9ns7e7i_tHkx0XC5EIjxGIEw5B8tnyMoRHoEhKamH83CqZ_x45lRo-EahXw2EGfyBKBZbZW2x0DQ0jU7qKB4Az7maxIpxxlzpA">
+</div>
+<div class="shrink-0 w-[280px] snap-center">
+<img class="rounded-[40px] border-[10px] border-primary shadow-xl" data-alt="A mobile phone screen displaying a vibrant business analytics chart with daily sales growth in green and blue tones. The interface is clean, professional, and reflects a corporate modern style optimized for Android devices." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW3ta_ss2B5zxgcdsczxhD6d4NNrxsSHnG1b--ay3TOkfblXf5ta4XG7dASrrb9p_imk2PaBDokgJFCqlQXaO_0nwKbaSfuMt5QAf_O7yf-XfDHl3E9meazRDOFRsNPbZVJDG9NR2UJKWif3N6GQCtU0XF1NsVo6v4u0znLXtwKDLiBiR8di10Sh8tXWzWGEXROFtJp5PTI9eTT5UdLFBgrtYGgm6OUFWjNhVQfv5nOEEdyj1gpOBED4_AAkPpuDsG4uXMBbY45g">
+</div>
+<div class="shrink-0 w-[280px] snap-center">
+<img class="rounded-[40px] border-[10px] border-primary shadow-xl" data-alt="A smartphone interface showing a digital customer loyalty and debt management screen. Clear typography and professional color palette of navy, white, and emerald green. High clarity for outdoor readability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwUltMPOgnylpl0D1QA89dq8aDoCXunUGxFbwGqTzsy_wzaxBVTMXd7lOalVRbApSpfiBtylgaTk_PS71wX_oLAfjAtFh6BpIWOZEnJ00bpcU0cdmavnEnGP6XblKfTSJb7QtqCmp9gZN1W5Du7O324j01VX1dBhF6eotBB08mnliL58sNVoKUK9FwLsa5Iv_Mzui4dDoaG2a3NcSLFpD0M64L2ulsDCXwhXeIskk2Hme-ggvQisLr4ZejsqFxMHxLxoZJ6pMfKg">
+</div>
+</div>
+</section>
+<!-- How it works -->
+<section class="px-margin-mobile py-20 bg-surface-container-low">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-primary text-center mb-16">
+                Prêt en 3 minutes
+            </h2>
+<div class="space-y-12 relative">
+<!-- Connection Line -->
+<div class="absolute left-6 top-8 bottom-8 w-1 bg-primary/10"></div>
+<div class="relative flex items-start gap-6">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xl shrink-0 z-10">01</div>
+<div>
+<h3 class="font-label-bold text-[18px] text-primary mb-2">Créez votre compte</h3>
+<p class="text-on-surface-variant">Juste un numéro de téléphone et le nom de votre boutique.</p>
+</div>
+</div>
+<div class="relative flex items-start gap-6">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xl shrink-0 z-10">02</div>
+<div>
+<h3 class="font-label-bold text-[18px] text-primary mb-2">Installez l'application</h3>
+<p class="text-on-surface-variant">Disponible sur Android. Fonctionne même sur les téléphones simples.</p>
+</div>
+</div>
+<div class="relative flex items-start gap-6">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xl shrink-0 z-10">03</div>
+<div>
+<h3 class="font-label-bold text-[18px] text-primary mb-2">Gérez et vendez</h3>
+<p class="text-on-surface-variant">Commencez à scanner vos produits et encaissez vos premiers clients.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing -->
+<section class="px-margin-mobile py-20 bg-surface">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-primary text-center mb-12">Tarifs transparents</h2>
+<div class="space-y-8">
+<!-- Basic Plan -->
+<div class="p-8 bg-surface-container-lowest border border-outline-variant rounded-xl text-center">
+<h3 class="font-label-bold text-on-surface-variant mb-2">Découverte</h3>
+<div class="text-3xl font-bold text-primary mb-6">Gratuit</div>
+<ul class="text-left space-y-3 mb-8 text-on-surface-variant text-sm">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> Jusqu'à 50 ventes / mois</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> Gestion de stock basique</li>
+</ul>
+<button class="w-full border-2 border-primary text-primary h-12 rounded-lg font-label-bold">Commencer</button>
+</div>
+<!-- Pro Plan -->
+<div class="p-8 bg-surface-container-lowest border-4 border-primary rounded-xl text-center relative">
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                        LE PLUS POPULAIRE
+                    </div>
+<h3 class="font-label-bold text-on-surface-variant mb-2">Plan Pro</h3>
+<div class="text-3xl font-bold text-primary mb-1">4 900 FCFA</div>
+<div class="text-xs text-on-surface-variant mb-6">par mois</div>
+<ul class="text-left space-y-3 mb-8 text-on-surface-variant text-sm">
+<li class="flex items-center gap-2 font-bold text-on-surface"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> Ventes illimitées</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> Rappels Ardoise par SMS</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> 3 Utilisateurs (Gérants)</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm" data-icon="check_circle">check_circle</span> Rapports détaillés PDF</li>
+</ul>
+<button class="w-full bg-primary text-on-primary h-12 rounded-lg font-label-bold">Choisir Pro</button>
+</div>
+</div>
+</section>
+<!-- Testimonials -->
+<section class="px-margin-mobile py-20 bg-primary">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-on-primary text-center mb-12">Approuvé par vos pairs</h2>
+<div class="space-y-6">
+<!-- Testimonial 1 -->
+<div class="bg-surface p-6 rounded-xl shadow-lg">
+<p class="italic text-on-surface-variant mb-4">"Avant BoutikOS, je perdais 15% de mon stock chaque mois. Maintenant, tout est carré. Même sans internet, je continue de vendre."</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary">M</div>
+<div>
+<p class="font-label-bold text-primary">Mamadou D.</p>
+<p class="text-xs text-on-surface-variant">Quincaillerie, Pikine</p>
+</div>
+</div>
+</div>
+<!-- Testimonial 2 -->
+<div class="bg-surface p-6 rounded-xl shadow-lg">
+<p class="italic text-on-surface-variant mb-4">"La gestion des ardoises est magique. Les clients paient plus vite quand ils reçoivent le petit SMS de rappel automatique."</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-primary">A</div>
+<div>
+<p class="font-label-bold text-primary">Aïssatou S.</p>
+<p class="text-xs text-on-surface-variant">Boutique Cosmétique, Plateau</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ -->
+<section class="px-margin-mobile py-20 bg-surface">
+<h2 class="font-headline-section-mobile text-headline-section-mobile text-primary text-center mb-12">Vos questions</h2>
+<div class="space-y-4">
+<details class="group p-4 border border-outline-variant rounded-lg">
+<summary class="list-none flex justify-between items-center cursor-pointer font-label-bold text-primary">
+                        Est-ce que ça marche sans internet ?
+                        <span class="material-symbols-outlined transition-transform group-open:rotate-180" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant text-sm">Oui ! BoutikOS est conçu pour les zones à connexion instable. Toutes vos données sont enregistrées localement et synchronisées dès que vous retrouvez du réseau.</p>
+</details>
+<details class="group p-4 border border-outline-variant rounded-lg">
+<summary class="list-none flex justify-between items-center cursor-pointer font-label-bold text-primary">
+                        Faut-il une formation ?
+                        <span class="material-symbols-outlined transition-transform group-open:rotate-180" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant text-sm">Non, si vous savez utiliser WhatsApp, vous saurez utiliser BoutikOS. C'est simple, visuel et en français.</p>
+</details>
+<details class="group p-4 border border-outline-variant rounded-lg">
+<summary class="list-none flex justify-between items-center cursor-pointer font-label-bold text-primary">
+                        Comment payer mon abonnement ?
+                        <span class="material-symbols-outlined transition-transform group-open:rotate-180" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant text-sm">Nous acceptons Orange Money, Wave et Free Money directement depuis l'application.</p>
+</details>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="mx-margin-mobile my-20 p-10 bg-secondary rounded-3xl text-center shadow-2xl relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+<h2 class="font-headline-section-mobile text-on-secondary mb-6">Commencez aujourd'hui. C'est gratuit.</h2>
+<button class="w-full bg-white text-secondary h-touch-target rounded-xl font-label-bold text-lg active:scale-95 transition-transform">
+                Lancer ma boutique
+            </button>
+<p class="mt-6 text-on-secondary/80 text-xs">Rejoignez la révolution du commerce de proximité au Sénégal.</p>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-on-background py-16 px-margin-mobile text-surface">
+<div class="flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="storefront">storefront</span>
+<span class="text-2xl font-bold">BoutikOS</span>
+</div>
+<div class="grid grid-cols-2 gap-8 mb-12">
+<div class="space-y-4">
+<p class="font-label-bold text-secondary-fixed">Solution</p>
+<ul class="space-y-2 text-sm text-surface/60">
+<li class="">Fonctionnalités</li>
+<li class="">Tarifs</li>
+<li class="">Témoignages</li>
+</ul>
+</div>
+<div class="space-y-4">
+<p class="font-label-bold text-secondary-fixed">Aide</p>
+<ul class="space-y-2 text-sm text-surface/60">
+<li class="">Support</li>
+<li class="">Confidentialité</li>
+<li class="">Contact</li>
+</ul>
+</div>
+</div>
+<div class="pt-8 border-t border-surface/10 text-center space-y-4">
+<p class="text-xs text-surface/40">© 2024 BoutikOS. La gestion simplifiée pour le commerce de proximité.</p>
+<p class="text-sm">Fait avec ❤️ au Sénégal 🇸🇳</p>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for detail accordions
+        document.querySelectorAll('details').forEach((el) => {
+            el.addEventListener('toggle', (e) => {
+                if (el.open) {
+                    document.querySelectorAll('details').forEach((otherEl) => {
+                        if (otherEl !== el) otherEl.open = false;
+                    });
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

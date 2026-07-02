@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#382000",
+                    "error": "#ba1a1a",
+                    "secondary": "#006d37",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#a9c9f2",
+                    "on-secondary-container": "#007239",
+                    "surface-container-highest": "#e0e3e6",
+                    "on-background": "#191c1e",
+                    "outline": "#73777f",
+                    "on-primary-fixed": "#001d36",
+                    "on-surface-variant": "#43474e",
+                    "on-secondary-fixed-variant": "#005228",
+                    "tertiary-container": "#553300",
+                    "secondary-fixed-dim": "#61de8a",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c3c6cf",
+                    "primary-fixed": "#d1e4ff",
+                    "primary-container": "#1a3c5e",
+                    "on-tertiary-fixed": "#2b1700",
+                    "on-tertiary-container": "#e69200",
+                    "surface-container": "#eceef1",
+                    "surface-dim": "#d8dadd",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#7bf8a1",
+                    "surface-container-low": "#f2f4f7",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#28496b",
+                    "on-primary-container": "#87a7ce",
+                    "on-secondary-fixed": "#00210c",
+                    "surface-bright": "#f7f9fc",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e6e8eb",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "on-secondary": "#ffffff",
+                    "primary": "#002645",
+                    "surface": "#f7f9fc",
+                    "inverse-on-surface": "#eff1f4",
+                    "inverse-surface": "#2d3133",
+                    "primary-fixed-dim": "#a9c9f2",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#7efba4",
+                    "on-tertiary-fixed-variant": "#663e00",
+                    "surface-tint": "#416084",
+                    "tertiary-fixed": "#ffddb9",
+                    "background": "#f7f9fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "margin-desktop": "48px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["DM Sans"],
+                    "numeric-display": ["DM Sans"],
+                    "headline-lg-mobile": ["DM Sans"],
+                    "headline-sm": ["DM Sans"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["DM Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "numeric-display": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .stock-progress-bar {
+        height: 4px;
+        border-radius: 2px;
+        background-color: #E2E8F0;
+        overflow: hidden;
+      }
+      .elevation-level-2 {
+        box-shadow: 0px 4px 12px rgba(26, 60, 94, 0.08);
+      }
+      body {
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar Shell -->
+<header class="bg-primary fixed top-0 w-full z-50 flex justify-between items-center h-14 px-margin-mobile">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-bold text-label-md">
+                JS
+            </div>
+<h1 class="text-on-primary font-headline-md text-headline-md">BoutikOS</h1>
+</div>
+<button class="text-on-primary/70 hover:bg-primary-container/20 p-2 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<main class="pt-20 px-margin-mobile max-w-5xl mx-auto">
+<!-- Section Header -->
+<div class="mb-gutter flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Gestion du Stock</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Inventaire en temps réel</p>
+</div>
+<button class="flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-lg text-primary font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                Filtres
+            </button>
+</div>
+<!-- Metric Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
+<!-- Total Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant elevation-level-2">
+<div class="flex justify-between items-start mb-sm">
+<span class="material-symbols-outlined text-primary-container" data-icon="inventory_2">inventory_2</span>
+<span class="text-secondary font-label-md bg-secondary-container/20 px-2 py-0.5 rounded-full">+12%</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">Articles Totaux</p>
+<p class="font-numeric-display text-numeric-display text-primary">1,452</p>
+</div>
+<!-- Alertes Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant elevation-level-2">
+<div class="flex justify-between items-start mb-sm">
+<span class="material-symbols-outlined text-tertiary" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="text-tertiary-container font-label-md bg-tertiary-fixed/30 px-2 py-0.5 rounded-full">Bas</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">Alertes Stock</p>
+<p class="font-numeric-display text-numeric-display text-tertiary-container">24</p>
+</div>
+<!-- Ruptures Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant elevation-level-2">
+<div class="flex justify-between items-start mb-sm">
+<span class="material-symbols-outlined text-error" data-icon="block">block</span>
+<span class="text-error font-label-md bg-error-container px-2 py-0.5 rounded-full">Critique</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">En Rupture</p>
+<p class="font-numeric-display text-numeric-display text-error">08</p>
+</div>
+</div>
+<!-- Product List -->
+<div class="space-y-md">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-md">Produits Récents</h3>
+<!-- Item 1: En Rupture -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant elevation-level-2 flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg bg-surface-container shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A professional high-contrast photograph of a bright red athletic sneaker on a clean white background. The lighting is crisp and modern, reflecting a premium retail aesthetic. The composition is centered, emphasizing the sleek textures of the material in a professional product catalog style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr5zwctUuPloR0F4_9_P9dRbfPLD7P65sCJQM9Fosi9B4JJmLeyl1Ci1SWNfNcCuRY3JlyJnrJLbXSMHhIGBISkKA7q0CBdEDtdRuechJ3ULXbtm0cXg7G5Oj2UmomErrued-N02OESqCWQXJxVnGbbMVIaBVlouoSm-5ooa7e3cFgq1ERq-BeRUw5ufGO-CxjJ0dnA6KKrAsGzu6pIGWP-9IWki_XwQrfwnb2DULndVyviUtdHOwPis_H7H7yvMsRQ36wYDPeT58"/>
+<div class="absolute top-0 right-0 bg-error text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg">VIDE</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Sneaker Speedfire Red</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Ref: SF-2024-RD</p>
+</div>
+<div class="text-right">
+<p class="font-headline-sm text-headline-sm text-error">0 unités</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Prix: 45,000 FCFA</p>
+</div>
+</div>
+<div class="mt-4">
+<div class="stock-progress-bar">
+<div class="h-full bg-error" style="width: 0%"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-error font-bold">RUPTURE DE STOCK</span>
+<span class="text-[10px] text-on-surface-variant">0 / 100</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 2: Alerte -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant elevation-level-2 flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg bg-surface-container shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A minimalist professional product shot of a luxury matte white wristwatch on a clean, light grey surface. The lighting is soft and diffused, creating subtle shadows that enhance the modern and grounded fintech brand identity. The focus is sharp on the elegant dial details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqIIDyhqulmT0-QA-btImMIkreO2aZKVCOxYHvfa2oT8zEjwTq8ILYs_jIPQ4ZERGOgfS7FOIqkiGHlPGQxBgQNuduGf_Qjfl-yQ5GyjkWpaw8K_KfUrmxd_WjZ4Cr7QWb-tqWQWp15k6byVojmmp141eRJJ4L27JMaZ8gQ8KKAmZSPweR2BHpov9rD-xfmGkNKlHThxD9AFO93Ev0rWP9H7tVGV8V-jLo2akxy1kWbBd9yRRp0hcU9gguigLM4GD3S7miVpzEqw4"/>
+<div class="absolute top-0 right-0 bg-tertiary text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg uppercase">Alerte</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Montre Minimalist Quartz</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Ref: MQ-889-WT</p>
+</div>
+<div class="text-right">
+<p class="font-headline-sm text-headline-sm text-tertiary">12 unités</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Prix: 85,000 FCFA</p>
+</div>
+</div>
+<div class="mt-4">
+<div class="stock-progress-bar">
+<div class="h-full bg-tertiary-fixed-dim" style="width: 12%"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-tertiary font-bold">NIVEAU CRITIQUE</span>
+<span class="text-[10px] text-on-surface-variant">12 / 100</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 3: Alerte -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant elevation-level-2 flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg bg-surface-container shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Modern high-fidelity wireless headphones in deep navy blue, displayed in a clean, professional studio setting. The background is a soft, light blue-grey that complements the corporate color palette. Soft rim lighting highlights the metallic accents, suggesting a premium, durable retail product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHkkY4hmOvmkaRYZ5-xjvDEjH8TNfXVPw2ZsQ32F8oU2C1yyZ1tVag87pKEJWZP0LZyopyeF9RUIGtcQo-07TlAKqxw_qs8ghCPzL6BWL_j0jMMZrYmcRyU-ee8X0fnb4VoOtpjLoOpM6QwMdjjJPeAngqIRdj2eHo8aOWnIIEYgc4k7mADXhs9yLusNAQEOrC4_tTgGsVjvT3RKEfxOM2G1fb62U2cPGvUEct3UcfEgUaLvgbwif5ESUZb2cBNVsY_ISSR2N9rdM"/>
+<div class="absolute top-0 right-0 bg-tertiary text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg uppercase">Alerte</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Casque Audio Studio Pro</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Ref: HP-900-NV</p>
+</div>
+<div class="text-right">
+<p class="font-headline-sm text-headline-sm text-tertiary">18 unités</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Prix: 120,000 FCFA</p>
+</div>
+</div>
+<div class="mt-4">
+<div class="stock-progress-bar">
+<div class="h-full bg-tertiary-fixed-dim" style="width: 18%"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-tertiary font-bold">STOCK BAS</span>
+<span class="text-[10px] text-on-surface-variant">18 / 100</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 4: Normal -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant elevation-level-2 flex gap-md items-center">
+<div class="w-16 h-16 rounded-lg bg-surface-container shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A pack of premium leather goods displayed on a clean surface. The lighting is warm and natural, emphasizing the texture of the materials. The style is clear, professional, and accessible, typical of a high-end boutique's inventory management system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAb4TjRgeBxVRk1EHZpkDt1OetA51-5JWLVQAI6Jif4g7sP9XKv5HTnGhZC6eCM8sCkLkH_O5SitwpBsdDGPBO86HtrSmm7t7KZ4GWg1WsfsSO3E0zcWuMBRchXb5HkVIs8OHV1MNnw0LYNd8rJPIOsy8O4-mhsDm7Omh4CcRUrwEYdzu2b6PTKuFVuPoJfsGScIwfXwPKZyHaUPu1A1MVgHJApfFb4A1zKkSG62Zc6_0HmNznfKl6ulUZ48UW8C87bCZn7FHASqLw"/>
+<div class="absolute top-0 right-0 bg-secondary text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg uppercase">Stock</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Sac à Dos Urban Canvas</h4>
+<p class="font-label-md text-label-md text-on-surface-variant">Ref: BP-550-GR</p>
+</div>
+<div class="text-right">
+<p class="font-headline-sm text-headline-sm text-secondary">75 unités</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Prix: 32,000 FCFA</p>
+</div>
+</div>
+<div class="mt-4">
+<div class="stock-progress-bar">
+<div class="h-full bg-secondary" style="width: 75%"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="text-[10px] text-secondary font-bold">EN STOCK</span>
+<span class="text-[10px] text-on-surface-variant">75 / 100</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-gutter w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center transition-all active:scale-90 z-40">
+<span class="material-symbols-outlined text-[32px]" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-primary flex justify-around items-center h-16 px-2 pb-safe shadow-lg">
+<div class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="point_of_sale">point_of_sale</span>
+<span class="font-label-md text-label-md">Caisse</span>
+</div>
+<div class="flex flex-col items-center justify-center text-secondary-fixed font-bold hover:bg-primary-container/10 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-label-md">Stock</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md">Ardoise</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-primary/60 hover:bg-primary-container/10 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</div>
+</nav>
+<script>
+        // Simple ripple effect or active state handling
+        document.querySelectorAll('nav div, .elevation-level-2').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.classList.add('scale-95');
+            });
+            el.addEventListener('touchend', function() {
+                this.classList.remove('scale-95');
+            });
+        });
+    </script>
+</body></html>

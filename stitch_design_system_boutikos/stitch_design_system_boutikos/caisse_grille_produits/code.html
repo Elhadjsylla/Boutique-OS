@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#382000",
+                    "error": "#ba1a1a",
+                    "secondary": "#006d37",
+                    "on-surface": "#191c1e",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#a9c9f2",
+                    "on-secondary-container": "#007239",
+                    "surface-container-highest": "#e0e3e6",
+                    "on-background": "#191c1e",
+                    "outline": "#73777f",
+                    "on-primary-fixed": "#001d36",
+                    "on-surface-variant": "#43474e",
+                    "on-secondary-fixed-variant": "#005228",
+                    "tertiary-container": "#553300",
+                    "secondary-fixed-dim": "#61de8a",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c3c6cf",
+                    "primary-fixed": "#d1e4ff",
+                    "primary-container": "#1a3c5e",
+                    "on-tertiary-fixed": "#2b1700",
+                    "on-tertiary-container": "#e69200",
+                    "surface-container": "#eceef1",
+                    "surface-dim": "#d8dadd",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#7bf8a1",
+                    "surface-container-low": "#f2f4f7",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#28496b",
+                    "on-primary-container": "#87a7ce",
+                    "on-secondary-fixed": "#00210c",
+                    "surface-bright": "#f7f9fc",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e6e8eb",
+                    "tertiary-fixed-dim": "#ffb961",
+                    "on-secondary": "#ffffff",
+                    "primary": "#002645",
+                    "surface": "#f7f9fc",
+                    "inverse-on-surface": "#eff1f4",
+                    "inverse-surface": "#2d3133",
+                    "primary-fixed-dim": "#a9c9f2",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#7efba4",
+                    "on-tertiary-fixed-variant": "#663e00",
+                    "surface-tint": "#416084",
+                    "tertiary-fixed": "#ffddb9",
+                    "background": "#f7f9fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "margin-desktop": "48px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "sm": "8px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["DM Sans"],
+                    "numeric-display": ["DM Sans"],
+                    "headline-lg-mobile": ["DM Sans"],
+                    "headline-sm": ["DM Sans"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["DM Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "numeric-display": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #f7f9fc; color: #191c1e; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .cart-shadow {
+            box-shadow: 0px -8px 24px rgba(0, 0, 0, 0.08);
+        }
+        .product-card-shadow {
+            box-shadow: 0px 4px 12px rgba(26, 60, 94, 0.08);
+        }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-primary text-on-primary fixed top-0 left-0 w-full z-50 h-14 flex justify-between items-center px-margin-mobile">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
+<span class="font-headline-md text-sm">JS</span>
+</div>
+<div class="flex flex-col">
+<h1 class="font-headline-md text-headline-md leading-none">BoutikOS</h1>
+<span class="text-[10px] opacity-70 tracking-wider">MARCHÉ CENTRAL</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-on-primary hover:bg-primary-container/20 p-2 rounded-full transition-transform active:scale-95">notifications</button>
+</div>
+</header>
+<main class="pt-20 pb-40 px-margin-mobile min-h-screen">
+<!-- Search & Filter Section -->
+<div class="mb-lg">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-outline-variant border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-body-lg text-body-lg" placeholder="Rechercher un produit..." type="text"/>
+<button class="absolute right-4 text-primary material-symbols-outlined">barcode_scanner</button>
+</div>
+<!-- Category Chips -->
+<div class="flex gap-sm overflow-x-auto scroll-hide py-sm mt-md">
+<span class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-md text-label-md whitespace-nowrap">Tout</span>
+<span class="px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Alimentation</span>
+<span class="px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Boissons</span>
+<span class="px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Hygiène</span>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-2 gap-md">
+<!-- Product 1 -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant product-card-shadow flex flex-col overflow-hidden relative active:scale-95 transition-transform duration-150">
+<div class="h-32 bg-surface-container overflow-hidden">
+<img alt="Huile de cuisine" class="w-full h-full object-cover" data-alt="A professional high-contrast product photograph of a premium vegetable oil bottle on a clean white surface with soft ambient shadows. The lighting is bright and corporate, emphasizing the liquid's clarity and the bottle's high-quality packaging. The scene is grounded in a modern retail aesthetic with a professional and reliable tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAR9qk8Nr_lavkl_Ooj_HQutFq7uBdmdqKXaWipn7Rt99JE2hHdDRezu43VTRDtRC2gyCVvvXtaA65VLCODGfEeDpB56CgrwLe5G1m9AJaaHG37lBaEfmz08Wy8pKuKqTDEIribGeNtG6qPSZRlgB_0zj6Urd1Wb5_gX_Eq06-7_2cUP30p01ki1L3aDlPcaogob8V9lfhqtRg8Thb_phXAo8p2Mly3gEvOIB80rP1jm2jaCZcHZ9Upe1NjeTf4cBVzfl9yAX0KQjE"/>
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-sm text-on-surface leading-tight truncate pr-2">Huile de Palme</h3>
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">In Stock</span>
+</div>
+<div class="mt-auto">
+<p class="font-numeric-display text-primary text-lg">2,500 FCFA</p>
+</div>
+</div>
+</div>
+<!-- Product 2 -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant product-card-shadow flex flex-col overflow-hidden relative active:scale-95 transition-transform duration-150">
+<div class="h-32 bg-surface-container overflow-hidden">
+<img alt="Sac de Riz" class="w-full h-full object-cover" data-alt="A professional studio shot of a high-quality burlap sack of premium long-grain rice, placed against a neutral grey background with high-contrast lighting. The image conveys reliability and stock abundance, using a professional fintech visual style that is clean, sharp, and grounded. The lighting is even and detailed, highlighting the texture of the sack." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeI-pAEaQ10nxOTirj1SyrtJMbrSXTGaeNd0B0hUySm4X3kRgGXh2DT5QruT7oln528OTKuAjK7A0NSVKuwbwHs_ieN16kHFVNR4JbUWppJYge7HlfNo2c2bUa1HCngNDnvJKwG-J4aV-lvg6df9i9t11meNVAEHGIQthJKlrge-st5Pz2vIo08jGV_dkclK9KnD-DdugDzJZbP-zv0rj3oCp_q16l63diwfQgiRbNvn6nrcv_iKhLLN_sBn2cxzLd4Gpy6jeqKh4"/>
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-sm text-on-surface leading-tight truncate pr-2">Riz Long Grain 5kg</h3>
+<span class="bg-error/10 text-error px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">Low</span>
+</div>
+<div class="mt-auto">
+<p class="font-numeric-display text-primary text-lg">6,750 FCFA</p>
+</div>
+</div>
+</div>
+<!-- Product 3 -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant product-card-shadow flex flex-col overflow-hidden relative active:scale-95 transition-transform duration-150">
+<div class="h-32 bg-surface-container overflow-hidden">
+<img alt="Bouteille d'eau" class="w-full h-full object-cover" data-alt="A clean, minimalist product photograph of a clear plastic water bottle with a pristine label, set against a bright, modern studio background. The lighting is sharp and professional, creating high contrast that emphasizes the product's clarity and purity. The visual style is modern, corporate, and functional, ideal for a retail inventory interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfza5s38pysYpWzsinlMNIiy6We-F5GcDKCZzA54SuYWzMIeJ_CDy8gc3z6jzvpf6pkxE0jGFw51iJY2RKF1iJkKag4x9Md44KHa92zEJNZCwWyVX3taQxc4ieiEaI6SPak1MbTm4Sb5ZG8bDjWJ2DwuqmDCedqoHYs8aeZIguw5xQc-w-6fUqIBdLf4K4RXca-nE-4LiV5zNZcOiT5b--1C-6Fw7uS8B23n0hHwHB_AD2yzrbJuLh2S7cyhkF-aGxkvP67vhCvho"/>
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-sm text-on-surface leading-tight truncate pr-2">Eau Minérale 1.5L</h3>
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">In Stock</span>
+</div>
+<div class="mt-auto">
+<p class="font-numeric-display text-primary text-lg">500 FCFA</p>
+</div>
+</div>
+</div>
+<!-- Product 4 -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant product-card-shadow flex flex-col overflow-hidden relative active:scale-95 transition-transform duration-150">
+<div class="h-32 bg-surface-container overflow-hidden">
+<img alt="Savon" class="w-full h-full object-cover" data-alt="A macro studio photograph of a stack of artisanal soaps with elegant packaging, presented on a stone surface with soft, high-quality lighting. The palette is muted and professional, using shades of cream and earth tones. The focus is sharp, showcasing the premium quality of the product in a corporate retail context that values clarity and efficiency." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVuCJpEUS9k0ZFVHQFHACwY_4_jjvYpeOwM3lz0bgKEN1Qcu-IuZLUcm-u2gZKQIioqN_CCoQXaqF_Ejwfzl73987loXtJ_KF9vz4N_3TAVsZxR29BYcpK8eBBK8d9NgD7bJEZsL33_-juAtMRxyQi-8gAxBC983WbPwJ0lyy5N-QFTCL3cBJq_R-jvOiiYPdfufPCe8Wdi2cWCrSNjHh7ii1RmSxZ0Dh8BglOa7DvWqmezbhXDVi3kxoiGV55wafbrbXRrb-tteo"/>
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-sm text-on-surface leading-tight truncate pr-2">Savon Corporel</h3>
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">In Stock</span>
+</div>
+<div class="mt-auto">
+<p class="font-numeric-display text-primary text-lg">1,200 FCFA</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (Panier) -->
+<div class="fixed bottom-20 left-0 w-full px-margin-mobile z-40">
+<div class="bg-primary text-on-primary rounded-2xl p-4 cart-shadow flex items-center justify-between border border-on-primary/10">
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined text-3xl">shopping_cart</span>
+<span class="absolute -top-2 -right-2 bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">2</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs opacity-80 font-medium">Panier actuel</span>
+<span class="font-numeric-display text-headline-sm">9,250 FCFA</span>
+</div>
+</div>
+<button class="bg-on-primary text-primary px-6 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-transform">
+                ENCAISSER
+            </button>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-2 pb-safe bg-primary text-on-primary shadow-lg">
+<button class="flex flex-col items-center justify-center text-secondary-fixed font-bold flex-1 h-full hover:bg-primary-container/10">
+<span class="material-symbols-outlined">point_of_sale</span>
+<span class="font-label-md text-label-md">Caisse</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-primary/60 flex-1 h-full hover:bg-primary-container/10">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">Stock</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-primary/60 flex-1 h-full hover:bg-primary-container/10">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Ardoise</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-primary/60 flex-1 h-full hover:bg-primary-container/10">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</button>
+</nav>
+<script>
+        // Simple ripple-like effect on product cards
+        document.querySelectorAll('.active\\:scale-95').forEach(card => {
+            card.addEventListener('touchstart', function() {
+                this.classList.add('brightness-90');
+            });
+            card.addEventListener('touchend', function() {
+                this.classList.remove('brightness-90');
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "ventes": "Ventes",
+    "stock": "Stock",
+    "ardoises": "Ardoises",
+    "rapports": "Dashboard",
+    "reglages": "Réglages"
+  },
+  "common": {
+    "ajouter": "Ajouter",
+    "modifier": "Modifier",
+    "supprimer": "Supprimer",
+    "annuler": "Annuler",
+    "confirmer": "Confirmer",
+    "sauvegarder": "Sauvegarder",
+    "fermer": "Fermer",
+    "rechercher": "Rechercher",
+    "chargement": "Chargement...",
+    "enregistrement": "Enregistrement...",
+    "aucun_resultat": "Aucun résultat",
+    "erreur": "Une erreur est survenue",
+    "succes": "Succès",
+    "oui": "Oui",
+    "non": "Non",
+    "retour": "Retour",
+    "suivant": "Suivant",
+    "terminer": "Terminer"
+  },
+  "auth": {
+    "connexion": "Connexion",
+    "deconnexion": "Déconnexion",
+    "email": "Adresse email",
+    "email_placeholder": "votre@email.com",
+    "envoyer_lien": "Envoyer le lien de connexion",
+    "lien_envoye": "Lien envoyé ! Vérifiez votre boîte mail.",
+    "bienvenue": "Bienvenue sur Sama Boutik"
+  },
+  "ventes": {
+    "titre": "Ventes",
+    "nouvelle_vente": "Nouvelle vente",
+    "total": "Total",
+    "quantite": "Quantité",
+    "produit": "Produit",
+    "valider": "Valider la vente",
+    "historique": "Historique des ventes",
+    "aucune_vente": "Aucune vente enregistrée"
+  },
+  "stock": {
+    "titre": "Stock",
+    "nouveau_produit": "Nouveau produit",
+    "nom": "Nom du produit",
+    "prix": "Prix de vente",
+    "stock": "Stock",
+    "categorie": "Catégorie",
+    "aucun_produit": "Aucun produit en stock"
+  },
+  "ardoises": {
+    "titre": "Ardoises",
+    "nouvelle_ardoise": "Nouvelle ardoise",
+    "client": "Client",
+    "montant": "Montant dû",
+    "rembourser": "Marquer comme remboursé",
+    "aucune_ardoise": "Aucune ardoise en cours"
+  },
+  "rapports": {
+    "titre": "Dashboard",
+    "ca_jour": "CA aujourd'hui",
+    "ca_semaine": "CA cette semaine",
+    "ca_mois": "CA ce mois",
+    "ventes_jour": "Ventes aujourd'hui",
+    "top_produits": "Top produits"
+  },
+  "reglages": {
+    "titre": "Réglages",
+    "boutique": "Ma boutique",
+    "langue": "Langue",
+    "choisir_langue": "Choisir la langue",
+    "abonnement": "Mon abonnement",
+    "plan_actuel": "Plan actuel",
+    "inviter": "Inviter un collaborateur"
+  },
+  "abonnement": {
+    "titre": "Abonnement",
+    "essai_gratuit": "Essai Gratuit — 1 Mois",
+    "essai_description": "Accès complet sans paiement immédiat",
+    "demarrer_essai": "Démarrer l'essai gratuit",
+    "jours_restants": "{{count}} jours restants",
+    "engagement": "Paiement dû à la fin de l'essai",
+    "essai_termine": "Votre essai gratuit est terminé",
+    "contacter_support": "Contactez-nous pour activer votre abonnement",
+    "annuler_essai": "Annuler l'essai",
+    "annuler_confirmation": "Êtes-vous sûr ? Votre accès sera coupé immédiatement.",
+    "plan_starter": "Starter",
+    "plan_pro": "Pro",
+    "plan_annual": "Annuel"
+  },
+  "trial_banner": {
+    "actif_annulable": "Essai gratuit — {{days}} j restants · Annulation possible encore {{cancel_days}} j",
+    "engage": "Essai actif — {{days}} j restants · Paiement dû à la fin"
+  }
+}
