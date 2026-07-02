@@ -46,6 +46,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const fetchStats = async () => {
     setLoading(true);
     try {
+      // Confirm session before RPC to avoid auth.uid() = null race condition
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expirée — veuillez vous reconnecter');
+
       const { data, error: err } = await supabase.rpc('admin_platform_stats');
       if (err) throw err;
       setStats(data);
