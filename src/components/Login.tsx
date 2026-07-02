@@ -17,6 +17,10 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    if (window.location.hash.includes('type=recovery')) {
+      setIsPasswordReset(true);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordReset(true);

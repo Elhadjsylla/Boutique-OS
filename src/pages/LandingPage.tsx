@@ -19,6 +19,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    // Auto-open modal if password recovery is requested in URL
+    if (window.location.hash.includes('type=recovery')) {
+      setShowLoginModal(true);
+    }
+
     const sections = ['problem', 'solution', 'features', 'how-it-works', 'demo', 'security'];
     
     const handleScroll = () => {
