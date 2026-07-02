@@ -43,25 +43,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     expired_subscriptions: 4
   };
 
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const { data, error: err } = await supabase.rpc('admin_platform_stats');
+      if (err) throw err;
+      setStats(data);
+      setIsDemo(false);
+    } catch (e: any) {
+      console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
+      setStats(DEMO_STATS);
+      setIsDemo(true);
+      setDemoReason(e.message || 'RPC non déployé');
+      setError(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const { data, error: err } = await supabase.rpc('admin_platform_stats');
-        if (err) throw err;
-        setStats(data);
-        setIsDemo(false);
-      } catch (e: any) {
-        // Fallback to demo data when the RPC doesn't exist yet or permission is denied
-        console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
-        setStats(DEMO_STATS);
-        setIsDemo(true);
-        setDemoReason(e.message || 'RPC non déployé');
-        setError(null);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
 
@@ -95,12 +95,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       {isDemo && (
         <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
           <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
             <span className="text-[10px] text-amber-400/80">
               Les données affichées sont fictives. Raison : {demoReason || 'Inconnue (Vérifiez la console)'}
             </span>
           </div>
+          <button
+            onClick={fetchStats}
+            className="shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg border border-amber-500/30 transition-all active:scale-95 flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-sm">refresh</span>
+            Réessayer
+          </button>
         </div>
       )}
 
