@@ -17,6 +17,10 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    if (window.location.hash.includes('type=recovery')) {
+      setIsPasswordReset(true);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsPasswordReset(true);
@@ -96,7 +100,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         const generatedBoutiqueId = crypto.randomUUID();
 
         const { error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: {
@@ -114,7 +118,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
 

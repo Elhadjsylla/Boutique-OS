@@ -19,6 +19,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    // Auto-open modal if password recovery is requested in URL
+    if (window.location.hash.includes('type=recovery')) {
+      setShowLoginModal(true);
+    }
+
     const sections = ['problem', 'solution', 'features', 'how-it-works', 'demo', 'security'];
     
     const handleScroll = () => {
@@ -62,16 +67,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Header / Light Glass Navbar */}
       <header className="fixed top-0 left-0 w-full z-50 bg-[#F5F7FA]/80 backdrop-blur-md border-b border-outline-variant/80">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md text-white">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <div className="max-w-6xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md text-white">
+              <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
             </div>
-            <span className="text-lg font-black tracking-tight text-primary">Sama Boutik</span>
+            <span className="text-base md:text-lg font-black tracking-tight text-primary">Sama Boutik</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-texte-2">
@@ -107,7 +112,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          {/* Desktop buttons */}
+          <div className="hidden md:flex items-center gap-3">
             <button 
               onClick={onNavigateToPortal}
               className="px-3.5 h-9.5 text-xs font-black tracking-wider uppercase border border-emerald-500/30 text-emerald-600 bg-emerald-50 hover:bg-emerald-100/50 rounded-xl transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
@@ -139,6 +145,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Créer un commerce
                 </button>
               </>
+            )}
+          </div>
+
+          {/* Mobile: compact action buttons */}
+          <div className="flex md:hidden items-center gap-2">
+            <button 
+              onClick={onNavigateToPortal}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-emerald-500/30 text-emerald-600 bg-emerald-50 active:scale-95 transition-all cursor-pointer"
+              title="Espace Client"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>menu_book</span>
+            </button>
+            {isLoggedIn ? (
+              <button 
+                onClick={onBackToApp}
+                className="h-8 px-3 text-[10px] font-black tracking-wider uppercase bg-secondary text-white rounded-lg shadow-md active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>dashboard</span>
+                App
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowLoginModal(true)}
+                className="h-8 px-3 text-[10px] font-black tracking-wider uppercase bg-primary text-white rounded-lg shadow-md active:scale-95 transition-all cursor-pointer"
+              >
+                Connexion
+              </button>
             )}
           </div>
         </div>
@@ -215,48 +248,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           <div className="rounded-[20px] overflow-hidden border border-outline-variant/60 bg-white aspect-[16/9] flex items-center justify-center relative">
             {/* Mock Dashboard UI inside the mockup */}
-            <div className="w-full h-full p-4 flex flex-col gap-3 text-left">
+            <div className="w-full h-full p-2 md:p-4 flex flex-col gap-1.5 md:gap-3 text-left">
               {/* Header inside mockup */}
-              <div className="flex items-center justify-between border-b border-outline-variant pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-primary flex items-center justify-center text-white">
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center justify-between border-b border-outline-variant pb-1.5 md:pb-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-4 h-4 md:w-6 md:h-6 rounded bg-primary flex items-center justify-center text-white">
+                    <svg className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                       <line x1="3" y1="6" x2="21" y2="6"></line>
                       <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
                   </div>
-                  <span className="text-xs font-bold text-texte">Sama Boutik - Aperçu</span>
+                  <span className="text-[8px] md:text-xs font-bold text-texte">Sama Boutik - Aperçu</span>
                 </div>
-                <div className="flex gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-outline-variant" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-outline-variant" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-outline-variant" />
+                <div className="flex gap-1 md:gap-1.5">
+                  <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full bg-outline-variant" />
+                  <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full bg-outline-variant" />
+                  <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full bg-outline-variant" />
                 </div>
               </div>
               {/* Content Grid inside mockup */}
-              <div className="grid grid-cols-3 gap-3 mt-1">
-                <div className="bg-surface-container-lowest border border-outline-variant p-3 rounded-xl flex flex-col justify-between h-20">
-                  <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Ventes Aujourd'hui</span>
-                  <span className="text-lg font-black text-secondary">145 000 FCFA</span>
+              <div className="grid grid-cols-3 gap-1.5 md:gap-3 mt-1">
+                <div className="bg-surface-container-lowest border border-outline-variant p-1.5 md:p-3 rounded-lg md:rounded-xl flex flex-col justify-between min-h-[3rem] md:h-20">
+                  <span className="text-[7px] md:text-[9px] font-bold text-outline uppercase tracking-wide leading-tight">Ventes Aujourd'hui</span>
+                  <span className="text-[10px] md:text-lg font-black text-secondary leading-tight">145 000 F</span>
                 </div>
-                <div className="bg-surface-container-lowest border border-outline-variant p-3 rounded-xl flex flex-col justify-between h-20">
-                  <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Crédits En cours</span>
-                  <span className="text-lg font-black text-error">32 500 FCFA</span>
+                <div className="bg-surface-container-lowest border border-outline-variant p-1.5 md:p-3 rounded-lg md:rounded-xl flex flex-col justify-between min-h-[3rem] md:h-20">
+                  <span className="text-[7px] md:text-[9px] font-bold text-outline uppercase tracking-wide leading-tight">Crédits En cours</span>
+                  <span className="text-[10px] md:text-lg font-black text-error leading-tight">32 500 F</span>
                 </div>
-                <div className="bg-surface-container-lowest border border-outline-variant p-3 rounded-xl flex flex-col justify-between h-20">
-                  <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Articles en Rupture</span>
-                  <span className="text-lg font-black text-tertiary">3 produits</span>
+                <div className="bg-surface-container-lowest border border-outline-variant p-1.5 md:p-3 rounded-lg md:rounded-xl flex flex-col justify-between min-h-[3rem] md:h-20">
+                  <span className="text-[7px] md:text-[9px] font-bold text-outline uppercase tracking-wide leading-tight">Articles en Rupture</span>
+                  <span className="text-[10px] md:text-lg font-black text-tertiary leading-tight">3 produits</span>
                 </div>
               </div>
               {/* Big graph mockup placeholder */}
-              <div className="bg-surface-container-lowest border border-outline-variant/60 p-4 rounded-xl flex-1 flex flex-col justify-between relative overflow-hidden">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-texte-2 uppercase tracking-wide">Courbe d'activité</span>
-                  <span className="text-[10px] text-outline">Mise à jour en temps réel</span>
+              <div className="bg-surface-container-lowest border border-outline-variant/60 p-2 md:p-4 rounded-lg md:rounded-xl flex-1 flex flex-col justify-between relative overflow-hidden">
+                <div className="flex justify-between items-center gap-1">
+                  <span className="text-[7px] md:text-[10px] font-bold text-texte-2 uppercase tracking-wide">Courbe d'activité</span>
+                  <span className="text-[7px] md:text-[10px] text-outline hidden sm:inline">Mise à jour en temps réel</span>
                 </div>
                 {/* SVG Mock Curve Graph */}
-                <div className="w-full h-16 mt-2 relative">
+                <div className="w-full h-10 md:h-16 mt-1 md:mt-2 relative">
                   <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">

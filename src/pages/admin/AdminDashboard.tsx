@@ -43,18 +43,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     expired_subscriptions: 4
   };
 
-  const fetchStats = async () => {
+  // Standalone so the retry button in the demo banner can also call it
+  const fetchStats = async (retryCount = 0): Promise<void> => {
     setLoading(true);
     try {
-      // Confirm session before RPC to avoid auth.uid() = null race condition
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expirée — veuillez vous reconnecter');
+      if (!session) {
+        if (retryCount < 2) {
+          await new Promise(r => setTimeout(r, 1500));
+          return fetchStats(retryCount + 1);
+        }
+        throw new Error('Aucune session active — veuillez vous reconnecter');
+      }
 
       const { data, error: err } = await supabase.rpc('admin_platform_stats');
       if (err) throw err;
       setStats(data);
       setIsDemo(false);
     } catch (e: any) {
+      if (retryCount < 1 && e?.message?.includes('fetch')) {
+        try {
+          await supabase.auth.refreshSession();
+          return fetchStats(retryCount + 1);
+        } catch (_) { /* fall through */ }
+      }
       console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
       setStats(DEMO_STATS);
       setIsDemo(true);

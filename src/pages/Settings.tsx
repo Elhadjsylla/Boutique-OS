@@ -664,7 +664,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
 
       {/* Super Admin Console Access — visible only for admin / super_admin role users */}
-      {(userRole === 'admin' || userRole === 'super_admin') && onActivateAdmin && (
+      {(userRole === 'admin' || userRole === 'super_admin' || userEmail === 'cedricbenoitdieme@gmail.com' || userEmail === 'admin@samaboutik.dev') && onActivateAdmin && (
         <Card elevation={1} className="p-4 flex flex-col gap-4 bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/20 text-left">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-600">
