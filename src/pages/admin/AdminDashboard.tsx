@@ -43,25 +43,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     expired_subscriptions: 4
   };
 
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
-      const { data, error: err } = await supabase.rpc('admin_platform_stats');
-      if (err) throw err;
-      setStats(data);
-      setIsDemo(false);
-    } catch (e: any) {
-      console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
-      setStats(DEMO_STATS);
-      setIsDemo(true);
-      setDemoReason(e.message || 'RPC non déployé');
-      setError(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchStats = async (retryCount = 0): Promise<void> => {
+      setLoading(true);
+      try {
+        // Ensure we have a valid session before calling the RPC
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // No session yet — wait a bit and retry (max 2 retries)
+          if (retryCount < 2) {
+            await new Promise(r => setTimeout(r, 1500));
+            return fetchStats(retryCount + 1);
+          }
+          throw new Error('Aucune session active');
+        }
+
+        const { data, error: err } = await supabase.rpc('admin_platform_stats');
+        if (err) throw err;
+        setStats(data);
+        setIsDemo(false);
+      } catch (e: any) {
+        // On network error ("Failed to fetch"), try refreshing the session and retry once
+        if (retryCount < 1 && e?.message?.includes('fetch')) {
+          try {
+            await supabase.auth.refreshSession();
+            return fetchStats(retryCount + 1);
+          } catch (_) {
+            // refresh also failed, fall through to demo
+          }
+        }
+        // Fallback to demo data when the RPC doesn't exist yet or permission is denied
+        console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
+        setStats(DEMO_STATS);
+        setIsDemo(true);
+        setDemoReason(e.message || 'RPC non déployé');
+        setError(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchStats();
   }, []);
 
