@@ -434,7 +434,7 @@ function App() {
   const boutiqueId = storeProfile?.boutique_id || user.user_metadata?.boutique_id || 'boutique-1';
   const boutiqueName = (storeProfile as any)?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
   const caissierId = user.id;
-  const userRole = user.user_metadata?.role || 'caissier';
+  const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
 
   if (!boutiqueId) {
     return (
