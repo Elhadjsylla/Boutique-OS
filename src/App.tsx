@@ -1,4 +1,4 @@
-import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
+import { useState, useEffect, useRef, Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
@@ -243,11 +243,17 @@ function App() {
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
 
-  // Auto-open admin console if the user is an admin
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
-  // We no longer automatically open the admin console on login.
-  // The user will land on the 'caisse' tab, and can open the admin console manually from Settings.
+  // Auto-open admin console once per session when admin role is confirmed.
+  // The ref prevents re-opening if the admin manually closes the console.
+  const hasAutoOpenedAdmin = useRef(false);
+  useEffect(() => {
+    if (isAdmin && !hasAutoOpenedAdmin.current) {
+      hasAutoOpenedAdmin.current = true;
+      setShowAdminConsole(true);
+    }
+  }, [isAdmin]);
 
   // Check subscription status for real (non-dev) sessions
   useEffect(() => {
