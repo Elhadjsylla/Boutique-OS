@@ -303,6 +303,7 @@ function App() {
       if (trial?.has_trial && trial.status === 'trial' && !trial.is_expired) {
         setTrialStatus(trial);
         setSubStatus('trial');
+        setActivePlan('Essai Gratuit');
         return;
       }
 

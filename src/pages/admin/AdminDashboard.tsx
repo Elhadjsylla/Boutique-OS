@@ -61,7 +61,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       setStats(data);
       setIsDemo(false);
     } catch (e: any) {
-      if (retryCount < 1 && e?.message?.includes('fetch')) {
+      const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé') || e?.message?.includes('fetch');
+      if (retryCount < 1 && isAuthError) {
         try {
           await supabase.auth.refreshSession();
           return fetchStats(retryCount + 1);
