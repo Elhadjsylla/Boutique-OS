@@ -11,7 +11,7 @@ import { getProductIconAndGradient } from '../lib/productHelper';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface DashboardProps {
   onNavigate?: (tab: any) => void;
@@ -19,10 +19,13 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const isOnline = useOnline();
-  const { profile } = useAuth();
+  // Read directly from store — avoids triggering a redundant auth re-fetch
+  const profile = useAuthStore(state => state.profile);
+  const isAuthLoading = useAuthStore(state => state.isLoading);
   const metrics = useDashboardData();
   const { subscription } = useSubscription();
-  const isPro = subscription?.plan === 'pro' || subscription?.plan === 'annual' || profile?.role === 'super_admin' || import.meta.env.DEV;
+  // While auth loads, default to unlocked to avoid flash of locked content for admins
+  const isPro = isAuthLoading || subscription?.plan === 'pro' || subscription?.plan === 'annual' || profile?.role === 'super_admin' || profile?.role === 'admin' || import.meta.env.DEV;
 
   const [period, setPeriod] = useState<'24h' | '7j' | '30j' | '1an'>('7j');
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);

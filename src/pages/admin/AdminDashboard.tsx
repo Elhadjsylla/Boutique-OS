@@ -47,9 +47,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const fetchStats = async (retryCount = 0): Promise<void> => {
     setLoading(true);
     try {
+      // Ensure session is valid before calling RPC
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        if (retryCount < 2) {
+        if (retryCount < 3) {
           await new Promise(r => setTimeout(r, 1500));
           return fetchStats(retryCount + 1);
         }
@@ -61,17 +62,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       setStats(data);
       setIsDemo(false);
     } catch (e: any) {
-      const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé') || e?.message?.includes('fetch');
-      if (retryCount < 1 && isAuthError) {
-        try {
-          await supabase.auth.refreshSession();
-          return fetchStats(retryCount + 1);
-        } catch (_) { /* fall through */ }
+      const isNetworkError = e instanceof TypeError || e?.message?.toLowerCase().includes('fetch');
+      const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé');
+
+      if (retryCount < 3) {
+        if (isAuthError) {
+          // JWT expiré : refresh puis retry
+          try { await supabase.auth.refreshSession(); } catch (_) {}
+        }
+        // Réseau : attendre progressivement sans appeler Supabase pendant l'attente
+        const delay = isNetworkError ? 2000 * (retryCount + 1) : 1000;
+        await new Promise(r => setTimeout(r, delay));
+        return fetchStats(retryCount + 1);
       }
-      console.warn('[AdminDashboard] RPC admin_platform_stats indisponible, utilisation des données démo.', e.message);
+
+      console.warn('[AdminDashboard] RPC admin_platform_stats indisponible après 3 tentatives.', e.message);
       setStats(DEMO_STATS);
       setIsDemo(true);
-      setDemoReason(e.message || 'RPC non déployé');
+      setDemoReason(isNetworkError ? 'Réseau inaccessible — vérifiez votre connexion' : (e.message || 'RPC non déployé'));
       setError(null);
     } finally {
       setLoading(false);
