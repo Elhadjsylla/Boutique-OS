@@ -25,23 +25,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
-  const [demoReason, setDemoReason] = useState<string | null>(null);
-
-  // Demo data used when the backend RPCs haven't been deployed yet
-  const DEMO_STATS: PlatformStats = {
-    total_boutiques: 12,
-    active_boutiques: 10,
-    suspended_boutiques: 2,
-    total_users: 34,
-    total_sales_today: 47,
-    total_sales_week: 312,
-    total_sales_month: 1205,
-    ca_today: 285000,
-    ca_week: 1870000,
-    ca_month: 7430000,
-    active_subscriptions: 8,
-    expired_subscriptions: 4
-  };
 
   // Standalone so the retry button in the demo banner can also call it
   const fetchStats = async (retryCount = 0): Promise<void> => {

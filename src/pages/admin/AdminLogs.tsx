@@ -17,12 +17,6 @@ export const AdminLogs: React.FC = () => {
 
   const [isDemo, setIsDemo] = useState(false);
 
-  const DEMO_LOGS: AuditLogEntry[] = [
-    { id: 'log-001', actor_id: 'usr-004-dddd', action: 'boutique.created', target_type: 'boutique', target_id: 'demo-1', details: { nom: 'Boutique Medina' }, created_at: '2025-06-20T14:30:00Z' },
-    { id: 'log-002', actor_id: 'usr-004-dddd', action: 'boutique.suspended', target_type: 'boutique', target_id: 'demo-3', details: { reason: 'Facture impayée', suspended: true }, created_at: '2025-06-18T09:15:00Z' },
-    { id: 'log-003', actor_id: 'usr-004-dddd', action: 'subscription.updated', target_type: 'subscription', target_id: 'sub-001', details: { user_id: 'usr-001-aaaa', old_plan: 'starter', new_plan: 'pro' }, created_at: '2025-06-15T11:00:00Z' },
-  ];
-
   const fetchLogs = async () => {
     setLoading(true);
     try {

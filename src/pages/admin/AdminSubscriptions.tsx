@@ -25,12 +25,6 @@ export const AdminSubscriptions: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
 
-  const DEMO_SUBS: SubscriptionEntry[] = [
-    { id: 'sub-001', user_id: 'usr-001-aaaa', plan: 'pro', status: 'active', payment_method: 'wave', amount: 5000, starts_at: '2025-06-01T00:00:00Z', expires_at: '2025-07-01T00:00:00Z', created_at: '2025-06-01T00:00:00Z' },
-    { id: 'sub-002', user_id: 'usr-002-bbbb', plan: 'starter', status: 'active', payment_method: null, amount: 0, starts_at: '2025-05-15T00:00:00Z', expires_at: '2026-05-15T00:00:00Z', created_at: '2025-05-15T00:00:00Z' },
-    { id: 'sub-003', user_id: 'usr-003-cccc', plan: 'annual', status: 'expired', payment_method: 'orange_money', amount: 45000, starts_at: '2024-06-01T00:00:00Z', expires_at: '2025-06-01T00:00:00Z', created_at: '2024-06-01T00:00:00Z' },
-  ];
-
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {

@@ -51,12 +51,6 @@ export const AdminBoutiques: React.FC = () => {
 
   const [isDemo, setIsDemo] = useState(false);
 
-  const DEMO_BOUTIQUES: Boutique[] = [
-    { id: 'demo-1', nom: 'Boutique Medina', adresse: 'Dakar, Rue 10', suspended: false, suspended_at: null, suspended_reason: null, created_at: '2025-03-15T10:00:00Z', gerant_id: null },
-    { id: 'demo-2', nom: 'Superette Plateau', adresse: 'Dakar, Avenue Ponty', suspended: false, suspended_at: null, suspended_reason: null, created_at: '2025-04-22T14:30:00Z', gerant_id: null },
-    { id: 'demo-3', nom: 'Mini Prix Parcelles', adresse: 'Parcelles Assainies U14', suspended: true, suspended_at: '2025-06-01T09:00:00Z', suspended_reason: 'Facture impayée', created_at: '2025-02-10T08:00:00Z', gerant_id: null },
-  ];
-
   const fetchBoutiques = async () => {
     setLoading(true);
     try {

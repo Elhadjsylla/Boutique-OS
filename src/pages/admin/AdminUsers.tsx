@@ -28,18 +28,6 @@ export const AdminUsers: React.FC = () => {
 
   const [isDemo, setIsDemo] = useState(false);
 
-  const DEMO_USERS: Profile[] = [
-    { id: 'usr-001-aaaa', role: 'admin', boutique_id: 'demo-1', created_at: '2025-01-10T08:00:00Z', boutiques: { nom: 'Boutique Medina' } },
-    { id: 'usr-002-bbbb', role: 'caissier', boutique_id: 'demo-1', created_at: '2025-02-15T10:00:00Z', boutiques: { nom: 'Boutique Medina' } },
-    { id: 'usr-003-cccc', role: 'gerant', boutique_id: 'demo-2', created_at: '2025-03-20T14:00:00Z', boutiques: { nom: 'Superette Plateau' } },
-    { id: 'usr-004-dddd', role: 'super_admin', boutique_id: null, created_at: '2025-01-01T00:00:00Z', boutiques: null },
-  ];
-
-  const DEMO_BOUTIQUES: Boutique[] = [
-    { id: 'demo-1', nom: 'Boutique Medina' },
-    { id: 'demo-2', nom: 'Superette Plateau' },
-  ];
-
   const fetchUsersAndBoutiques = async () => {
     setLoading(true);
     try {
