@@ -75,12 +75,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         await new Promise(r => setTimeout(r, delay));
         return fetchStats(retryCount + 1);
       }
-
-      console.warn('[AdminDashboard] RPC admin_platform_stats indisponible après 3 tentatives.', e.message);
-      setStats(DEMO_STATS);
-      setIsDemo(true);
-      setDemoReason(isNetworkError ? 'Réseau inaccessible — vérifiez votre connexion' : (e.message || 'RPC non déployé'));
-      setError(null);
+      console.error('[AdminDashboard] Erreur chargement stats:', e);
+      setError(e.message || 'Erreur lors du chargement des statistiques');
+      setIsDemo(false);
     } finally {
       setLoading(false);
     }

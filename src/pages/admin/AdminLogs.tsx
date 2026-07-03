@@ -34,10 +34,10 @@ export const AdminLogs: React.FC = () => {
       if (error) throw error;
       setLogs(data || []);
       setIsDemo(false);
-    } catch (e) {
-      console.warn("[AdminLogs] Erreur fetch audit logs, utilisation données démo.", e);
-      setLogs(DEMO_LOGS);
-      setIsDemo(true);
+    } catch (e: any) {
+      console.error("[AdminLogs] Erreur fetch audit logs:", e?.message ?? e);
+      setLogs([]);
+      setIsDemo(false);
     } finally {
       setLoading(false);
     }

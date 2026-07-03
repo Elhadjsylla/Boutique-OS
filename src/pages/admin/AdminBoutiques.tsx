@@ -67,10 +67,11 @@ export const AdminBoutiques: React.FC = () => {
       if (error) throw error;
       setBoutiques(data || []);
       setIsDemo(false);
-    } catch (e) {
-      console.warn('[AdminBoutiques] Erreur fetch boutiques, utilisation données démo.', e);
-      setBoutiques(DEMO_BOUTIQUES);
-      setIsDemo(true);
+    } catch (e: any) {
+      console.error('[AdminBoutiques] Erreur fetch boutiques:', e);
+      setBoutiques([]);
+      setIsDemo(false);
+      // Optional: add a toast or setError here if the component supports it
     } finally {
       setLoading(false);
     }
@@ -86,18 +87,11 @@ export const AdminBoutiques: React.FC = () => {
       const { data, error } = await supabase.rpc('admin_boutique_details', { boutique_uuid: id });
       if (error) throw error;
       setSelectedBoutiqueDetails(data);
-    } catch (e) {
-      // Fallback: build demo details from local boutique list
-      const b = boutiques.find(x => x.id === id);
-      if (b) {
-        setSelectedBoutiqueDetails({
-          id: b.id, nom: b.nom, adresse: b.adresse, suspended: b.suspended,
-          suspended_at: b.suspended_at, suspended_reason: b.suspended_reason,
-          created_at: b.created_at, gerant: null,
-          stats: { total_users: 3, total_products: 42, total_sales: 156, ca_total: 2450000, ca_month: 430000, open_ardoises: 2, ardoises_amount: 75000 }
-        });
-      }
-      console.warn('[AdminBoutiques] RPC admin_boutique_details indisponible, données démo.', e);
+    } catch (e: any) {
+      console.error('[AdminBoutiques] RPC admin_boutique_details indisponible:', e);
+      // We can just leave selectedBoutiqueDetails null or set an empty state
+      // but without demo data. We'll set it to null and let the UI handle the missing details or loading state.
+      setSelectedBoutiqueDetails(null);
     } finally {
       setDetailsLoading(false);
     }

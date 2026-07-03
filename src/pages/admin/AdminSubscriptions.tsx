@@ -41,10 +41,10 @@ export const AdminSubscriptions: React.FC = () => {
       if (error) throw error;
       setSubscriptions(data || []);
       setIsDemo(false);
-    } catch (e) {
-      console.warn("[AdminSubscriptions] Erreur fetch, utilisation données démo.", e);
-      setSubscriptions(DEMO_SUBS);
-      setIsDemo(true);
+    } catch (e: any) {
+      console.error("[AdminSubscriptions] Erreur fetch:", e?.message ?? e);
+      setSubscriptions([]);
+      setIsDemo(false);
     } finally {
       setLoading(false);
     }

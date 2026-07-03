@@ -61,9 +61,9 @@ export const AdminUsers: React.FC = () => {
       setIsDemo(false);
     } catch (e: any) {
       console.error("[AdminUsers] Erreur fetch:", e?.message ?? e);
-      setUsers(DEMO_USERS);
-      setBoutiques(DEMO_BOUTIQUES);
-      setIsDemo(true);
+      setUsers([]);
+      setBoutiques([]);
+      setIsDemo(false);
     } finally {
       setLoading(false);
     }
