@@ -32,7 +32,7 @@ export const MoneyText: React.FC<MoneyTextProps> = ({
       // Easing out quad
       const easeOutQuad = progress * (2 - progress);
       const currentValue = Math.round(startValue + easeOutQuad * (endValue - startValue));
-      
+
       setDisplayValue(currentValue);
 
       if (progress < 1) {
@@ -52,13 +52,21 @@ export const MoneyText: React.FC<MoneyTextProps> = ({
 
   // Format number with spaces for thousands (Sénégal/CFA standard)
   const formattedValue = new Intl.NumberFormat('fr-FR').format(displayValue);
+  const finalFormattedValue = new Intl.NumberFormat('fr-FR').format(value);
 
   return (
     <span
-      className={`font-numeric-display text-on-surface ${className}`}
+      className={`inline-grid font-numeric-display text-on-surface ${className}`}
       {...props}
     >
-      {formattedValue} <span className="text-sm font-semibold ml-0.5">FCFA</span>
+      {/* Invisible element to reserve exact final width and prevent layout shift */}
+      <span className="invisible col-start-1 row-start-1" aria-hidden="true">
+        {finalFormattedValue} <span className="text-sm font-semibold ml-0.5">FCFA</span>
+      </span>
+      {/* Visible animating element */}
+      <span className="col-start-1 row-start-1 tabular-nums justify-self-end">
+        {formattedValue} <span className="text-sm font-semibold ml-0.5">FCFA</span>
+      </span>
     </span>
   );
 };

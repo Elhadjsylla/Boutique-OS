@@ -118,7 +118,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             </span>
           </div>
           <button
-            onClick={fetchStats}
+            onClick={() => fetchStats()}
             className="shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg border border-amber-500/30 transition-all active:scale-95 flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-sm">refresh</span>
