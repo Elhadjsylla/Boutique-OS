@@ -6,9 +6,8 @@ import { queryClient } from './lib/queryClient'
 import './index.css'
 import App from './App.tsx'
 
-// Unregister any active Service Workers and clear caches in development mode
-// to prevent PWA caching issues on localhost.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  // Dev: unregister SW and clear caches to avoid stale-code issues on localhost
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     if (registrations.length > 0) {
       for (const registration of registrations) {
@@ -23,6 +22,16 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
       } else {
         (window as any).location.reload();
       }
+    }
+  });
+} else if ('serviceWorker' in navigator) {
+  // Production: when a new SW takes control, reload immediately so users
+  // always run the latest code (works with registerType: 'autoUpdate').
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) {
+      reloading = true;
+      window.location.reload();
     }
   });
 }
