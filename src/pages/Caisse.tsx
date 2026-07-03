@@ -180,22 +180,22 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                         <Badge variant="success">OK</Badge>
                       )}
                     </div>
-                    <div className="mt-auto flex justify-between items-center pt-1">
-                      <MoneyText value={p.prix} className="text-base text-primary font-bold" />
-                      <div className="flex items-center gap-1.5">
-                        {/* Bouton retirer du panier — visible seulement si en panier */}
-                        {cartItem && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); updateQuantity(p.id, -1); }}
-                            className="w-6 h-6 rounded-full bg-error/10 text-error flex items-center justify-center font-black text-sm hover:bg-error/20 active:scale-90 transition-all leading-none"
-                            title="Retirer un du panier"
-                          >
-                            −
-                          </button>
-                        )}
-                        <span className="text-[10px] text-outline font-bold">Stock: {p.quantite}</span>
+                      <div className="mt-auto flex flex-col gap-1.5 pt-2 border-t border-outline-variant/30">
+                        <MoneyText value={p.prix} className="text-[15px] md:text-base text-primary font-black whitespace-nowrap leading-none" />
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-[10px] text-outline font-bold whitespace-nowrap">Stock: {p.quantite}</span>
+                          {/* Bouton retirer du panier — visible seulement si en panier */}
+                          {cartItem && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(p.id, -1); }}
+                              className="w-6 h-6 rounded-full bg-error/10 text-error flex items-center justify-center font-black text-sm hover:bg-error/20 active:scale-90 transition-all leading-none"
+                              title="Retirer un du panier"
+                            >
+                              −
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
                   </div>
                 </div>
               );
