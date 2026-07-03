@@ -24,8 +24,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDemo, setIsDemo] = useState(false);
-
   // Standalone so the retry button in the demo banner can also call it
   const fetchStats = async (retryCount = 0): Promise<void> => {
     setLoading(true);
@@ -43,7 +41,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       const { data, error: err } = await supabase.rpc('admin_platform_stats');
       if (err) throw err;
       setStats(data);
-      setIsDemo(false);
     } catch (e: any) {
       const isNetworkError = e instanceof TypeError || e?.message?.toLowerCase().includes('fetch');
       const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé');
@@ -60,7 +57,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       }
       console.error('[AdminDashboard] Erreur chargement stats:', e);
       setError(e.message || 'Erreur lors du chargement des statistiques');
-      setIsDemo(false);
     } finally {
       setLoading(false);
     }
@@ -96,25 +92,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Dashboard Plateforme</h1>
         <p className="text-xs text-admin-text-muted">Indicateurs clés et chiffre d'affaires global Sama Boutik.</p>
       </div>
-
-      {isDemo && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
-          <div className="flex flex-col flex-1">
-            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
-            <span className="text-[10px] text-amber-400/80">
-              Les données affichées sont fictives. Raison : {demoReason || 'Inconnue (Vérifiez la console)'}
-            </span>
-          </div>
-          <button
-            onClick={() => fetchStats()}
-            className="shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg border border-amber-500/30 transition-all active:scale-95 flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-sm">refresh</span>
-            Réessayer
-          </button>
-        </div>
-      )}
 
       {/* Main KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
