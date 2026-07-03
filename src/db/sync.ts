@@ -13,8 +13,8 @@ export async function pushLocalChanges(): Promise<void> {
   if (!isBrowserOnline()) return;
 
   const state = useAuthStore.getState();
-  if (state.isLoading) return; // Ne pas bloquer ou fausser la garde si en cours de chargement
-  const boutiqueId = state.user?.user_metadata?.boutique_id || state.profile?.boutique_id;
+  if (state.isLoading) return;
+  const boutiqueId = state.profile?.boutique_id || state.boutique?.id;
 
   if (!boutiqueId) {
     console.error('[Sync Engine] Synchro annulée (push) : boutique_id invalide ou absent.');
@@ -58,12 +58,12 @@ export async function pullServerChanges(): Promise<void> {
   if (!isBrowserOnline()) return;
 
   const state = useAuthStore.getState();
-  if (state.isLoading) return; // Ne pas bloquer ou fausser la garde si en cours de chargement
-  const boutiqueId = state.user?.user_metadata?.boutique_id || state.profile?.boutique_id;
+  if (state.isLoading) return;
+  const boutiqueId = state.profile?.boutique_id || state.boutique?.id;
 
   if (!boutiqueId) {
     console.error('[Sync Engine] Synchro annulée (pull) : boutique_id invalide ou absent.');
-    throw new Error('Profil boutique non trouvé — contactez le support');
+    return;
   }
 
   const tablesToSync = ['produits', 'ventes', 'vente_items', 'ardoises', 'ardoise_paiements'];

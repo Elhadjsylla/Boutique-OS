@@ -20,6 +20,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/dexie';
 import { useAuthStore } from './store/useAuthStore';
 import { useAuth } from './hooks/useAuth';
+import { useSyncEngine } from './hooks/useSyncEngine';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -59,6 +60,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 function App() {
   // Initialize auth listener and fetch profile/boutique
   useAuth();
+  useSyncEngine();
 
   // Respect VITE_DEV_BYPASS=false to disable ALL dev session injection
   const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
