@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       // Disable Service Worker entirely in development to avoid CSS caching issues
       devOptions: {
         enabled: false,

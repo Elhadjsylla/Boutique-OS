@@ -101,6 +101,13 @@ function App() {
 
   const getInitialSession = () => {
     try {
+      // Our Supabase client uses storageKey: 'boutikos-session'
+      const direct = localStorage.getItem('boutikos-session');
+      if (direct) {
+        const parsed = JSON.parse(direct);
+        if (parsed?.access_token) return parsed;
+      }
+      // Fallback: default Supabase key pattern
       const keys = Object.keys(localStorage);
       const supabaseKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       if (supabaseKey) {
@@ -243,7 +250,7 @@ function App() {
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
 
-  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'gmoustapha0805@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
   // Auto-open admin console once per session when admin role is confirmed.
   // The ref prevents re-opening if the admin manually closes the console.
@@ -285,12 +292,17 @@ function App() {
       console.log('[App] Final effectiveRole:', effectiveRole);
       
       // Force admin bypass for known admin emails just in case DB is out of sync
-      const isAdminEmail = session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
-      
+      const isAdminEmail = session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'gmoustapha0805@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
+
       if (effectiveRole === 'super_admin' || effectiveRole === 'admin' || isAdminEmail) {
         console.log('[App] ✅ ADMIN DETECTED — bypassing paywall');
         setSubStatus('active');
         setActivePlan('Plan MAX');
+        // Belt-and-suspenders: also open admin console here in case the useEffect didn't fire yet
+        if (!hasAutoOpenedAdmin.current) {
+          hasAutoOpenedAdmin.current = true;
+          setShowAdminConsole(true);
+        }
         return;
       }
 
