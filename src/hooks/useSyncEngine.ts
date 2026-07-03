@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useOnline } from './useOnline';
 import { syncEngineRun } from '../db/sync';
 import { useAuthStore } from '../store/useAuthStore';
-import { supabase } from '../lib/supabase';
 
 export function useSyncEngine() {
   const isOnline = useOnline();
@@ -14,7 +13,7 @@ export function useSyncEngine() {
     if (isSyncing || !isOnline) return;
 
     const state = useAuthStore.getState();
-    if (state.isLoading) return; // Ne pas déclencher la garde tant que le profil charge
+    if (state.isLoading) return;
 
     const boutiqueId = state.profile?.boutique_id || state.boutique?.id;
 
@@ -46,24 +45,21 @@ export function useSyncEngine() {
   // Periodic sync every 60 seconds when online
   useEffect(() => {
     if (!isOnline) return;
-
-    const intervalId = setInterval(() => {
-      runSync();
-    }, 60000);
-
+    const intervalId = setInterval(() => runSync(), 60000);
     return () => clearInterval(intervalId);
   }, [isOnline, runSync]);
 
-  // Sync on login so data is restored immediately after reconnect
+  // Sync as soon as the profile finishes loading — fixes the race condition where
+  // SIGNED_IN fires before the auth store has fetched the profile (so boutiqueId is null).
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        // Small delay so the auth store finishes loading the profile before we check boutiqueId
-        setTimeout(runSync, 800);
+    const unsubscribe = useAuthStore.subscribe((state, prevState) => {
+      const profileJustReady = state.profile && !state.isLoading && (prevState.isLoading || !prevState.profile);
+      if (profileJustReady && isOnline) {
+        runSync();
       }
     });
-    return () => subscription.unsubscribe();
-  }, [runSync]);
+    return unsubscribe;
+  }, [isOnline, runSync]);
 
   return {
     isOnline,

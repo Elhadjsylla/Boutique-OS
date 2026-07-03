@@ -66,6 +66,8 @@ export async function pullServerChanges(): Promise<void> {
     return;
   }
 
+  // Tables where boutique_id is a direct column — filter pull to the current boutique
+  const tablesWithBoutiqueId = new Set(['produits', 'ventes', 'ardoises']);
   const tablesToSync = ['produits', 'ventes', 'vente_items', 'ardoises', 'ardoise_paiements'];
 
   for (const tableName of tablesToSync) {
@@ -73,13 +75,22 @@ export async function pullServerChanges(): Promise<void> {
       // Find the latest updated_at in the local table
       const localTable = db.table(tableName);
       const latestLocalRecord = await localTable.orderBy('updated_at').reverse().first();
-      const lastSyncTime = latestLocalRecord ? latestLocalRecord.updated_at : new Date(0).toISOString();
+      // Subtract 30 seconds from the last sync cursor to absorb client clock skew between devices
+      const lastSyncCursor = latestLocalRecord
+        ? new Date(new Date(latestLocalRecord.updated_at).getTime() - 30_000).toISOString()
+        : new Date(0).toISOString();
 
       // Fetch new/updated records from Supabase
-      const { data, error } = await supabase
+      let query = supabase
         .from(tableName)
         .select('*')
-        .gt('updated_at', lastSyncTime);
+        .gte('updated_at', lastSyncCursor);
+
+      if (tablesWithBoutiqueId.has(tableName)) {
+        query = query.eq('boutique_id', boutiqueId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
