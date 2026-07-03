@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component, type ErrorInfo, type ReactNode } from 'react';
+import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
@@ -145,7 +145,7 @@ function App() {
   const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
   const [trialStatus, setTrialStatus] = useState<any>(null);
-  const [showAdminConsole, setShowAdminConsole] = useState(false);
+  const [adminManuallyDismissed, setAdminManuallyDismissed] = useState(false);
 
   // Always start as 'checking' — resolved by useEffect once profile loads
   const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>('checking');
@@ -252,15 +252,6 @@ function App() {
 
   const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'gmoustapha0805@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
-  // Auto-open admin console once per session when admin role is confirmed.
-  // The ref prevents re-opening if the admin manually closes the console.
-  const hasAutoOpenedAdmin = useRef(false);
-  useEffect(() => {
-    if (isAdmin && !hasAutoOpenedAdmin.current) {
-      hasAutoOpenedAdmin.current = true;
-      setShowAdminConsole(true);
-    }
-  }, [isAdmin]);
 
   // Check subscription status for real (non-dev) sessions
   useEffect(() => {
@@ -298,11 +289,6 @@ function App() {
         console.log('[App] ✅ ADMIN DETECTED — bypassing paywall');
         setSubStatus('active');
         setActivePlan('Plan MAX');
-        // Belt-and-suspenders: also open admin console here in case the useEffect didn't fire yet
-        if (!hasAutoOpenedAdmin.current) {
-          hasAutoOpenedAdmin.current = true;
-          setShowAdminConsole(true);
-        }
         return;
       }
 
@@ -385,9 +371,9 @@ function App() {
 
   const isSessionOrProfileLoading = !forceUnlock && (loading || (session && isProfileLoading));
 
-  // isAdmin is now defined at the top of the file
-  if (!isSessionOrProfileLoading && session?.user && isAdmin && showAdminConsole) {
-    return <AdminLayout onExit={() => setShowAdminConsole(false)} />;
+  // Admin console: shows automatically for any admin, unless they explicitly dismissed it
+  if (!isSessionOrProfileLoading && session?.user && isAdmin && !adminManuallyDismissed) {
+    return <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />;
   }
 
   if (isSessionOrProfileLoading) {
@@ -661,13 +647,13 @@ function App() {
             activePlan={activePlan}
             onManageSubscription={() => setActiveTab('subscription')}
             onNavigateToPortal={() => setIsClientViewingPortal(true)}
-            onActivateAdmin={isAdmin ? () => setShowAdminConsole(true) : undefined}
+            onActivateAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
           />
         )}
         {(activeTab === 'reglages' as any) && (
           <Reglages
             boutiqueId={boutiqueId}
-            onOpenAdmin={isAdmin ? () => setShowAdminConsole(true) : undefined}
+            onOpenAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
           />
         )}
         {activeTab === 'subscription' && (
