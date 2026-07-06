@@ -40,7 +40,9 @@ export function useAuth() {
     try {
       if (!accessToken) return null
       const payload = JSON.parse(atob(accessToken.split('.')[1]))
-      return payload.role ?? null
+      // user_metadata.role is the actual app role (injected by custom_access_token_hook).
+      // payload.role at the top level is always 'authenticated' (PostgREST role).
+      return payload.user_metadata?.role ?? payload.role ?? null
     } catch {
       return null
     }
@@ -64,13 +66,19 @@ export function useAuth() {
         .single()
 
       if (profileError) {
-        // Fallback: build a minimal profile from JWT claims
-        const jwtRole = getRoleFromJWT(session.access_token)
-        if (jwtRole) {
-          setAuth(authUser, { id: authUser.id, role: jwtRole, boutique_id: null } as Profile, null)
-        } else {
-          setAuth(authUser, null, null)
-        }
+        // Offline or DB error: build from session user_metadata (set by custom_access_token_hook on last refresh).
+        // Provides correct role + boutique_id so the sync engine can still run offline.
+        const meta = authUser.user_metadata ?? {};
+        const role = meta.role || getRoleFromJWT(session.access_token) || 'caissier';
+        const boutiqueId: string | null = meta.boutique_id ?? null;
+        const boutiqueName: string | null = meta.boutique_name ?? null;
+        setAuth(
+          authUser,
+          { id: authUser.id, role, boutique_id: boutiqueId } as Profile,
+          boutiqueId && boutiqueName
+            ? { id: boutiqueId, nom: boutiqueName, adresse: null, gerant_id: null } as Boutique
+            : null
+        )
         clearTimeout(failsafe);
         return
       }
@@ -88,6 +96,11 @@ export function useAuth() {
 
         if (boutiqueError) {
           console.error('Error fetching user boutique:', boutiqueError)
+          // Offline fallback: reconstruct boutique from JWT metadata
+          const meta = authUser.user_metadata ?? {};
+          if (meta.boutique_id && meta.boutique_name) {
+            userBoutique = { id: meta.boutique_id, nom: meta.boutique_name, adresse: null, gerant_id: null } as Boutique;
+          }
         } else {
           userBoutique = boutiqueData as Boutique
         }
