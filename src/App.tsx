@@ -250,7 +250,7 @@ function App() {
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
 
-  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'gmoustapha0805@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'elhadjsylla667@gmail.com' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'gmoustapha0805@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
 
 
   // Check subscription status for real (non-dev) sessions
@@ -283,7 +283,7 @@ function App() {
       console.log('[App] Final effectiveRole:', effectiveRole);
       
       // Force admin bypass for known admin emails just in case DB is out of sync
-      const isAdminEmail = session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'gmoustapha0805@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
+      const isAdminEmail = session.user?.email === 'elhadjsylla667@gmail.com' || session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'gmoustapha0805@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
 
       if (effectiveRole === 'super_admin' || effectiveRole === 'admin' || isAdminEmail) {
         console.log('[App] ✅ ADMIN DETECTED — bypassing paywall');
