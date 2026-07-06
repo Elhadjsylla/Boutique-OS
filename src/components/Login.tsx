@@ -4,32 +4,39 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Toast } from './ui/Toast';
 
+// null  = not in forgot-password flow
+// email = step 1 — enter email
+// code  = step 2 — enter 6-digit OTP received by email
+// newpw = step 3 — enter new password (after OTP verified or old magic-link)
+type ForgotStep = 'email' | 'code' | 'newpw' | null;
+
 export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [forgotStep, setForgotStep] = useState<ForgotStep>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [boutiqueName, setBoutiqueName] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
+    // Backward compat: users who still have an old magic-link in their inbox
     if (window.location.hash.includes('type=recovery')) {
-      setIsPasswordReset(true);
+      setForgotStep('newpw');
     }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        setIsPasswordReset(true);
+        setForgotStep('newpw');
       }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleForgotPassword = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+  // ── Step 1 — send OTP code ──────────────────────────────────────────────────
+  const handleRequestOtp = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) {
       setToast({ message: "Veuillez entrer votre adresse email.", type: 'error' });
@@ -37,19 +44,60 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/`,
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
-      setToast({ message: "Email de réinitialisation envoyé ! Vérifiez votre boite mail.", type: 'success' });
-      setIsForgotPassword(false);
+      setForgotStep('code');
+      setToast({ message: "Code envoyé ! Vérifiez votre boite mail.", type: 'success' });
     } catch (err: any) {
-      setToast({ message: err.message || "Une erreur est survenue.", type: 'error' });
+      setToast({ message: err.message || "Erreur lors de l'envoi du code.", type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResendOtp = async () => {
+    setOtpCode('');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+      setToast({ message: "Nouveau code envoyé !", type: 'success' });
+    } catch (err: any) {
+      setToast({ message: err.message || "Erreur lors du renvoi.", type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Step 2 — verify OTP code ────────────────────────────────────────────────
+  const handleVerifyOtp = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length < 6) {
+      setToast({ message: "Entrez le code à 6 chiffres reçu par email.", type: 'error' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: 'recovery',
+      });
+      if (error) throw error;
+      setForgotStep('newpw');
+    } catch (err: any) {
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('expired') || msg.includes('invalid') || msg.includes('otp')) {
+        setToast({ message: "Code invalide ou expiré. Cliquez sur « Renvoyer le code ».", type: 'error' });
+      } else {
+        setToast({ message: err.message || "Code incorrect.", type: 'error' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Step 3 — set new password ───────────────────────────────────────────────
   const handleUpdatePassword = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newPassword || !confirmPassword) {
@@ -68,18 +116,20 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      setToast({ message: "Mot de passe mis à jour ! Vous êtes connecté.", type: 'success' });
-      setIsPasswordReset(false);
-      // Clean the URL hash
+      setToast({ message: "Mot de passe mis à jour ! Connexion en cours...", type: 'success' });
+      setForgotStep(null);
+      setNewPassword('');
+      setConfirmPassword('');
       window.history.replaceState(null, '', window.location.pathname);
-      setTimeout(() => { window.location.reload(); }, 1500);
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
-      setToast({ message: err.message || "Une erreur est survenue.", type: 'error' });
+      setToast({ message: err.message || "Erreur lors de la mise à jour.", type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Google OAuth ────────────────────────────────────────────────────────────
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
@@ -94,6 +144,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     }
   };
 
+  // ── Login / Sign-up ─────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email || !password) {
@@ -102,7 +153,6 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
     }
 
     setLoading(true);
-
     try {
       if (isSignUp) {
         if (!boutiqueName) {
@@ -110,9 +160,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
           setLoading(false);
           return;
         }
-
         const generatedBoutiqueId = crypto.randomUUID();
-
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -124,7 +172,6 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
             },
           },
         });
-
         if (error) throw error;
         setToast({
           message: "Compte créé ! Veuillez vérifier vos e-mails ou vous connecter.",
@@ -135,7 +182,6 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
           email: email.trim(),
           password,
         });
-
         if (error) throw error;
         if (import.meta.env.DEV) {
           localStorage.removeItem('dev_signed_out');
@@ -154,7 +200,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
       if (isNetworkError && devBypassEnabled) {
         localStorage.removeItem('dev_signed_out');
         setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });
-        setTimeout(() => { window.location.reload(); }, 1000);
+        setTimeout(() => window.location.reload(), 1000);
       } else if (isNetworkError) {
         setToast({ message: "Connexion impossible. Vérifiez votre connexion Internet.", type: 'error' });
       } else {
@@ -167,7 +213,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
 
   const renderContent = () => (
     <div className="w-full max-w-md bg-white rounded-3xl border border-outline-variant premium-shadow-lg p-8 flex flex-col gap-6 text-center animate-fade-in mx-auto">
-      {/* Logo Section */}
+      {/* Logo */}
       <div className="flex flex-col items-center gap-3">
         <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-md text-white">
           <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -182,10 +228,13 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         </div>
       </div>
 
-      {/* New password form (after clicking reset link in email) */}
-      {isPasswordReset ? (
+      {/* ── Step 3: New password ── */}
+      {forgotStep === 'newpw' ? (
         <>
-          <h2 className="font-headline-md text-on-surface">Nouveau mot de passe</h2>
+          <div className="flex flex-col gap-1">
+            <h2 className="font-headline-md text-on-surface">Nouveau mot de passe</h2>
+            <p className="text-sm text-outline">Choisissez un nouveau mot de passe pour votre compte.</p>
+          </div>
           <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
             <Input
               label="Nouveau mot de passe"
@@ -208,12 +257,63 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
             </Button>
           </form>
         </>
-      ) : isForgotPassword ? (
-        /* Forgot password form */
+
+      ) : forgotStep === 'code' ? (
+        /* ── Step 2: Enter OTP code ── */
         <>
-          <h2 className="font-headline-md text-on-surface">Mot de passe oublié</h2>
-          <p className="font-body-md text-outline text-sm">Entrez votre email pour recevoir un lien de réinitialisation.</p>
-          <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-headline-md text-on-surface">Code de vérification</h2>
+            <p className="text-sm text-outline">
+              Entrez le code à 6 chiffres envoyé à <strong className="text-on-surface">{email}</strong>.
+            </p>
+          </div>
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+            <Input
+              label="Code à 6 chiffres"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              required
+            />
+            <Button
+              type="submit"
+              className="w-full mt-2"
+              disabled={loading || otpCode.length < 6}
+            >
+              {loading ? 'Vérification...' : 'VALIDER LE CODE'}
+            </Button>
+          </form>
+          <div className="border-t border-outline-variant pt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={loading}
+              className="font-label-md text-xs text-secondary hover:text-secondary/80 font-bold uppercase tracking-wider disabled:opacity-50"
+            >
+              Renvoyer le code
+            </button>
+            <button
+              type="button"
+              onClick={() => { setForgotStep(null); setOtpCode(''); }}
+              className="font-label-md text-xs text-outline hover:text-on-surface font-bold uppercase tracking-wider"
+            >
+              Retour à la connexion
+            </button>
+          </div>
+        </>
+
+      ) : forgotStep === 'email' ? (
+        /* ── Step 1: Enter email ── */
+        <>
+          <div className="flex flex-col gap-1">
+            <h2 className="font-headline-md text-on-surface">Mot de passe oublié</h2>
+            <p className="text-sm text-outline">Entrez votre email pour recevoir un code de vérification.</p>
+          </div>
+          <form onSubmit={handleRequestOtp} className="flex flex-col gap-4">
             <Input
               label="Adresse Email"
               type="email"
@@ -223,20 +323,22 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
               required
             />
             <Button type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? 'Envoi...' : 'ENVOYER LE LIEN'}
+              {loading ? 'Envoi...' : 'ENVOYER LE CODE'}
             </Button>
           </form>
           <div className="border-t border-outline-variant pt-4">
             <button
-              onClick={() => setIsForgotPassword(false)}
+              type="button"
+              onClick={() => setForgotStep(null)}
               className="font-label-md text-xs text-secondary hover:text-secondary/80 font-bold uppercase tracking-wider"
             >
               Retour à la connexion
             </button>
           </div>
         </>
+
       ) : (
-        /* Normal login / signup form */
+        /* ── Normal login / signup ── */
         <>
           <h2 className="font-headline-md text-on-surface">
             {isSignUp ? 'Créer un commerce' : 'Se connecter'}
@@ -275,7 +377,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
               {!isSignUp && (
                 <button
                   type="button"
-                  onClick={() => setIsForgotPassword(true)}
+                  onClick={() => setForgotStep('email')}
                   className="self-end text-[11px] text-secondary hover:text-secondary/80 font-bold uppercase tracking-wider"
                 >
                   Mot de passe oublié ?
@@ -311,6 +413,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
 
           <div className="border-t border-outline-variant pt-4">
             <button
+              type="button"
               onClick={() => setIsSignUp(!isSignUp)}
               className="font-label-md text-xs text-secondary hover:text-secondary/80 font-bold uppercase tracking-wider"
             >
