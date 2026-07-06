@@ -306,14 +306,23 @@ function App() {
       }
 
       // 5. Check active subscription
-      const { data: sub } = await supabase
+      // Fetch all active subs, prioritise non-free (trial/paid) over the free baseline.
+      const { data: subs } = await supabase
         .from('subscriptions')
-        .select('id')
+        .select('id, plan')
         .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .limit(1)
-        .maybeSingle();
-      setSubStatus(sub ? 'active' : 'paywall');
+        .gt('expires_at', new Date().toISOString());
+
+      const planLabels: Record<string, string> = {
+        free: 'Plan Gratuit', starter: 'Starter', pro: 'Pro', annual: 'Annuel',
+      };
+      const bestSub = subs?.find(s => s.plan !== 'free') ?? subs?.find(s => s.plan === 'free') ?? null;
+      if (bestSub) {
+        setSubStatus('active');
+        setActivePlan(planLabels[bestSub.plan] ?? 'Starter');
+      } else {
+        setSubStatus('paywall');
+      }
     };
 
     checkSubscription();
