@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useRateLimitTimer } from '../hooks/useRateLimitTimer';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Toast } from './ui/Toast';
@@ -22,6 +23,11 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Rate-limit timers — each tracks its own localStorage key and countdown
+  const otpRequestRL = useRateLimitTimer('otp_request'); // resetPasswordForEmail
+  const otpVerifyRL = useRateLimitTimer('otp_verify');   // verifyOtp
+  const signInRL = useRateLimitTimer('sign_in', 60);     // signInWithPassword (GoTrue gives no timing → 60s fallback)
+
   useEffect(() => {
     // Backward compat: users who still have an old magic-link in their inbox
     if (window.location.hash.includes('type=recovery')) {
@@ -42,28 +48,40 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
       setToast({ message: "Veuillez entrer votre adresse email.", type: 'error' });
       return;
     }
+    if (otpRequestRL.isRateLimited) return;
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
+      otpRequestRL.clear();
       setForgotStep('code');
       setToast({ message: "Code envoyé ! Vérifiez votre boite mail.", type: 'success' });
     } catch (err: any) {
-      setToast({ message: err.message || "Erreur lors de l'envoi du code.", type: 'error' });
+      if (otpRequestRL.handleError(err)) {
+        setToast({ message: `Trop de tentatives. Réessayez dans ${otpRequestRL.secondsLeft}s.`, type: 'error' });
+      } else {
+        setToast({ message: err.message || "Erreur lors de l'envoi du code.", type: 'error' });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (otpRequestRL.isRateLimited) return;
     setOtpCode('');
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
+      otpRequestRL.clear();
       setToast({ message: "Nouveau code envoyé !", type: 'success' });
     } catch (err: any) {
-      setToast({ message: err.message || "Erreur lors du renvoi.", type: 'error' });
+      if (otpRequestRL.handleError(err)) {
+        setToast({ message: `Trop de tentatives. Réessayez dans ${otpRequestRL.secondsLeft}s.`, type: 'error' });
+      } else {
+        setToast({ message: err.message || "Erreur lors du renvoi.", type: 'error' });
+      }
     } finally {
       setLoading(false);
     }
@@ -76,6 +94,7 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
       setToast({ message: "Entrez le code à 6 chiffres reçu par email.", type: 'error' });
       return;
     }
+    if (otpVerifyRL.isRateLimited) return;
     setLoading(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
@@ -84,13 +103,18 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         type: 'recovery',
       });
       if (error) throw error;
+      otpVerifyRL.clear();
       setForgotStep('newpw');
     } catch (err: any) {
-      const msg = (err.message || '').toLowerCase();
-      if (msg.includes('expired') || msg.includes('invalid') || msg.includes('otp')) {
-        setToast({ message: "Code invalide ou expiré. Cliquez sur « Renvoyer le code ».", type: 'error' });
+      if (otpVerifyRL.handleError(err)) {
+        setToast({ message: `Trop de tentatives. Réessayez dans ${otpVerifyRL.secondsLeft}s.`, type: 'error' });
       } else {
-        setToast({ message: err.message || "Code incorrect.", type: 'error' });
+        const msg = (err.message || '').toLowerCase();
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('otp')) {
+          setToast({ message: "Code invalide ou expiré. Cliquez sur « Renvoyer le code ».", type: 'error' });
+        } else {
+          setToast({ message: err.message || "Code incorrect.", type: 'error' });
+        }
       }
     } finally {
       setLoading(false);
@@ -178,11 +202,16 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
           type: 'success',
         });
       } else {
+        if (signInRL.isRateLimited) {
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
         if (error) throw error;
+        signInRL.clear();
         if (import.meta.env.DEV) {
           localStorage.removeItem('dev_signed_out');
         }
@@ -197,7 +226,9 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
         errorMsg.toLowerCase().includes('fetch failed') ||
         err?.name === 'AuthRetryableFetchError';
       const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
-      if (isNetworkError && devBypassEnabled) {
+      if (signInRL.handleError(err)) {
+        setToast({ message: `Trop de tentatives. Réessayez dans ${signInRL.secondsLeft}s.`, type: 'error' });
+      } else if (isNetworkError && devBypassEnabled) {
         localStorage.removeItem('dev_signed_out');
         setToast({ message: "Connexion hors-ligne (Mode Dev) réussie !", type: 'success' });
         setTimeout(() => window.location.reload(), 1000);
@@ -282,19 +313,25 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
             <Button
               type="submit"
               className="w-full mt-2"
-              disabled={loading || otpCode.length < 6}
+              disabled={loading || otpCode.length < 6 || otpVerifyRL.isRateLimited}
             >
-              {loading ? 'Vérification...' : 'VALIDER LE CODE'}
+              {loading
+                ? 'Vérification...'
+                : otpVerifyRL.isRateLimited
+                ? `Réessayer dans ${otpVerifyRL.secondsLeft}s`
+                : 'VALIDER LE CODE'}
             </Button>
           </form>
           <div className="border-t border-outline-variant pt-4 flex flex-col gap-2">
             <button
               type="button"
               onClick={handleResendOtp}
-              disabled={loading}
+              disabled={loading || otpRequestRL.isRateLimited}
               className="font-label-md text-xs text-secondary hover:text-secondary/80 font-bold uppercase tracking-wider disabled:opacity-50"
             >
-              Renvoyer le code
+              {otpRequestRL.isRateLimited
+                ? `Renvoyer le code (${otpRequestRL.secondsLeft}s)`
+                : 'Renvoyer le code'}
             </button>
             <button
               type="button"
@@ -322,8 +359,12 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
               placeholder="Ex: caissier@boutik.com"
               required
             />
-            <Button type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? 'Envoi...' : 'ENVOYER LE CODE'}
+            <Button type="submit" className="w-full mt-2" disabled={loading || otpRequestRL.isRateLimited}>
+              {loading
+                ? 'Envoi...'
+                : otpRequestRL.isRateLimited
+                ? `Réessayer dans ${otpRequestRL.secondsLeft}s`
+                : 'ENVOYER LE CODE'}
             </Button>
           </form>
           <div className="border-t border-outline-variant pt-4">
@@ -385,8 +426,12 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
               )}
             </div>
 
-            <Button type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? 'Traitement...' : isSignUp ? "S'INSCRIRE" : "SE CONNECTER"}
+            <Button type="submit" className="w-full mt-2" disabled={loading || (!isSignUp && signInRL.isRateLimited)}>
+              {loading
+                ? 'Traitement...'
+                : !isSignUp && signInRL.isRateLimited
+                ? `Réessayer dans ${signInRL.secondsLeft}s`
+                : isSignUp ? "S'INSCRIRE" : "SE CONNECTER"}
             </Button>
           </form>
 
