@@ -11,13 +11,6 @@ import { Toast } from '../components/ui/Toast';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { getProductIconAndGradient } from '../lib/productHelper';
 
-const SEED_PRODUCTS = [
-  { id: '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed', boutique_id: 'boutique-1', nom: 'Huile de Palme', prix: 2500, quantite: 15, seuil_alerte: 5, archive: 0, updated_at: new Date().toISOString() },
-  { id: '2b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bee', boutique_id: 'boutique-1', nom: 'Riz Long Grain 5kg', prix: 6750, quantite: 3, seuil_alerte: 4, archive: 0, updated_at: new Date().toISOString() },
-  { id: '3b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bef', boutique_id: 'boutique-1', nom: 'Eau Minérale 1.5L', prix: 500, quantite: 24, seuil_alerte: 10, archive: 0, updated_at: new Date().toISOString() },
-  { id: '4b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bf0', boutique_id: 'boutique-1', nom: 'Savon Corporel', prix: 1200, quantite: 0, seuil_alerte: 5, archive: 0, updated_at: new Date().toISOString() },
-];
-
 interface CaisseProps {
   boutiqueId: string;
   caissierId: string;
@@ -31,13 +24,6 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   const [clientNom, setClientNom] = useState('');
   const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
-
-  useEffect(() => {
-    const seed = async () => {
-      if ((await db.produits.count()) === 0) await db.produits.bulkAdd(SEED_PRODUCTS);
-    };
-    seed();
-  }, []);
 
   const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
   const todaySales = useLiveQuery(() => {

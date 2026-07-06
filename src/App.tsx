@@ -158,6 +158,25 @@ function App() {
 
 
 
+  // One-time cleanup: remove demo data seeded during early development.
+  // Demo entries used boutique_id='boutique-1' (not a real UUID).
+  useEffect(() => {
+    const CLEANUP_KEY = 'sb_demo_cleaned_v1';
+    if (localStorage.getItem(CLEANUP_KEY)) return;
+    (async () => {
+      try {
+        await db.produits.where('boutique_id').equals('boutique-1').delete();
+        await db.ardoises.where('boutique_id').equals('boutique-1').delete();
+        await db.ardoise_paiements.bulkDelete([
+          'p1b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be1',
+          'p2b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be2',
+          'p3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3',
+        ]);
+        localStorage.setItem(CLEANUP_KEY, '1');
+      } catch { /* IndexedDB not available */ }
+    })();
+  }, []);
+
   useEffect(() => {
     if (!isOnline) {
       setShowOfflineBanner(true);

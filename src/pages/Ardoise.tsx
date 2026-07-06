@@ -11,18 +11,6 @@ import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
 
-const SEED_ARDOISES = [
-  { id: 'a1b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be1', boutique_id: 'boutique-1', client_nom: 'Moussa Keita', montant_total: 22000, statut: 'en_cours' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: 'a2b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be2', boutique_id: 'boutique-1', client_nom: 'Amina Diallo', montant_total: 48000, statut: 'en_cours' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: 'a3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3', boutique_id: 'boutique-1', client_nom: 'Bakary Traoré', montant_total: 15000, statut: 'soldee' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-];
-
-const SEED_PAYMENTS = [
-  { id: 'p1b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be1', ardoise_id: 'a1b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be1', montant: 9500, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: 'p2b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be2', ardoise_id: 'a2b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be2', montant: 6000, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-  { id: 'p3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3', ardoise_id: 'a3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3', montant: 15000, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-];
-
 const getAvatarGradient = (name: string) => {
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const gradients = [
@@ -314,16 +302,6 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   // Form states — ajout de dette
   const [showAddDebt, setShowAddDebt] = useState(false);
   const [addDebtAmount, setAddDebtAmount] = useState('');
-
-  useEffect(() => {
-    const seed = async () => {
-      if ((await db.ardoises.count()) === 0) {
-        await db.ardoises.bulkAdd(SEED_ARDOISES);
-        await db.ardoise_paiements.bulkAdd(SEED_PAYMENTS);
-      }
-    };
-    seed();
-  }, []);
 
   const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
   const payments = useLiveQuery(() => db.ardoise_paiements.toArray(), []) || [];
