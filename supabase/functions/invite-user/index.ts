@@ -87,12 +87,15 @@ serve(async (req) => {
     if (inviteError) {
       // Annuler l'invitation en DB si l'email échoue
       await supabase.from('invitations').delete().eq('id', invitation.id);
-      throw inviteError;
+      return json({
+        error: inviteError.message || "Erreur lors de l'envoi de l'invitation",
+        raw_error: { message: inviteError.message, status: (inviteError as any).status, code: (inviteError as any).code },
+      }, 400);
     }
 
     // Audit log
     await supabase.from('admin_audit_log').insert({
-      actor_id: user.id,
+      admin_id: user.id,
       action: 'invite_user',
       target_type: 'invitation',
       target_id: invitation.id,
