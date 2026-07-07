@@ -49,23 +49,33 @@ export const AdminBoutiques: React.FC = () => {
   const [newBoutiqueGerantEmail, setNewBoutiqueGerantEmail] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const [isDemo, setIsDemo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchBoutiques = async () => {
+  const fetchBoutiques = async (retryCount = 0) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('boutiques')
-        .select('id, nom, adresse, suspended, suspended_at, suspended_reason, created_at, gerant_id')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setBoutiques(data || []);
-      setIsDemo(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        if (retryCount < 3) {
+          await new Promise(r => setTimeout(r, 1500));
+          return fetchBoutiques(retryCount + 1);
+        }
+        throw new Error('Session expirée — veuillez vous reconnecter');
+      }
+      const { data, error: rpcErr } = await supabase.rpc('admin_get_boutiques');
+      if (rpcErr) throw rpcErr;
+      setBoutiques((data as Boutique[] | null) || []);
+      setError(null);
     } catch (e: any) {
-      console.error('[AdminBoutiques] Erreur fetch boutiques:', e);
+      const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé');
+      if (isAuthError && retryCount < 2) {
+        try { await supabase.auth.refreshSession(); } catch (_) {}
+        await new Promise(r => setTimeout(r, 1000 * (retryCount + 1)));
+        return fetchBoutiques(retryCount + 1);
+      }
+      console.error('[AdminBoutiques] Erreur:', e?.message ?? e);
+      setError(e.message || 'Erreur de chargement des boutiques');
       setBoutiques([]);
-      setIsDemo(false);
-      // Optional: add a toast or setError here if the component supports it
     } finally {
       setLoading(false);
     }
@@ -154,13 +164,18 @@ export const AdminBoutiques: React.FC = () => {
         </button>
       </div>
 
-      {isDemo && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
-            <span className="text-[10px] text-amber-400/80">Les données affichées sont fictives. Les migrations backend ne sont pas encore déployées.</span>
+      {error && (
+        <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-red-400 text-xs">
+            <span className="material-symbols-outlined text-sm">warning</span>
+            <span>{error}</span>
           </div>
+          <button
+            onClick={() => fetchBoutiques()}
+            className="text-[9px] font-black uppercase tracking-wider text-red-400 hover:text-red-300 border border-red-800 hover:border-red-600 px-2 py-1 rounded-lg transition-all cursor-pointer"
+          >
+            Réessayer
+          </button>
         </div>
       )}
 

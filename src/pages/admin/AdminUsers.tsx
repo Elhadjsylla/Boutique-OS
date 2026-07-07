@@ -26,32 +26,42 @@ export const AdminUsers: React.FC = () => {
   const [editBoutiqueId, setEditBoutiqueId] = useState<string>('null');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const [isDemo, setIsDemo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUsersAndBoutiques = async () => {
+  const fetchUsersAndBoutiques = async (retryCount = 0) => {
     setLoading(true);
     try {
-      const [{ data: profs, error: profsErr }, { data: bouts, error: boutsErr }] = await Promise.all([
-        supabase.from('profils').select('id, role, boutique_id, created_at').order('created_at', { ascending: false }),
-        supabase.from('boutiques').select('id, nom').order('nom'),
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        if (retryCount < 3) {
+          await new Promise(r => setTimeout(r, 1500));
+          return fetchUsersAndBoutiques(retryCount + 1);
+        }
+        throw new Error('Session expirée — veuillez vous reconnecter');
+      }
+
+      const [{ data: usersData, error: usersErr }, { data: boutsData, error: boutsErr }] = await Promise.all([
+        supabase.rpc('admin_list_users'),
+        supabase.rpc('admin_get_boutiques'),
       ]);
 
-      if (profsErr) throw profsErr;
+      if (usersErr) throw usersErr;
       if (boutsErr) throw boutsErr;
 
-      const boutiquesMap = Object.fromEntries((bouts || []).map(b => [b.id, b]));
-      const formattedProfs = (profs || []).map((p: any) => ({
-        ...p,
-        boutiques: boutiquesMap[p.boutique_id] ?? null,
-      }));
-      setUsers(formattedProfs);
-      setBoutiques(bouts || []);
-      setIsDemo(false);
+      setUsers((usersData as Profile[] | null) || []);
+      setBoutiques((boutsData as Boutique[] | null) || []);
+      setError(null);
     } catch (e: any) {
+      const isAuthError = e?.code === '42501' || e?.message?.includes('Accès refusé');
+      if (isAuthError && retryCount < 2) {
+        try { await supabase.auth.refreshSession(); } catch (_) {}
+        await new Promise(r => setTimeout(r, 1000 * (retryCount + 1)));
+        return fetchUsersAndBoutiques(retryCount + 1);
+      }
       console.error("[AdminUsers] Erreur fetch:", e?.message ?? e);
+      setError(e.message || 'Erreur de chargement des utilisateurs');
       setUsers([]);
       setBoutiques([]);
-      setIsDemo(false);
     } finally {
       setLoading(false);
     }
@@ -97,13 +107,18 @@ export const AdminUsers: React.FC = () => {
         <p className="text-xs text-admin-text-muted">Affichez les profils utilisateurs et réassignez les rôles et boutiques.</p>
       </div>
 
-      {isDemo && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
-            <span className="text-[10px] text-amber-400/80">Données fictives. Les migrations backend ne sont pas encore déployées.</span>
+      {error && (
+        <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-red-400 text-xs">
+            <span className="material-symbols-outlined text-sm">warning</span>
+            <span>{error}</span>
           </div>
+          <button
+            onClick={() => fetchUsersAndBoutiques()}
+            className="text-[9px] font-black uppercase tracking-wider text-red-400 hover:text-red-300 border border-red-800 hover:border-red-600 px-2 py-1 rounded-lg transition-all cursor-pointer"
+          >
+            Réessayer
+          </button>
         </div>
       )}
 

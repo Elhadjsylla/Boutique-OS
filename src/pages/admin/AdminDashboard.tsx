@@ -77,9 +77,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
   if (error || !stats) {
     return (
-      <div className="p-6 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-center">
-        <span className="material-symbols-outlined text-3xl mb-1">warning</span>
+      <div className="p-6 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-center flex flex-col items-center gap-3">
+        <span className="material-symbols-outlined text-3xl">warning</span>
         <p className="text-sm font-bold">{error || "Impossible de charger les données."}</p>
+        <button
+          onClick={() => fetchStats()}
+          className="h-9 px-4 bg-red-900/40 hover:bg-red-800/60 border border-red-700 text-red-300 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
