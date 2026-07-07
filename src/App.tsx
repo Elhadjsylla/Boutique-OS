@@ -269,7 +269,11 @@ function App() {
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
 
-  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || session?.user?.email === 'elhadjsylla667@gmail.com' || session?.user?.email === 'cedricbenoitdieme@gmail.com' || session?.user?.email === 'gmoustapha0805@gmail.com' || session?.user?.email === 'admin@samaboutik.dev';
+  // Known admin emails — bypass is immediate, no need to wait for DB profile.
+  // This list is the single source of truth for email-based admin detection.
+  const ADMIN_EMAILS = ['elhadjsylla667@gmail.com', 'cedricbenoitdieme@gmail.com', 'gmoustapha0805@gmail.com', 'admin@samaboutik.dev'];
+  const isAdminEmail = ADMIN_EMAILS.includes(session?.user?.email ?? '');
+  const isAdmin = storeProfile?.role === 'super_admin' || storeProfile?.role === 'admin' || session?.user?.user_metadata?.role === 'super_admin' || session?.user?.user_metadata?.role === 'admin' || isAdminEmail;
 
 
   // Check subscription status for real (non-dev) sessions
@@ -302,7 +306,7 @@ function App() {
       console.log('[App] Final effectiveRole:', effectiveRole);
       
       // Force admin bypass for known admin emails just in case DB is out of sync
-      const isAdminEmail = session.user?.email === 'elhadjsylla667@gmail.com' || session.user?.email === 'cedricbenoitdieme@gmail.com' || session.user?.email === 'gmoustapha0805@gmail.com' || session.user?.email === 'admin@samaboutik.dev';
+      const isAdminEmail = ADMIN_EMAILS.includes(session.user?.email ?? '');
 
       if (effectiveRole === 'super_admin' || effectiveRole === 'admin' || isAdminEmail) {
         console.log('[App] ✅ ADMIN DETECTED — bypassing paywall');
@@ -399,7 +403,17 @@ function App() {
 
   const isSessionOrProfileLoading = !forceUnlock && (loading || (session && isProfileLoading));
 
-  // Admin console: shows automatically for any admin, unless they explicitly dismissed it
+  // ── ADMIN FAST-PATH ──────────────────────────────────────────────────────────
+  // For known admin emails: bypass ALL loading guards immediately.
+  // The session email is available from the very first render, so we never
+  // need to wait for the profils table to confirm the role.
+  // This fixes cedricbenoitdieme@gmail.com (and any other admin) getting stuck
+  // on the subscription-check spinner or "Profil Incomplet" screen.
+  if (session?.user && isAdminEmail && !adminManuallyDismissed) {
+    return <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />;
+  }
+
+  // Admin console: also shows for admins detected via DB role (non-email path)
   if (!isSessionOrProfileLoading && session?.user && isAdmin && !adminManuallyDismissed) {
     return <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />;
   }
