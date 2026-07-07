@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubscription';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface AbonnementProps {
   onSuccess?: () => void;
@@ -10,13 +11,14 @@ interface AbonnementProps {
 type Step = 'plans' | 'payment' | 'waiting' | 'success';
 
 export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) => {
+  const user = useAuthStore(state => state.user);
   const [step, setStep]               = useState<Step>('plans');
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wave');
-  const [phone, setPhone]             = useState('');
+  const [phone, setPhone]             = useState(user?.user_metadata?.phone || '');
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const [paymentUrl, setPaymentUrl]   = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string } } | null>(null);
 
   const handleSelectPlan = (plan: PlanType) => {
     setSelectedPlan(plan);
@@ -40,10 +42,10 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Erreur de paiement');
 
-      if (data.payment_url) {
-        setPaymentUrl(data.payment_url);
-        window.open(data.payment_url, '_blank');
-      }
+      setPaymentData({
+        payment_url: data.payment_url,
+        deep_links: data.deep_links
+      });
       setStep('waiting');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
@@ -229,17 +231,38 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
               <br />Une fois payé, appuyez sur "Confirmer".
             </p>
           </div>
-          {paymentUrl && (
-            <a
-              href={paymentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full h-12 rounded-2xl bg-primary text-white text-sm font-black flex items-center justify-center gap-2 shadow-sm"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>open_in_new</span>
-              Ouvrir le lien de paiement
-            </a>
-          )}
+          <div className="flex flex-col gap-3 w-full mt-2">
+            {paymentData?.deep_links?.MAXIT && (
+              <a
+                href={paymentData.deep_links.MAXIT}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-12 rounded-xl bg-orange-500 text-white text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+              >
+                Ouvrir l'application Max It
+              </a>
+            )}
+            {paymentData?.deep_links?.OM && (
+              <a
+                href={paymentData.deep_links.OM}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-12 rounded-xl bg-slate-900 text-white text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+              >
+                Ouvrir Orange Money
+              </a>
+            )}
+            {paymentData?.payment_url && (
+              <a
+                href={paymentData.payment_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-12 rounded-xl border-2 border-slate-200 text-slate-700 text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-slate-50"
+              >
+                Ouvrir le lien Web
+              </a>
+            )}
+          </div>
           <button
             onClick={handleConfirmPayment}
             className="w-full h-12 rounded-2xl bg-secondary text-white text-sm font-black active:scale-95 transition-all shadow-sm"

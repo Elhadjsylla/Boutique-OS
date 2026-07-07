@@ -3,6 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Toast } from '../components/ui/Toast';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG } from '../hooks/useSubscription';
+import { useAuthStore } from '../store/useAuthStore';
 
 // ⚠️ PRODUCTION: remplacer par le vrai numéro WhatsApp avant le lancement
 const WHATSAPP_SUPPORT = '221700000000';
@@ -17,12 +18,13 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   onBack, 
   currentPlan = 'Starter'
 }) => {
+  const user = useAuthStore(state => state.user);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.user_metadata?.phone || '');
   const [provider, setProvider] = useState<'wave' | 'orange'>('wave');
   const [isPaying, setIsPaying] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string } } | null>(null);
 
   const plans = [
     {
@@ -130,11 +132,10 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       if (error) throw error;
 
       if (data && data.success) {
-        if (data.payment_url) {
-          window.location.href = data.payment_url;
-        } else if (data.qr_code) {
-          setQrCode(data.qr_code);
-        }
+        setPaymentData({
+          payment_url: data.payment_url,
+          deep_links: data.deep_links
+        });
       } else {
         throw new Error(data?.error || 'Erreur lors de la création du paiement.');
       }
@@ -386,33 +387,84 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                 <p className="text-[13px] text-slate-500 mt-1.5">Passerelle de paiement sécurisée</p>
               </div>
               <button
-                onClick={() => { setSelectedPlanForPayment(null); setQrCode(null); }}
+                onClick={() => { setSelectedPlanForPayment(null); setPaymentData(null); }}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center"
               >
                 <span className="material-symbols-outlined text-[28px] font-light">close</span>
               </button>
             </div>
 
-            {/* QR Code Orange Money */}
-            {qrCode && (
+            {/* Interface Paiement en cours / Deep links */}
+            {paymentData && (
               <div className="flex flex-col items-center gap-5 text-center pb-2">
-                <p className="text-sm font-bold text-slate-700">Scannez avec Orange Money</p>
-                <img src={qrCode} alt="QR Code Orange Money" className="w-52 h-52 border border-slate-200 rounded-2xl shadow-sm object-contain" />
-                <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                  Après paiement, votre abonnement sera activé automatiquement dans quelques secondes.
-                </p>
+                <div className="w-16 h-16 rounded-full bg-secondary-container flex items-center justify-center animate-pulse mb-2">
+                  <span className="material-symbols-outlined text-secondary text-3xl">
+                    {provider === 'wave' ? 'waves' : 'smartphone'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Paiement en cours</h3>
+                  <p className="text-[13px] text-slate-500 mt-1 max-w-[280px]">
+                    Complétez le paiement via l'application ou le lien ci-dessous.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full mt-2">
+                  {paymentData.deep_links?.MAXIT && (
+                    <a
+                      href={paymentData.deep_links.MAXIT}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-12 rounded-xl bg-orange-500 text-white text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+                    >
+                      Ouvrir l'application Max It
+                    </a>
+                  )}
+                  {paymentData.deep_links?.OM && (
+                    <a
+                      href={paymentData.deep_links.OM}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-12 rounded-xl bg-slate-900 text-white text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+                    >
+                      Ouvrir Orange Money
+                    </a>
+                  )}
+                  {paymentData.payment_url && (
+                    <a
+                      href={paymentData.payment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-12 rounded-xl border-2 border-slate-200 text-slate-700 text-sm font-black flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-slate-50"
+                    >
+                      Ouvrir le lien Web
+                    </a>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => { setSelectedPlanForPayment(null); setQrCode(null); }}
-                  className="w-full h-12 rounded-2xl bg-primary text-white text-sm font-black active:scale-95 transition-all"
+                  onClick={() => {
+                    setToast({ message: 'Vérification du paiement...', type: 'success' });
+                    setTimeout(() => window.location.reload(), 2000);
+                  }}
+                  className="w-full h-12 rounded-xl bg-secondary text-white text-sm font-black mt-2 active:scale-95 transition-all shadow-md"
                 >
-                  Fermer
+                  J'ai payé — Confirmer
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setSelectedPlanForPayment(null); setPaymentData(null); }}
+                  className="text-xs font-bold text-slate-400 mt-2 hover:text-slate-600"
+                >
+                  Annuler
                 </button>
               </div>
             )}
 
             {/* Content */}
-            {!qrCode && <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-7 text-left">
+            {!paymentData && <form onSubmit={handlePaymentSubmit} className="flex flex-col gap-7 text-left">
               {/* Plan Recap */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 flex justify-between items-center shadow-sm">
                 <div className="flex flex-col">
