@@ -88,9 +88,9 @@ serve(async (req) => {
         callback_cancel: `${baseUrl}/payment/cancel?sub=${subscription.id}`,
       });
     } else {
-      unitechRes = await callUnitech("create_orange_qr", UNITECH_OM_KEY, {
+      unitechRes = await callUnitech("create_orange_maxit", UNITECH_OM_KEY, {
         amount: selectedPlan.amount,
-        reference: `samaboutik_${subscription.id}`,
+        customer_number,
         description: selectedPlan.label,
         callback_success: `${baseUrl}/payment/success?sub=${subscription.id}`,
         callback_cancel: `${baseUrl}/payment/cancel?sub=${subscription.id}`,
@@ -116,7 +116,6 @@ serve(async (req) => {
       success: true,
       subscription_id: subscription.id,
       payment_url:  unitechRes.data.payment_url  ?? null,
-      qr_code:      unitechRes.data.qr_code      ?? null,
       deep_links:   unitechRes.data.deep_links   ?? null,
     });
 

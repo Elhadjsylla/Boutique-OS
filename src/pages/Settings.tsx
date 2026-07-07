@@ -79,7 +79,18 @@ export const Settings: React.FC<SettingsProps> = ({
   // Profile management states
   const [userFullName, setUserFullName] = useState(user.user_metadata?.full_name || '');
   const [avatarUrl, setAvatarUrl] = useState(user.user_metadata?.avatar_url || '');
+  const [userPhoneNumber, setUserPhoneNumber] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  useEffect(() => {
+    const fetchPhone = async () => {
+      const { data } = await supabase.from('profils').select('phone_number').eq('id', user.id).single();
+      if (data?.phone_number) {
+        setUserPhoneNumber(data.phone_number);
+      }
+    };
+    fetchPhone();
+  }, [user.id]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Password reset states
@@ -153,6 +164,11 @@ export const Settings: React.FC<SettingsProps> = ({
         }
       });
       if (error) throw error;
+      
+      if (userPhoneNumber.trim()) {
+        const { error: phoneError } = await supabase.rpc('update_phone_number', { new_phone: userPhoneNumber.trim() });
+        if (phoneError) throw phoneError;
+      }
       
       // Update local store user object immediately
       if (data.user) {
@@ -308,12 +324,18 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 items-end mt-2">
-              <div className="flex-1 w-full">
+              <div className="flex-1 w-full flex flex-col gap-3">
                 <Input 
                   label="Votre Nom Complet" 
                   value={userFullName} 
                   onChange={(e) => setUserFullName(e.target.value)} 
                   placeholder="Ex: Babacar Diop"
+                />
+                <Input 
+                  label="Numéro de téléphone" 
+                  value={userPhoneNumber} 
+                  onChange={(e) => setUserPhoneNumber(e.target.value)} 
+                  placeholder="Ex: 771234567"
                 />
               </div>
               <button
