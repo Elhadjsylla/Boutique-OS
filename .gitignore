@@ -38,4 +38,3 @@ db.sqlite3-journal
 
 # Vercel
 .vercel
-.env*
