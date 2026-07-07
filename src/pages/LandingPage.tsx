@@ -8,6 +8,46 @@ interface LandingPageProps {
   onNavigateToPortal?: () => void;
 }
 
+const AnimatedPhrase = () => {
+  const phrases = [
+    "comme un vrai patron.",
+    "sans perdre de temps.",
+    "avec efficacité.",
+    "en toute simplicité."
+  ];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % phrases.length);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="relative inline-block h-[1.3em] w-full align-top overflow-hidden">
+      {phrases.map((phrase, i) => {
+        const isCurrent = i === index;
+        const isPrevious = i === (index - 1 + phrases.length) % phrases.length;
+        return (
+          <span
+            key={i}
+            className={`absolute left-0 w-full text-center transition-all duration-700 ease-in-out bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent ${
+              isCurrent
+                ? 'opacity-100 translate-y-0 scale-100'
+                : isPrevious
+                ? 'opacity-0 -translate-y-full scale-95'
+                : 'opacity-0 translate-y-full scale-105'
+            }`}
+          >
+            {phrase}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ 
   isLoggedIn = false, 
   onBackToApp,
@@ -187,8 +227,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         <h1 className="reveal transition-all duration-1000 ease-out transform  delay-150 text-4xl md:text-6xl font-black tracking-tight leading-[1.1] max-w-4xl text-primary mb-6">
           Gère ta boutique <br />
-          <span className="bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent">
-            comme un vrai patron.
+          <span className="block mt-2">
+            <AnimatedPhrase />
           </span>
         </h1>
 
