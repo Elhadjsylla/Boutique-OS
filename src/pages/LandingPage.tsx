@@ -25,14 +25,16 @@ const AnimatedPhrase = () => {
   }, []);
 
   return (
-    <span className="relative inline-block h-[1.3em] w-full align-top overflow-hidden">
+    <span className="relative inline-block h-[1.3em] align-top overflow-hidden">
+      {/* Placeholder for intrinsic width */}
+      <span className="invisible whitespace-nowrap px-2">comme un vrai patron.</span>
       {phrases.map((phrase, i) => {
         const isCurrent = i === index;
         const isPrevious = i === (index - 1 + phrases.length) % phrases.length;
         return (
           <span
             key={i}
-            className={`absolute left-0 w-full text-center transition-all duration-700 ease-in-out bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent ${
+            className={`absolute top-0 left-0 w-full text-center whitespace-nowrap px-2 transition-all duration-700 ease-in-out bg-gradient-to-r from-primary via-[#2E5B88] to-secondary bg-clip-text text-transparent ${
               isCurrent
                 ? 'opacity-100 translate-y-0 scale-100'
                 : isPrevious
