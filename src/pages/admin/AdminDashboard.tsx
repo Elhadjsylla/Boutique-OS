@@ -38,7 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         throw new Error('Aucune session active — veuillez vous reconnecter');
       }
 
-      const { data, error: err } = await supabase.rpc('admin_platform_stats');
+      const { data, error: err } = await supabase.rpc('sys_platform_metrics');
       if (err) throw err;
       setStats(data);
     } catch (e: any) {

@@ -62,7 +62,7 @@ export const AdminBoutiques: React.FC = () => {
         }
         throw new Error('Session expirée — veuillez vous reconnecter');
       }
-      const { data, error: rpcErr } = await supabase.rpc('admin_get_boutiques');
+      const { data, error: rpcErr } = await supabase.rpc('sys_get_boutiques');
       if (rpcErr) throw rpcErr;
       setBoutiques((data as Boutique[] | null) || []);
       setError(null);
@@ -88,7 +88,7 @@ export const AdminBoutiques: React.FC = () => {
   const handleOpenDetails = async (id: string) => {
     setDetailsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('admin_boutique_details', { boutique_uuid: id });
+      const { data, error } = await supabase.rpc('sys_boutique_details', { boutique_uuid: id });
       if (error) throw error;
       setSelectedBoutiqueDetails(data);
     } catch (e: any) {
@@ -103,7 +103,7 @@ export const AdminBoutiques: React.FC = () => {
 
   const handleToggleSuspend = async (b: Boutique, actionSuspend: boolean) => {
     try {
-      const { error } = await supabase.rpc('admin_toggle_boutique_suspend', {
+      const { error } = await supabase.rpc('sys_toggle_boutique_suspend', {
         boutique_uuid: b.id,
         suspend: actionSuspend,
         reason: actionSuspend ? suspendReason : null

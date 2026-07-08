@@ -61,7 +61,7 @@ export const AdminSubscriptions: React.FC = () => {
     setIsUpdating(true);
     try {
       const formattedDate = new Date(newExpiresAt).toISOString();
-      const { error } = await supabase.rpc('admin_update_subscription', {
+      const { error } = await supabase.rpc('sys_update_subscription', {
         target_user: editingSub.user_id,
         new_plan: newPlan,
         new_expires_at: formattedDate

@@ -21,7 +21,7 @@ export const AdminLogs: React.FC = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('admin_audit_log')
+        .from('sys_audit_log')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -76,7 +76,7 @@ export const AdminLogs: React.FC = () => {
           <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
           <div className="flex flex-col">
             <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
-            <span className="text-[10px] text-amber-400/80">Données fictives. La table admin_audit_log n'est pas encore déployée.</span>
+            <span className="text-[10px] text-amber-400/80">Données fictives. La table sys_audit_log n'est pas encore déployée.</span>
           </div>
         </div>
       )}

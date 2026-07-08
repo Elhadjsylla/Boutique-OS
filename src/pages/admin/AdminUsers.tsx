@@ -41,8 +41,8 @@ export const AdminUsers: React.FC = () => {
       }
 
       const [{ data: usersData, error: usersErr }, { data: boutsData, error: boutsErr }] = await Promise.all([
-        supabase.rpc('admin_list_users'),
-        supabase.rpc('admin_get_boutiques'),
+        supabase.rpc('sys_list_users'),
+        supabase.rpc('sys_get_boutiques'),
       ]);
 
       if (usersErr) throw usersErr;
