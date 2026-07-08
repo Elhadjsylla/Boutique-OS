@@ -27,12 +27,40 @@ export const Reglages: React.FC<ReglagesProps> = ({
   const { user, profile, boutique } = useAuthStore();
   const [boutiqueName, setBoutiqueName] = useState(boutique?.nom || '');
   const [stockThreshold, setStockThreshold] = useState(5);
+  const [boutiqueQuartier, setBoutiqueQuartier] = useState('');
+  const [quartiers, setQuartiers] = useState<string[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (boutique?.nom) setBoutiqueName(boutique.nom);
-  }, [boutique]);
+    const fetchBoutiqueAndQuartiers = async () => {
+      try {
+        // Fetch quartiers
+        const { data: qData } = await supabase.from('quartiers_dakar').select('nom').order('nom');
+        if (qData) {
+          setQuartiers(qData.map(q => q.nom));
+        } else {
+          setQuartiers(["Dakar Plateau", "Médina", "Fann-Point E-Amitié", "Ouakam", "Yoff", "Ngor-Almadies", "Mermoz-Sacré Cœur", "Grand Dakar", "Parcelles Assainies", "Pikine", "Guédiawaye", "Rufisque"]);
+        }
+
+        // Fetch current boutique quartier
+        const { data: bData } = await supabase
+          .from('boutiques')
+          .select('nom, quartier')
+          .eq('id', boutiqueId)
+          .single();
+        
+        if (bData) {
+          if (bData.nom) setBoutiqueName(bData.nom);
+          if (bData.quartier) setBoutiqueQuartier(bData.quartier);
+        }
+      } catch (err) {
+        console.error("Error loading boutique details:", err);
+      }
+    };
+
+    fetchBoutiqueAndQuartiers();
+  }, [boutiqueId]);
 
   const saveSettings = async () => {
     if (!boutiqueName.trim()) return;
@@ -40,7 +68,10 @@ export const Reglages: React.FC<ReglagesProps> = ({
     try {
       const { error } = await supabase
         .from('boutiques')
-        .update({ nom: boutiqueName.trim() })
+        .update({ 
+          nom: boutiqueName.trim(),
+          quartier: boutiqueQuartier || null
+        })
         .eq('id', boutiqueId);
       if (error) throw error;
       setToast({ message: 'Paramètres sauvegardés avec succès.', type: 'success' });
@@ -122,6 +153,22 @@ export const Reglages: React.FC<ReglagesProps> = ({
             onChange={(e) => setBoutiqueName(e.target.value)}
             className="w-full h-12 px-4 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-semibold text-on-surface"
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
+            Quartier (Dakar)
+          </label>
+          <select
+            value={boutiqueQuartier}
+            onChange={(e) => setBoutiqueQuartier(e.target.value)}
+            className="w-full h-12 px-4 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-semibold text-on-surface cursor-pointer"
+          >
+            <option value="">Non renseigné</option>
+            {quartiers.map((q) => (
+              <option key={q} value={q}>{q}</option>
+            ))}
+          </select>
         </div>
 
         <div className="flex flex-col gap-2">
