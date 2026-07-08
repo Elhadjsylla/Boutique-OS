@@ -5,7 +5,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import * as L from 'leaflet';
 
 // Types
 interface Alert {
