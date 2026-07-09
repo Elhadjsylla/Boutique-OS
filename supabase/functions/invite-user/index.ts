@@ -85,7 +85,53 @@ serve(async (req) => {
     });
 
     if (inviteError) {
-      // Annuler l'invitation en DB si l'email échoue
+      const isEmailExists =
+        (inviteError as any).status === 422 ||
+        inviteError.message?.toLowerCase().includes('already been registered');
+
+      if (isEmailExists) {
+        // L'utilisateur a déjà un compte Supabase Auth.
+        // On cherche son user_id et on met à jour son profil directement.
+        const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const existingUser = usersData?.users?.find(
+          (u) => u.email?.toLowerCase() === email.toLowerCase()
+        );
+
+        if (existingUser) {
+          const { error: updateError } = await supabase
+            .from('profils')
+            .upsert(
+              { id: existingUser.id, boutique_id: targetBoutiqueId, role },
+              { onConflict: 'id' }
+            );
+
+          if (updateError) {
+            await supabase.from('invitations').delete().eq('id', invitation.id);
+            return json({ error: 'Erreur lors de la mise à jour du profil : ' + updateError.message }, 400);
+          }
+
+          // Marquer l'invitation acceptée immédiatement
+          await supabase
+            .from('invitations')
+            .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+            .eq('id', invitation.id);
+
+          return json({
+            success: true,
+            invitation_id: invitation.id,
+            already_registered: true,
+            note: 'Utilisateur déjà enregistré — profil lié à la boutique directement.',
+          });
+        }
+
+        // email_exists mais user introuvable (cas rare) — message clair
+        await supabase.from('invitations').delete().eq('id', invitation.id);
+        return json({
+          error: 'Cet email est déjà associé à un compte. Demandez à l\'utilisateur de se connecter directement.',
+        }, 400);
+      }
+
+      // Autre erreur Auth → annuler l'invitation en DB
       await supabase.from('invitations').delete().eq('id', invitation.id);
       return json({
         error: inviteError.message || "Erreur lors de l'envoi de l'invitation",
@@ -94,8 +140,8 @@ serve(async (req) => {
     }
 
     // Audit log
-    await supabase.from('admin_audit_log').insert({
-      admin_id: user.id,
+    await supabase.from('sys_audit_log').insert({
+      actor_id: user.id,
       action: 'invite_user',
       target_type: 'invitation',
       target_id: invitation.id,

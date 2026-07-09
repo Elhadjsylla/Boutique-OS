@@ -576,10 +576,27 @@ export const Settings: React.FC<SettingsProps> = ({
                 const { data, error } = await supabase.functions.invoke('invite-user', {
                   body: { email: inviteEmail.trim(), role: inviteRole, boutique_id: boutiqueId }
                 });
-                if (error || data?.error) {
-                  setToast({ message: data?.error || 'Erreur lors de l\'invitation.', type: 'error' });
+
+                // Extraire le message d'erreur même depuis les réponses 4xx
+                let errorMessage: string | null = null;
+                if (error) {
+                  try {
+                    const body = await (error as any).context?.json?.();
+                    errorMessage = body?.error || error.message || 'Erreur lors de l\'invitation.';
+                  } catch {
+                    errorMessage = error.message || 'Erreur lors de l\'invitation.';
+                  }
+                } else if (data?.error) {
+                  errorMessage = data.error;
+                }
+
+                if (errorMessage) {
+                  setToast({ message: errorMessage, type: 'error' });
                 } else {
-                  setToast({ message: 'Invitation envoyée avec succès !', type: 'success' });
+                  const msg = data?.already_registered
+                    ? 'Utilisateur déjà enregistré — il a été lié à votre boutique directement.'
+                    : 'Invitation envoyée avec succès !';
+                  setToast({ message: msg, type: 'success' });
                   setInviteEmail('');
                   fetchTeam();
                 }
