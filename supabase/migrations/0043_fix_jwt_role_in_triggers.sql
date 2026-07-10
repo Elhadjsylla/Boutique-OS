@@ -50,6 +50,8 @@ END;
 $$;
 
 -- 2. Corriger assign_staff
+DROP FUNCTION IF EXISTS public.assign_staff(uuid, text, uuid);
+
 CREATE OR REPLACE FUNCTION public.assign_staff(
   target_user   uuid,
   new_role      text,
