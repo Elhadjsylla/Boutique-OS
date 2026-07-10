@@ -107,8 +107,9 @@ serve(async (req) => {
     await supabase
       .from("subscriptions")
       .update({
-        unitech_reference: unitechRes.data.reference,
+        unitech_reference:      unitechRes.data.reference,
         unitech_transaction_id: unitechRes.data.transaction_id,
+        payment_url:            unitechRes.data.payment_url ?? null,
       })
       .eq("id", subscription.id);
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
@@ -8,7 +8,10 @@ interface AbonnementProps {
   onLogout?: () => void;
 }
 
-type Step = 'plans' | 'payment' | 'waiting' | 'success';
+type Step = 'plans' | 'payment' | 'waiting' | 'success' | 'failed';
+
+const POLL_INTERVAL_MS = 3000;
+const TIMEOUT_MS       = 15 * 60 * 1000; // 15 minutes
 
 export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) => {
   const user = useAuthStore(state => state.user);
@@ -18,10 +21,64 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
   const [phone, setPhone]             = useState(user?.user_metadata?.phone || '');
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string } } | null>(null);
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<{
+    payment_url?: string;
+    deep_links?: { MAXIT?: string; OM?: string };
+  } | null>(null);
+  const [pollCount, setPollCount]     = useState(0);
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current)  clearTimeout(timeoutRef.current);
+  };
+
+  // Auto-polling : vérifie le statut de la subscription toutes les 3s
+  // Seule la signature HMAC du webhook peut changer le statut — jamais l'user
+  useEffect(() => {
+    if (step !== 'waiting' || !subscriptionId) return;
+
+    const poll = async () => {
+      try {
+        const { data } = await supabase
+          .rpc('get_subscription_status', { p_subscription_id: subscriptionId });
+
+        if (!data) return;
+
+        if (data.status === 'active') {
+          clearTimers();
+          setStep('success');
+          setTimeout(() => onSuccess?.(), 2000);
+        } else if (data.status === 'failed' || data.status === 'cancelled') {
+          clearTimers();
+          setError('Paiement non abouti. Vérifiez votre solde et réessayez.');
+          setStep('failed');
+        }
+        setPollCount(c => c + 1);
+      } catch {
+        // Erreur réseau passagère — on continue à poller
+      }
+    };
+
+    poll(); // premier appel immédiat
+    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+
+    // Timeout global 15 min : si le webhook n'arrive jamais, on abandonne
+    timeoutRef.current = setTimeout(() => {
+      clearTimers();
+      setError('Délai dépassé (15 min). Si vous avez payé, patientez et rechargez la page.');
+      setStep('failed');
+    }, TIMEOUT_MS);
+
+    return clearTimers;
+  }, [step, subscriptionId]);
 
   const handleSelectPlan = (plan: PlanType) => {
     setSelectedPlan(plan);
+    setError(null);
     setStep('payment');
   };
 
@@ -42,10 +99,9 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Erreur de paiement');
 
-      setPaymentData({
-        payment_url: data.payment_url,
-        deep_links: data.deep_links
-      });
+      setSubscriptionId(data.subscription_id);
+      setPaymentData({ payment_url: data.payment_url, deep_links: data.deep_links });
+      setPollCount(0);
       setStep('waiting');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
@@ -54,35 +110,16 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
     }
   };
 
-  const handleConfirmPayment = async () => {
-    setIsLoading(true);
+  const handleRetry = () => {
+    clearTimers();
     setError(null);
-    try {
-      // Vérifie que le webhook a bien activé la subscription en base
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('id, status')
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-
-      if (sub) {
-        setStep('success');
-        setTimeout(() => onSuccess?.(), 2000);
-      } else {
-        setError('Paiement non encore confirmé. Patientez quelques secondes et réessayez.');
-        setStep('waiting');
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur de vérification');
-    } finally {
-      setIsLoading(false);
-    }
+    setSubscriptionId(null);
+    setPaymentData(null);
+    setStep('payment');
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-16 pb-10 px-4 animate-fade-in">
-      {/* Bouton Déconnexion */}
       {onLogout && (
         <div className="w-full max-w-sm flex justify-end mt-2 mb-2">
           <button
@@ -94,7 +131,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
           </button>
         </div>
       )}
-      {/* Header */}
+
       <div className="text-center mt-8 mb-8">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-4 shadow-md">
           <span className="material-symbols-outlined text-white" style={{ fontSize: '28px' }}>storefront</span>
@@ -145,7 +182,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
       {/* ÉTAPE 2 — Moyen de paiement & numéro */}
       {step === 'payment' && selectedPlan && (
         <div className="w-full max-w-sm flex flex-col gap-5">
-          {/* Récap plan */}
           <div className="bg-primary-container border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-primary/70">Plan sélectionné</p>
@@ -157,7 +193,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
             </div>
           </div>
 
-          {/* Choix du moyen */}
           <div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant mb-3">Moyen de paiement</p>
             <div className="grid grid-cols-2 gap-3">
@@ -179,7 +214,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
             </div>
           </div>
 
-          {/* Numéro de téléphone */}
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
               Numéro {paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}
@@ -215,7 +249,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
         </div>
       )}
 
-      {/* ÉTAPE 3 — En attente de confirmation */}
+      {/* ÉTAPE 3 — En attente (auto-polling) */}
       {step === 'waiting' && (
         <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center mt-4">
           <div className="w-20 h-20 rounded-full bg-secondary-container flex items-center justify-center animate-pulse">
@@ -224,13 +258,16 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
             </span>
           </div>
           <div>
-            <h2 className="font-headline-sm text-on-surface">Paiement en cours...</h2>
+            <h2 className="font-headline-sm text-on-surface">Paiement en cours…</h2>
             <p className="font-body-md text-on-surface-variant mt-2">
-              Complétez le paiement sur votre application{' '}
-              <strong>{paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}</strong>.
-              <br />Une fois payé, appuyez sur "Confirmer".
+              Complétez le paiement sur <strong>{paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}</strong>.
+              <br />La confirmation est automatique — inutile de cliquer.
+            </p>
+            <p className="text-[11px] text-outline mt-3">
+              Vérification en cours{'.'.repeat((pollCount % 3) + 1)}
             </p>
           </div>
+
           <div className="flex flex-col gap-3 w-full mt-2">
             {paymentData?.deep_links?.MAXIT && (
               <a
@@ -263,14 +300,9 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
               </a>
             )}
           </div>
+
           <button
-            onClick={handleConfirmPayment}
-            className="w-full h-12 rounded-2xl bg-secondary text-white text-sm font-black active:scale-95 transition-all shadow-sm"
-          >
-            J'ai payé — Confirmer
-          </button>
-          <button
-            onClick={() => setStep('plans')}
+            onClick={handleRetry}
             className="text-sm text-outline underline underline-offset-2"
           >
             Annuler
@@ -288,6 +320,33 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
           <p className="font-body-md text-on-surface-variant">
             Bienvenue dans Sama Boutik. Votre boutique est prête.
           </p>
+        </div>
+      )}
+
+      {/* ÉTAPE 5 — Échec */}
+      {step === 'failed' && (
+        <div className="w-full max-w-sm flex flex-col items-center gap-5 text-center mt-4">
+          <div className="w-20 h-20 rounded-full bg-error-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-error" style={{ fontSize: '44px' }}>cancel</span>
+          </div>
+          <div>
+            <h2 className="font-headline-sm text-on-surface">Paiement non abouti</h2>
+            {error && (
+              <p className="font-body-md text-on-surface-variant mt-2">{error}</p>
+            )}
+          </div>
+          <button
+            onClick={handleRetry}
+            className="w-full h-12 rounded-2xl bg-primary text-white text-sm font-black active:scale-95 transition-all shadow-sm"
+          >
+            Réessayer
+          </button>
+          <button
+            onClick={() => setStep('plans')}
+            className="text-sm text-outline underline underline-offset-2"
+          >
+            Changer de plan
+          </button>
         </div>
       )}
     </div>

@@ -2,14 +2,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
-const UNITECH_KEY = Deno.env.get("UNITECH_WEBHOOK_SECRET")!;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const UNITECH_KEY      = Deno.env.get("UNITECH_WEBHOOK_SECRET")!;
+const SUPABASE_URL     = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const PLAN_DURATIONS: Record<string, number> = {
   starter: 30,
-  pro: 30,
-  annual: 365,
+  pro:     30,
+  annual:  365,
 };
 
 serve(async (req) => {
@@ -24,14 +24,18 @@ serve(async (req) => {
   const payload = JSON.parse(rawBody);
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+  // Log brut du webhook — toujours, quelle que soit l'issue
   await supabase.from("payment_logs").insert({
-    event: payload.event,
+    event:             payload.event,
     unitech_reference: payload.reference,
-    amount: payload.amount,
-    status: payload.status,
-    raw_payload: payload,
+    amount:            payload.amount,
+    status:            payload.status,
+    raw_payload:       payload,
   });
 
+  const now = new Date();
+
+  // ── Paiement confirmé ────────────────────────────────────────
   if (payload.event === "payment_completed") {
     const { data: newSub } = await supabase
       .from("subscriptions")
@@ -43,10 +47,14 @@ serve(async (req) => {
       return new Response("Subscription introuvable", { status: 404 });
     }
 
-    const now = new Date();
+    // Idempotence : webhook reçu 2× pour la même ref → ne rien faire
+    if (newSub.status === "active") {
+      return new Response("OK", { status: 200 });
+    }
+
     const days = PLAN_DURATIONS[newSub.plan] ?? 30;
 
-    // Chercher un abonnement actif existant (renouvellement anticipé)
+    // Renouvellement anticipé → prolonger depuis expires_at actuel
     const { data: activeSub } = await supabase
       .from("subscriptions")
       .select("id, expires_at")
@@ -58,24 +66,21 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    // Renouvellement anticipé → prolonger depuis expires_at actuel
-    // Après expiration → démarrer depuis maintenant
     const baseDate = activeSub ? new Date(activeSub.expires_at) : now;
     const expiresAt = new Date(baseDate);
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    // Activer le nouvel abonnement
     await supabase
       .from("subscriptions")
       .update({
-        status: "active",
-        net_amount: payload.net_amount,
-        starts_at: now.toISOString(),
-        expires_at: expiresAt.toISOString(),
+        status:       "active",
+        net_amount:   payload.net_amount,
+        starts_at:    now.toISOString(),
+        expires_at:   expiresAt.toISOString(),
+        confirmed_at: now.toISOString(),
       })
       .eq("id", newSub.id);
 
-    // Expirer proprement l'ancien si renouvellement anticipé
     if (activeSub) {
       await supabase
         .from("subscriptions")
@@ -87,6 +92,25 @@ serve(async (req) => {
       .from("payment_logs")
       .update({ subscription_id: newSub.id })
       .eq("unitech_reference", payload.reference);
+  }
+
+  // ── Paiement échoué / annulé ─────────────────────────────────
+  if (payload.event === "payment_failed" || payload.event === "payment_cancelled") {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id, status")
+      .eq("unitech_reference", payload.reference)
+      .maybeSingle();
+
+    if (sub && sub.status === "pending") {
+      await supabase
+        .from("subscriptions")
+        .update({
+          status:       "failed",
+          confirmed_at: now.toISOString(),
+        })
+        .eq("id", sub.id);
+    }
   }
 
   return new Response("OK", { status: 200 });
@@ -105,11 +129,7 @@ async function verifySignature(
     false,
     ["sign"]
   );
-  const signed = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(payload)
-  );
+  const signed = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
   const expected = Array.from(new Uint8Array(signed))
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
@@ -117,7 +137,6 @@ async function verifySignature(
   return timingSafeEqual(expected, signature);
 }
 
-// Comparaison en temps constant pour éviter les timing attacks
 function timingSafeEqual(a: string, b: string): boolean {
   const enc = new TextEncoder();
   const ab = enc.encode(a);
