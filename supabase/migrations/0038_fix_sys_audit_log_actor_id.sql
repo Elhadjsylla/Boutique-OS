@@ -6,9 +6,17 @@
 
 BEGIN;
 
--- 1. Renommer la colonne
-ALTER TABLE public.sys_audit_log
-  RENAME COLUMN admin_id TO actor_id;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+      AND table_name = 'sys_audit_log' 
+      AND column_name = 'admin_id'
+  ) THEN
+    ALTER TABLE public.sys_audit_log RENAME COLUMN admin_id TO actor_id;
+  END IF;
+END $$;
 
 ALTER INDEX IF EXISTS idx_sys_audit_log_admin_id RENAME TO idx_sys_audit_log_actor_id;
 
