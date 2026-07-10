@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Select } from '../../components/ui/Select';
+import { MaskedValue } from '../../components/admin/MaskedValue';
+import { useRevealUser } from '../../hooks/useRevealUser';
 
 interface SubscriptionEntry {
   id: string;
@@ -12,6 +14,7 @@ interface SubscriptionEntry {
   starts_at: string;
   expires_at: string;
   created_at: string;
+  email_masque?: string;
 }
 
 export const AdminSubscriptions: React.FC = () => {
@@ -25,13 +28,13 @@ export const AdminSubscriptions: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
 
+  // Reveal State
+  const { revealStates, revealedDetails, handleReveal } = useRevealUser();
+
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('id, user_id, plan, status, payment_method, amount, starts_at, expires_at, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_subscriptions_list_masked');
       if (error) throw error;
       setSubscriptions(data || []);
       setIsDemo(false);
@@ -105,6 +108,7 @@ export const AdminSubscriptions: React.FC = () => {
               <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
                 <th className="py-3 px-4 font-black">ID Abonnement</th>
                 <th className="py-3 px-4 font-black">User ID</th>
+                <th className="py-3 px-4 font-black">Email</th>
                 <th className="py-3 px-4 font-black">Formule</th>
                 <th className="py-3 px-4 font-black">Statut</th>
                 <th className="py-3 px-4 font-black">Montant</th>
@@ -124,6 +128,15 @@ export const AdminSubscriptions: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 font-mono truncate max-w-[100px]" title={s.user_id}>
                       {s.user_id}
+                    </td>
+                    <td className="py-3 px-4 truncate max-w-[180px]">
+                      <MaskedValue 
+                        maskedText={s.email_masque || '***@***.**'}
+                        revealedText={revealedDetails[s.user_id]?.email}
+                        status={revealStates[s.user_id] || 'hidden'}
+                        onReveal={() => handleReveal(s.user_id)}
+                        type="email"
+                      />
                     </td>
                     <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
                       {s.plan}

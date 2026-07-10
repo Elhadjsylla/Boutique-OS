@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Select } from '../../components/ui/Select';
+import { MaskedValue } from '../../components/admin/MaskedValue';
+import { useRevealUser } from '../../hooks/useRevealUser';
 
 interface Profile {
   id: string;
@@ -13,54 +15,6 @@ interface Profile {
   boutiques?: { nom: string } | null;
 }
 
-type RevealState = 'hidden' | 'loading' | 'revealed';
-interface RevealedDetail {
-  nom: string;
-  email: string;
-}
-
-const MaskedValue = ({ 
-  maskedText, 
-  revealedText, 
-  status, 
-  onReveal, 
-  type 
-}: { 
-  maskedText: string, 
-  revealedText?: string, 
-  status: RevealState, 
-  onReveal: () => void,
-  type: 'nom' | 'email'
-}) => {
-  if (status === 'revealed' && revealedText) {
-    return <span className="text-admin-text font-bold">{revealedText}</span>;
-  }
-
-  if (status === 'loading') {
-    return (
-      <span className="flex items-center gap-2 text-admin-text-muted">
-        <div className="w-3 h-3 border-2 border-admin-primary border-t-transparent rounded-full animate-spin"></div>
-        <span className="opacity-70">{maskedText}</span>
-      </span>
-    );
-  }
-
-  return (
-    <span 
-      onClick={(e) => { e.stopPropagation(); onReveal(); }}
-      className="group flex items-center gap-2 cursor-pointer text-admin-text-muted hover:text-admin-primary transition-colors"
-      title={`Cliquer pour révéler le ${type}`}
-    >
-      <span className="border-b border-dashed border-admin-text-muted/50 group-hover:border-admin-primary">
-        {maskedText}
-      </span>
-      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">
-        visibility
-      </span>
-    </span>
-  );
-};
-
 interface Boutique {
   id: string;
   nom: string;
@@ -72,8 +26,7 @@ export const AdminUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Reveal State
-  const [revealStates, setRevealStates] = useState<Record<string, RevealState>>({});
-  const [revealedDetails, setRevealedDetails] = useState<Record<string, RevealedDetail>>({});
+  const { revealStates, revealedDetails, handleReveal } = useRevealUser();
 
   // Edit State
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
@@ -125,27 +78,6 @@ export const AdminUsers: React.FC = () => {
   useEffect(() => {
     fetchUsersAndBoutiques();
   }, []);
-
-  const handleReveal = async (userId: string) => {
-    if (revealStates[userId] === 'loading' || revealStates[userId] === 'revealed') return;
-    
-    setRevealStates(prev => ({ ...prev, [userId]: 'loading' }));
-    try {
-      const { data, error } = await supabase.rpc('reveal_user_details', { p_user_id: userId });
-      if (error) throw error;
-      
-      const detail = Array.isArray(data) ? data[0] : data;
-      const nom = detail?.nom || detail?.nom_complet || detail?.full_name || 'Inconnu';
-      const email = detail?.email || detail?.email_complet || 'Inconnu';
-      
-      setRevealedDetails(prev => ({ ...prev, [userId]: { nom, email } }));
-      setRevealStates(prev => ({ ...prev, [userId]: 'revealed' }));
-    } catch (err: any) {
-      console.error('Erreur lors de la révélation:', err);
-      alert(err?.message || "Erreur lors de l'accès aux informations détaillées. Accès refusé.");
-      setRevealStates(prev => ({ ...prev, [userId]: 'hidden' }));
-    }
-  };
 
   const handleOpenEdit = (u: Profile) => {
     setEditingUser(u);
