@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Select } from '../../components/ui/Select';
+import { MaskedValue } from '../../components/admin/MaskedValue';
+import { useRevealUser } from '../../hooks/useRevealUser';
 
 interface SubscriptionEntry {
   id: string;
@@ -19,6 +21,7 @@ interface SubscriptionEntry {
   confirmed_at: string | null;
   cancelled_at: string | null;
   created_at: string;
+  email_masque?: string;
 }
 
 interface RevealedIdentity {
@@ -39,6 +42,9 @@ export const AdminSubscriptions: React.FC = () => {
   // Reveal state : userId → données en clair (cache local par session)
   const [revealed, setRevealed]           = useState<Record<string, RevealedIdentity>>({});
   const [revealingId, setRevealingId]     = useState<string | null>(null);
+
+  // Reveal State
+  const { revealStates, revealedDetails, handleReveal } = useRevealUser();
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -137,26 +143,33 @@ export const AdminSubscriptions: React.FC = () => {
             </thead>
             <tbody>
               {subscriptions.map(s => {
-                const identity = revealed[s.user_id];
-                const isRevealing = revealingId === s.user_id;
+                const identity = revealedDetails[s.user_id];
+                const revealStatus = revealStates[s.user_id] || 'hidden';
 
                 return (
                   <tr key={s.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
-                    {/* Marchand — masqué ou révélé */}
+                    {/* Marchand — masqué ou révélé via MaskedValue */}
                     <td className="py-3 px-4 min-w-[180px]">
-                      {identity ? (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold text-admin-text">
-                            {[identity.prenom, identity.nom].filter(Boolean).join(' ') || '—'}
-                          </span>
-                          <span className="text-admin-primary-light font-mono">{identity.email}</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-admin-text-muted">{s.nom_masque}</span>
-                          <span className="text-admin-text-muted font-mono">{s.email_masque}</span>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-admin-text">
+                          <MaskedValue 
+                            maskedText={s.nom_masque || 'Anonyme'}
+                            revealedText={[identity?.prenom, identity?.nom].filter(Boolean).join(' ') || identity?.nom}
+                            status={revealStatus}
+                            onReveal={() => handleReveal(s.user_id)}
+                            type="nom"
+                          />
+                        </span>
+                        <span className="text-admin-primary-light font-mono">
+                          <MaskedValue 
+                            maskedText={s.email_masque || '***@***.**'}
+                            revealedText={identity?.email}
+                            status={revealStatus}
+                            onReveal={() => handleReveal(s.user_id)}
+                            type="email"
+                          />
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-admin-text-muted">
                       {s.boutique_nom ?? '—'}
@@ -173,17 +186,6 @@ export const AdminSubscriptions: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {/* Bouton Révéler — tracé dans user_reveal_logs + sys_audit_log */}
-                        {!identity && (
-                          <button
-                            onClick={() => handleReveal(s.user_id)}
-                            disabled={!!revealingId}
-                            title="Révéler email et nom (action tracée)"
-                            className="h-8 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer disabled:opacity-40"
-                          >
-                            {isRevealing ? '...' : 'Révéler'}
-                          </button>
-                        )}
                         <button
                           onClick={() => handleOpenEdit(s)}
                           className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
