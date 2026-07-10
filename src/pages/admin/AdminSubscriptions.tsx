@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+
 import { Select } from '../../components/ui/Select';
 import { MaskedValue } from '../../components/admin/MaskedValue';
 import { useRevealUser } from '../../hooks/useRevealUser';
+import { callRpcWithRetry } from '../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../lib/format';
 
 interface SubscriptionEntry {
   id: string;
@@ -49,7 +51,7 @@ export const AdminSubscriptions: React.FC = () => {
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_subscriptions_list_masked');
+      const { data, error } = await callRpcWithRetry('get_subscriptions_list_masked');
       if (error) throw error;
       setSubscriptions(data || []);
     } catch (e: unknown) {
@@ -89,10 +91,11 @@ export const AdminSubscriptions: React.FC = () => {
     if (!editingSub) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.rpc('sys_update_subscription', {
-        target_user:    editingSub.user_id,
-        new_plan:       newPlan,
-        new_expires_at: new Date(newExpiresAt).toISOString(),
+      const formattedDate = new Date(newExpiresAt).toISOString();
+      const { error } = await callRpcWithRetry('sys_update_subscription', {
+        target_user: editingSub.user_id,
+        new_plan: newPlan,
+        new_expires_at: formattedDate
       });
       if (error) throw error;
       setEditingSub(null);
@@ -179,7 +182,7 @@ export const AdminSubscriptions: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">{statusBadge(s)}</td>
                     <td className="py-3 px-4 font-bold font-numeric-display">
-                      {s.amount ? `${new Intl.NumberFormat('fr-FR').format(s.amount)} F` : '0 F'}
+                      {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
                     </td>
                     <td className="py-3 px-4 text-admin-text-muted" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
                       {new Date(s.expires_at).toLocaleDateString('fr-FR')}

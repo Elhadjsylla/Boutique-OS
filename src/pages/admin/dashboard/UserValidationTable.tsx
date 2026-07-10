@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 interface PendingUser {
   id: string;
@@ -25,7 +26,7 @@ export const UserValidationTable: React.FC = () => {
 
   const fetchPendingUsers = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_users_pending_validation');
+      const { data, error } = await callRpcWithRetry('get_users_pending_validation');
       if (error) throw error;
       setUsers(data || []);
     } catch (err) {
@@ -59,7 +60,7 @@ export const UserValidationTable: React.FC = () => {
     setShowRejectInput(false);
     setRejectReason('');
     try {
-      const { data, error } = await supabase.rpc('get_user_full_details', { p_user_id: id });
+      const { data, error } = await callRpcWithRetry('get_user_full_details', { p_user_id: id });
       if (error) throw error;
       setUserDetails(data);
     } catch (err) {
@@ -73,7 +74,7 @@ export const UserValidationTable: React.FC = () => {
     if (!selectedUserId) return;
     setActionLoading(true);
     try {
-      const { error } = await supabase.rpc('approve_user', { p_user_id: selectedUserId });
+      const { error } = await callRpcWithRetry('approve_user', { p_user_id: selectedUserId });
       if (error) throw error;
       setUsers(prev => prev.filter(u => u.id !== selectedUserId));
       setSelectedUserId(null);
@@ -94,7 +95,7 @@ export const UserValidationTable: React.FC = () => {
     
     setActionLoading(true);
     try {
-      const { error } = await supabase.rpc('reject_user', { p_user_id: selectedUserId, p_raison: rejectReason });
+      const { error } = await callRpcWithRetry('reject_user', { p_user_id: selectedUserId, p_raison: rejectReason });
       if (error) throw error;
       setUsers(prev => prev.filter(u => u.id !== selectedUserId));
       setSelectedUserId(null);

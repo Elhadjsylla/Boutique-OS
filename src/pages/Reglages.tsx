@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
+import { Select } from '../components/ui/Select';
 
 interface ReglagesProps {
   boutiqueId: string;
@@ -159,16 +160,14 @@ export const Reglages: React.FC<ReglagesProps> = ({
           <label className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
             Quartier (Dakar)
           </label>
-          <select
+          <Select
             value={boutiqueQuartier}
-            onChange={(e) => setBoutiqueQuartier(e.target.value)}
-            className="w-full h-12 px-4 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-semibold text-on-surface cursor-pointer"
-          >
-            <option value="">Non renseigné</option>
-            {quartiers.map((q) => (
-              <option key={q} value={q}>{q}</option>
-            ))}
-          </select>
+            onChange={(val) => setBoutiqueQuartier(val)}
+            options={[
+              { value: '', label: 'Non renseigné' },
+              ...quartiers.map(q => ({ value: q, label: q }))
+            ]}
+          />
         </div>
 
         <div className="flex flex-col gap-2">

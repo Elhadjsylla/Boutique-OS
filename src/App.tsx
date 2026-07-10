@@ -12,6 +12,7 @@ import { MonEspace } from './pages/MonEspace';
 import { Abonnement } from './pages/Abonnement';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { TrialBanner } from './components/ui/TrialBanner';
+import { AuthProvider } from './components/AuthProvider';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
@@ -57,90 +58,35 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+const VALID_TABS = ['caisse', 'stock', 'ardoise', 'dashboard', 'settings', 'reglages', 'subscription', 'portal_client'];
+
 function App() {
-  // Initialize auth listener and fetch profile/boutique
-  useAuth();
+  const { session, isLoading: isProfileLoading, signOut: handleLogout } = useAuth();
   useSyncEngine();
 
-  // Respect VITE_DEV_BYPASS=false to disable ALL dev session injection
-  const devBypassEnabled = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
-
-  const getDevSession = () => {
-    const devRole = localStorage.getItem('dev_role') || 'admin';
-    return {
-      user: {
-        id: 'dev-admin-id',
-        email: 'admin@samaboutik.dev',
-        user_metadata: {
-          boutique_id: 'boutique-dev',
-          boutique_name: 'Sama Boutik Dev',
-          role: devRole,
-        }
-      }
-    };
-  };
-
-  // Applies DEV role override to any session (real or fake)
-  const applyDevRoleOverride = (s: any) => {
-    if (!devBypassEnabled || !s) return s;
-    const devRole = localStorage.getItem('dev_role');
-    if (devRole) {
-      return {
-        ...s,
-        user: {
-          ...s.user,
-          user_metadata: {
-            ...s.user.user_metadata,
-            role: devRole,
-          }
-        }
-      };
-    }
-    return s;
-  };
-
-  const getInitialSession = () => {
-    try {
-      // Our Supabase client uses storageKey: 'boutikos-session'
-      const direct = localStorage.getItem('boutikos-session');
-      if (direct) {
-        const parsed = JSON.parse(direct);
-        if (parsed?.access_token) return parsed;
-      }
-      // Fallback: default Supabase key pattern
-      const keys = Object.keys(localStorage);
-      const supabaseKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-      if (supabaseKey) {
-        const localSession = JSON.parse(localStorage.getItem(supabaseKey) || '');
-        if (localSession) return localSession;
-      }
-    } catch (e) {}
-
-    if (devBypassEnabled) {
-      const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-      if (isSignedOut) return null;
-
-      // Extract role from URL or load from localStorage, defaulting to 'admin' (merchant view)
-      const urlRole = new URLSearchParams(window.location.search).get('role');
-      if (urlRole) {
-        localStorage.setItem('dev_role', urlRole);
-      }
-
-      return getDevSession();
-    }
-    return null;
-  };
-
-  const initialSession = getInitialSession();
-  const [session, setSession] = useState<any>(initialSession);
-  const [loading, setLoading] = useState(!initialSession);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (VALID_TABS.includes(hash)) return hash as TabType;
     return (localStorage.getItem('active_tab') as TabType) || 'caisse';
   });
 
   useEffect(() => {
     localStorage.setItem('active_tab', activeTab);
+    if (window.location.hash !== `#${activeTab}`) {
+      window.history.pushState(null, '', `#${activeTab}`);
+    }
   }, [activeTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (VALID_TABS.includes(hash)) {
+        setActiveTab(hash as TabType);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
@@ -197,74 +143,6 @@ function App() {
     const timer = setInterval(() => setLiveTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const failsafe = setTimeout(() => {
-      if (isMounted) setLoading(false);
-    }, 8000);
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(failsafe);
-      if (session) {
-        // In DEV, merge the dev_role override into the real session
-        setSession(applyDevRoleOverride(session));
-      } else if (devBypassEnabled) {
-        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-        if (!isSignedOut) {
-          setSession(getDevSession());
-        } else {
-          setSession(null);
-        }
-      } else {
-        setSession(null);
-      }
-      setLoading(false);
-    }).catch(() => {
-      if (devBypassEnabled) {
-        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-        if (!isSignedOut) setSession(getDevSession());
-      }
-      setLoading(false);
-    });
-
-    // Listen to changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (_event === 'SIGNED_OUT') {
-        if (devBypassEnabled) {
-          localStorage.setItem('dev_signed_out', 'true');
-        }
-        setSession(null);
-      } else if (session) {
-        // In DEV, merge the dev_role override into the real session
-        setSession(applyDevRoleOverride(session));
-      } else if (devBypassEnabled) {
-        const isSignedOut = localStorage.getItem('dev_signed_out') === 'true';
-        if (!isSignedOut) {
-          setSession(getDevSession());
-        } else {
-          setSession(null);
-        }
-      } else {
-        setSession(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      clearTimeout(failsafe);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const handleLogout = async () => {
-    if (devBypassEnabled) {
-      localStorage.setItem('dev_signed_out', 'true');
-    }
-    setSession(null);
-    await supabase.auth.signOut();
-  };
 
   // Check role from Zustand store (loaded from profils table)
   const storeProfile = useAuthStore(state => state.profile);
@@ -351,7 +229,6 @@ function App() {
     checkSubscription();
   }, [session, storeProfile]);
 
-  const isProfileLoading = useAuthStore(state => state.isLoading);
   const [forceUnlock, setForceUnlock] = useState(false);
   
   useEffect(() => {
@@ -401,7 +278,7 @@ function App() {
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
   if (espaceParam === 'client') return <MonEspace />;
 
-  const isSessionOrProfileLoading = !forceUnlock && (loading || (session && isProfileLoading));
+  const isSessionOrProfileLoading = !forceUnlock && (isProfileLoading);
 
   // ── ADMIN FAST-PATH ──────────────────────────────────────────────────────────
   // For known admin emails: bypass ALL loading guards immediately.
@@ -757,7 +634,9 @@ function App() {
 function AppWithErrorBoundary() {
   return (
     <ErrorBoundary>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

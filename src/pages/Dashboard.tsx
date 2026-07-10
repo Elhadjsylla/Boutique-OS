@@ -12,6 +12,7 @@ import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
+import { formatMontantCompact } from '../lib/format';
 
 interface DashboardProps {
   onNavigate?: (tab: any) => void;
@@ -183,7 +184,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       {/* Activity Graph Section */}
       {renderLockedSection("Graphique d'Activité", (() => {
-        const fmtFr = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
+        const fmtFr = (n: number) => formatMontantCompact(n);
         const now = new Date();
         let chartData: { label: string; value: number; detail: string }[] = [];
 
@@ -429,7 +430,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       {/* Performance Reports Section */}
       {renderLockedSection("Bilans de Clôture", (() => {
-        const fmtFr = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
+        const fmtFr = (n: number) => formatMontantCompact(n);
         const now = new Date();
         let start = new Date();
         let end = new Date();
@@ -692,7 +693,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     </div>
                     <div className="text-right flex flex-col items-end">
                       <span className="font-numeric-display text-error font-extrabold text-xs">
-                        {totalDeadCapital > 0 ? `${new Intl.NumberFormat('fr-FR').format(totalDeadCapital)} F bloqués` : '0 F'}
+                        {totalDeadCapital > 0 ? `${formatMontantCompact(totalDeadCapital)} F bloqués` : '0 F'}
                       </span>
                       <span className="text-[8px] text-outline uppercase font-bold">Capital dormant</span>
                     </div>
@@ -752,7 +753,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       {isTop ? 'Volume de Ventes (7j)' : 'Capital Immobilisé (Dormant)'}
                     </span>
                     <span className="text-lg font-black text-on-surface font-numeric-display">
-                      {isTop ? `${p.qty} unités vendues` : `${new Intl.NumberFormat('fr-FR').format(totalCapital)} FCFA`}
+                      {isTop ? `${p.qty} unités vendues` : `${formatMontantCompact(totalCapital)} FCFA`}
                     </span>
                   </div>
                   <span className={`material-symbols-outlined text-2xl ${isTop ? 'text-primary' : 'text-error'}`}>
@@ -945,7 +946,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Produit</th><th>Prix (FCFA)</th><th>Quantité en Stock</th></tr>
                           </thead>
                           <tbody>
-                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${new Intl.NumberFormat('fr-FR').format(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
+                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${formatMontantCompact(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -1000,7 +1001,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Nom Client</th><th>Crédit Total (FCFA)</th><th>Statut</th></tr>
                           </thead>
                           <tbody>
-                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${new Intl.NumberFormat('fr-FR').format(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
+                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${formatMontantCompact(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -1055,7 +1056,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Date</th><th>Montant (FCFA)</th><th>ID Caissier</th></tr>
                           </thead>
                           <tbody>
-                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${new Intl.NumberFormat('fr-FR').format(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
+                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${formatMontantCompact(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>

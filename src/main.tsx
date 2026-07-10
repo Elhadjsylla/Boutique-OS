@@ -1,8 +1,6 @@
 import './i18n/index'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from './lib/queryClient'
 import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App.tsx'
@@ -19,14 +17,14 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
           registration.unregister();
         }
         localStorage.setItem(SW_CLEANED_KEY, '1');
-        if ('caches' in window) {
+        if ('caches' in globalThis) {
           caches.keys().then((keys) => {
             Promise.all(keys.map(key => caches.delete(key))).then(() => {
-              window.location.reload();
+              globalThis.location.reload();
             });
           });
         } else {
-          window.location.reload();
+          globalThis.location.reload();
         }
         return; // stop here — reload is coming
       }
@@ -46,8 +44,6 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <App />
   </StrictMode>,
 )

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { callRpcWithRetry } from '../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../lib/format';
 
 interface Boutique {
   id: string;
@@ -62,7 +64,7 @@ export const AdminBoutiques: React.FC = () => {
         }
         throw new Error('Session expirée — veuillez vous reconnecter');
       }
-      const { data, error: rpcErr } = await supabase.rpc('sys_get_boutiques');
+      const { data, error: rpcErr } = await callRpcWithRetry('sys_get_boutiques');
       if (rpcErr) throw rpcErr;
       setBoutiques((data as Boutique[] | null) || []);
       setError(null);
@@ -88,7 +90,7 @@ export const AdminBoutiques: React.FC = () => {
   const handleOpenDetails = async (id: string) => {
     setDetailsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('sys_boutique_details', { boutique_uuid: id });
+      const { data, error } = await callRpcWithRetry('sys_boutique_details', { boutique_uuid: id });
       if (error) throw error;
       setSelectedBoutiqueDetails(data);
     } catch (e: any) {
@@ -103,7 +105,7 @@ export const AdminBoutiques: React.FC = () => {
 
   const handleToggleSuspend = async (b: Boutique, actionSuspend: boolean) => {
     try {
-      const { error } = await supabase.rpc('sys_toggle_boutique_suspend', {
+      const { error } = await callRpcWithRetry('sys_toggle_boutique_suspend', {
         boutique_uuid: b.id,
         suspend: actionSuspend,
         reason: actionSuspend ? suspendReason : null
@@ -274,17 +276,17 @@ export const AdminBoutiques: React.FC = () => {
                 )}
 
                 {/* Stats grid */}
-                <div className="grid grid-cols-2 gap-3 mt-1">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-1">
                   {[
                     { label: "Utilisateurs", val: selectedBoutiqueDetails.stats.total_users, desc: "Personnel assigné" },
                     { label: "Produits en Stock", val: selectedBoutiqueDetails.stats.total_products, desc: "Hors archivés" },
                     { label: "Ventes Totales", val: selectedBoutiqueDetails.stats.total_sales, desc: "Transactions" },
-                    { label: "Chiffre d'Affaires", val: `${new Intl.NumberFormat('fr-FR').format(selectedBoutiqueDetails.stats.ca_total)} F`, desc: "Total historique" }
+                    { label: "Chiffre d'Affaires", val: `${formatMontantCompact(selectedBoutiqueDetails.stats.ca_total)} F`, desc: "Total historique" }
                   ].map((s, i) => (
-                    <div key={i} className="p-3 bg-admin-surface border border-admin-border/60 rounded-xl flex flex-col justify-between h-18 shadow-sm">
-                      <span className="text-[9px] font-bold text-admin-text-muted uppercase tracking-wide">{s.label}</span>
+                    <div key={i} className="p-2.5 sm:p-3 bg-admin-surface border border-admin-border/60 rounded-xl flex flex-col justify-between min-h-[5.5rem] shadow-sm gap-1 overflow-hidden">
+                      <span className="text-[8px] sm:text-[9px] font-bold text-admin-text-muted uppercase tracking-wide leading-tight break-words">{s.label}</span>
                       <span className="text-sm font-black text-admin-text truncate">{s.val}</span>
-                      <span className="text-[8px] text-admin-text-muted font-semibold">{s.desc}</span>
+                      <span className="text-[7px] sm:text-[8px] text-admin-text-muted font-semibold truncate">{s.desc}</span>
                     </div>
                   ))}
                 </div>

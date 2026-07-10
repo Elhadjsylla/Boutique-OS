@@ -34,6 +34,7 @@ const CreatePaymentSchema = z.object({
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");

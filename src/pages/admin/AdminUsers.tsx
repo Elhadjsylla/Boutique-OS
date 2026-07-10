@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Select } from '../../components/ui/Select';
 import { MaskedValue } from '../../components/admin/MaskedValue';
 import { useRevealUser } from '../../hooks/useRevealUser';
+import { callRpcWithRetry } from '../../lib/supabase-rpc';
 
 interface Profile {
   id: string;
@@ -49,8 +50,8 @@ export const AdminUsers: React.FC = () => {
       }
 
       const [{ data: usersData, error: usersErr }, { data: boutsData, error: boutsErr }] = await Promise.all([
-        supabase.rpc('get_users_list_masked'),
-        supabase.rpc('sys_get_boutiques'),
+        callRpcWithRetry('get_users_list_masked'),
+        callRpcWithRetry('sys_get_boutiques'),
       ]);
 
       if (usersErr) throw usersErr;
@@ -92,7 +93,7 @@ export const AdminUsers: React.FC = () => {
     setIsUpdating(true);
     try {
       const targetBoutique = editBoutiqueId === 'null' ? null : editBoutiqueId;
-      const { error } = await supabase.rpc('assign_staff', {
+      const { error } = await callRpcWithRetry('assign_staff', {
         target_user: editingUser.id,
         new_role: editRole,
         new_boutique: targetBoutique

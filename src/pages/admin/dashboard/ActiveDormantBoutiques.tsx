@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../../lib/format';
 
 export const ActiveDormantBoutiques: React.FC = () => {
   const [data, setData] = useState<any>(null);
@@ -19,8 +21,8 @@ export const ActiveDormantBoutiques: React.FC = () => {
       setLoadingTop(true);
       try {
         const [statusRes, topRes] = await Promise.all([
-          supabase.rpc('get_active_vs_dormant', { p_seuil_jours: 30 }),
-          supabase.rpc('get_top_boutiques', { p_period: '30d', p_limit: 10 })
+          callRpcWithRetry('get_active_vs_dormant', { p_seuil_jours: 30 }),
+          callRpcWithRetry('get_top_boutiques', { p_period: '30d', p_limit: 10 })
         ]);
 
         if (statusRes.error) console.error('Status error:', statusRes.error);
@@ -50,7 +52,7 @@ export const ActiveDormantBoutiques: React.FC = () => {
   };
 
   const formatMoney = (val: number) => {
-    return new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val || 0);
+    return formatMontantCompact(val || 0) + ' F';
   };
 
   if (loading || !data) {

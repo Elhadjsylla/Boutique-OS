@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { Select } from '../../../components/ui/Select';
 
 export const ChurnSection: React.FC = () => {
   const [period, setPeriod] = useState<string>('30d');
@@ -16,7 +18,7 @@ export const ChurnSection: React.FC = () => {
     const fetchChurn = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_churn_rate', { p_period: period });
+        const { data, error } = await callRpcWithRetry('get_churn_rate', { p_period: period });
         if (error) throw error;
         setChurnData(data);
       } catch (err) {
@@ -32,7 +34,7 @@ export const ChurnSection: React.FC = () => {
     setDrawerOpen(true);
     setLoadingDetail(true);
     try {
-      const { data, error } = await supabase.rpc('get_churned_users_detail', { p_period: period });
+      const { data, error } = await callRpcWithRetry('get_churned_users_detail', { p_period: period });
       if (error) throw error;
       setChurnedUsers(data || []);
     } catch (err) {
@@ -55,15 +57,17 @@ export const ChurnSection: React.FC = () => {
       <div className="bg-admin-card p-6 rounded-xl border border-admin-border flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Désabonnements (Churn)</h2>
-          <select 
+          <Select 
             value={period} 
-            onChange={(e) => setPeriod(e.target.value)}
-            className="bg-admin-surface border border-admin-border text-admin-text text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-admin-primary self-start"
-          >
-            <option value="7d">7 Derniers Jours</option>
-            <option value="30d">30 Derniers Jours</option>
-            <option value="3m">3 Derniers Mois</option>
-          </select>
+            onChange={(val) => setPeriod(val)}
+            options={[
+              { value: '7d', label: '7 Derniers Jours' },
+              { value: '30d', label: '30 Derniers Jours' },
+              { value: '3m', label: '3 Derniers Mois' }
+            ]}
+            isAdmin={true}
+            containerClassName="w-48 self-start"
+          />
         </div>
 
         <div className="flex items-center gap-6 cursor-pointer group" onClick={openDetails}>

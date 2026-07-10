@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 interface Alert {
   id: string;
@@ -17,7 +18,7 @@ export const AlertsBanner: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_alerts', { p_non_lues_only: true });
+      const { data, error } = await callRpcWithRetry('get_alerts', { p_non_lues_only: true });
       if (error) throw error;
       setAlerts(data || []);
     } catch (err) {
@@ -58,7 +59,7 @@ export const AlertsBanner: React.FC = () => {
 
   const markAsRead = async (id: string) => {
     try {
-      await supabase.rpc('mark_alert_read', { p_alert_id: id });
+      await callRpcWithRetry('mark_alert_read', { p_alert_id: id });
       setAlerts(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error('Erreur mark as read:', err);
@@ -67,7 +68,7 @@ export const AlertsBanner: React.FC = () => {
 
   const markAllRead = async () => {
     try {
-      await supabase.rpc('mark_all_alerts_read');
+      await callRpcWithRetry('mark_all_alerts_read');
       setAlerts([]);
     } catch (err) {
       console.error('Erreur mark all read:', err);

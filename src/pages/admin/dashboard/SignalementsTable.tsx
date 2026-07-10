@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { Select } from '../../../components/ui/Select';
 
 export const SignalementsTable: React.FC = () => {
   const [signalements, setSignalements] = useState<any[]>([]);
@@ -15,7 +17,7 @@ export const SignalementsTable: React.FC = () => {
 
   const fetchSignalements = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_signalements', { 
+      const { data, error } = await callRpcWithRetry('get_signalements', { 
         p_statut: statusFilter === 'all' ? null : statusFilter,
         p_period: 'all'
       });
@@ -47,7 +49,7 @@ export const SignalementsTable: React.FC = () => {
     setSelectedSignalement(sig);
     setLoadingThread(true);
     try {
-      const { data, error } = await supabase.rpc('get_signalement_thread', { p_signalement_id: sig.id });
+      const { data, error } = await callRpcWithRetry('get_signalement_thread', { p_signalement_id: sig.id });
       if (error) throw error;
       setThread(data?.reponses || []);
     } catch (err) {
@@ -67,7 +69,7 @@ export const SignalementsTable: React.FC = () => {
     if (!replyMessage.trim() || !selectedSignalement) return;
     setReplying(true);
     try {
-      const { error } = await supabase.rpc('repondre_signalement', {
+      const { error } = await callRpcWithRetry('repondre_signalement', {
         p_signalement_id: selectedSignalement.id,
         p_message: replyMessage
       });
@@ -75,7 +77,7 @@ export const SignalementsTable: React.FC = () => {
       
       setReplyMessage('');
       // Refresh thread
-      const { data } = await supabase.rpc('get_signalement_thread', { p_signalement_id: selectedSignalement.id });
+      const { data } = await callRpcWithRetry('get_signalement_thread', { p_signalement_id: selectedSignalement.id });
       setThread(data?.reponses || []);
       
       // Update local state for status if it was "nouveau" it becomes "en_cours" automatically
@@ -94,7 +96,7 @@ export const SignalementsTable: React.FC = () => {
     if (!selectedSignalement) return;
     setReplying(true);
     try {
-      const { error } = await supabase.rpc('update_signalement_statut', {
+      const { error } = await callRpcWithRetry('update_signalement_statut', {
         p_signalement_id: selectedSignalement.id,
         p_statut: 'resolu'
       });
@@ -128,16 +130,18 @@ export const SignalementsTable: React.FC = () => {
       <div className="bg-admin-card rounded-xl border border-admin-border overflow-hidden">
         <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Signalements Utilisateurs</h2>
-          <select 
+          <Select 
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-admin-card border border-admin-border text-admin-text text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-admin-primary"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="nouveau">Nouveau</option>
-            <option value="en_cours">En Cours</option>
-            <option value="resolu">Résolu</option>
-          </select>
+            onChange={(val) => setStatusFilter(val)}
+            options={[
+              { value: 'all', label: 'Tous les statuts' },
+              { value: 'nouveau', label: 'Nouveau' },
+              { value: 'en_cours', label: 'En Cours' },
+              { value: 'resolu', label: 'Résolu' }
+            ]}
+            isAdmin={true}
+            containerClassName="w-48"
+          />
         </div>
         
         {signalements.length === 0 ? (

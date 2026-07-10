@@ -29,16 +29,10 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const signInRL = useRateLimitTimer('sign_in', 60);     // signInWithPassword (GoTrue gives no timing → 60s fallback)
 
   useEffect(() => {
-    // Backward compat: users who still have an old magic-link in their inbox
+    // Users arriving from a recovery email link
     if (window.location.hash.includes('type=recovery')) {
       setForgotStep('newpw');
     }
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setForgotStep('newpw');
-      }
-    });
-    return () => subscription.unsubscribe();
   }, []);
 
   // ── Step 1 — send OTP code ──────────────────────────────────────────────────
