@@ -37,7 +37,7 @@ export async function pushLocalChanges(): Promise<void> {
       } else if (op === 'DELETE') {
         const { error } = await supabase
           .from(table)
-          .delete()
+          .update({ deleted_at: new Date().toISOString() })
           .eq('id', entry.id);
           
         if (error) throw error;
@@ -104,7 +104,13 @@ export async function pullServerChanges(): Promise<void> {
               // If local is newer or has not synced, let the local write eventually push and override
               continue;
             }
-            await localTable.put(item);
+            
+            if (item.deleted_at) {
+              // Soft delete on server translates to hard delete locally in Dexie
+              await localTable.delete(item.id);
+            } else {
+              await localTable.put(item);
+            }
           }
         });
       }
