@@ -58,17 +58,35 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+const VALID_TABS = ['caisse', 'stock', 'ardoise', 'dashboard', 'settings', 'reglages', 'subscription', 'portal_client'];
+
 function App() {
   const { session, isLoading: isProfileLoading, signOut: handleLogout } = useAuth();
   useSyncEngine();
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (VALID_TABS.includes(hash)) return hash as TabType;
     return (localStorage.getItem('active_tab') as TabType) || 'caisse';
   });
 
   useEffect(() => {
     localStorage.setItem('active_tab', activeTab);
+    if (window.location.hash !== `#${activeTab}`) {
+      window.history.pushState(null, '', `#${activeTab}`);
+    }
   }, [activeTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (VALID_TABS.includes(hash)) {
+        setActiveTab(hash as TabType);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
