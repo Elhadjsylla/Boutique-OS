@@ -12,7 +12,7 @@ export default defineConfig({
       devOptions: {
         enabled: false,
       },
-      includeAssets: ['favicon.svg', 'icons.svg', 'pwa-icon-192.png', 'pwa-icon-512.png'],
+      includeAssets: ['favicon-v2.svg', 'apple-touch-icon-v2.png', 'pwa-icon-192-v2.png', 'pwa-icon-512-v2.png'],
       manifest: {
         name: 'Sama Boutik',
         short_name: 'Sama Boutik',
@@ -25,18 +25,18 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-icon-192.png',
+            src: 'pwa-icon-192-v2.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-icon-512.png',
+            src: 'pwa-icon-512-v2.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-icon-512.png',
+            src: 'pwa-icon-512-v2.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'

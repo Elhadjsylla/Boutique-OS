@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DetailDrawer } from './DetailDrawer';
 import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../../lib/format';
+import { Select } from '../../../components/ui/Select';
 
 type Period = '24h' | '7d' | '30d' | '12m' | 'all';
 
@@ -54,7 +56,7 @@ export const RevenueSection: React.FC = () => {
   };
 
   const formatMoney = (val: number) => {
-    return new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val || 0);
+    return formatMontantCompact(val || 0) + ' F';
   };
 
   if (loading || !revenueData || !mrrData) {
@@ -72,17 +74,19 @@ export const RevenueSection: React.FC = () => {
         {/* Header & Selector */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-card p-5 rounded-xl border border-admin-border">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Revenus & Croissance</h2>
-          <select 
+          <Select 
             value={period} 
-            onChange={(e) => setPeriod(e.target.value as Period)}
-            className="bg-admin-surface border border-admin-border text-admin-text text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-admin-primary"
-          >
-            <option value="24h">24 Dernières Heures</option>
-            <option value="7d">7 Derniers Jours</option>
-            <option value="30d">30 Derniers Jours</option>
-            <option value="12m">12 Derniers Mois</option>
-            <option value="all">Depuis le début</option>
-          </select>
+            onChange={(val) => setPeriod(val as Period)}
+            options={[
+              { value: '24h', label: '24 Dernières Heures' },
+              { value: '7d', label: '7 Derniers Jours' },
+              { value: '30d', label: '30 Derniers Jours' },
+              { value: '12m', label: '12 Derniers Mois' },
+              { value: 'all', label: 'Depuis le début' }
+            ]}
+            isAdmin={true}
+            containerClassName="w-48"
+          />
         </div>
 
         {/* KPI Cards */}

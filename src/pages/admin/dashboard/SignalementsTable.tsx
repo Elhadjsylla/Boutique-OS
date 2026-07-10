@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { DetailDrawer } from './DetailDrawer';
 import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { Select } from '../../../components/ui/Select';
 
 export const SignalementsTable: React.FC = () => {
   const [signalements, setSignalements] = useState<any[]>([]);
@@ -129,16 +130,18 @@ export const SignalementsTable: React.FC = () => {
       <div className="bg-admin-card rounded-xl border border-admin-border overflow-hidden">
         <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Signalements Utilisateurs</h2>
-          <select 
+          <Select 
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-admin-card border border-admin-border text-admin-text text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-admin-primary"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="nouveau">Nouveau</option>
-            <option value="en_cours">En Cours</option>
-            <option value="resolu">Résolu</option>
-          </select>
+            onChange={(val) => setStatusFilter(val)}
+            options={[
+              { value: 'all', label: 'Tous les statuts' },
+              { value: 'nouveau', label: 'Nouveau' },
+              { value: 'en_cours', label: 'En Cours' },
+              { value: 'resolu', label: 'Résolu' }
+            ]}
+            isAdmin={true}
+            containerClassName="w-48"
+          />
         </div>
         
         {signalements.length === 0 ? (

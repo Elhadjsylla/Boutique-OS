@@ -12,6 +12,7 @@ import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { ImagePicker } from '../components/ui/ImagePicker';
 import { getProductIconAndGradient } from '../lib/productHelper';
+import { formatMontantCompact } from '../lib/format';
 
 const InteractiveCurve: React.FC<{
   items: any[];
@@ -168,7 +169,7 @@ const InteractiveCurve: React.FC<{
               <span className="text-[10px] font-black whitespace-nowrap">{hoveredPoint.item.nom}</span>
               <span className="text-[9px] opacity-70 whitespace-nowrap">
                 {type === 'ruptures'
-                  ? `Valeur : ${new Intl.NumberFormat('fr-FR').format(hoveredPoint.item.prix)} FCFA`
+                  ? `Valeur : ${formatMontantCompact(hoveredPoint.item.prix)} FCFA`
                   : `Quantité : ${hoveredPoint.item.quantite} u`
                 }
               </span>
@@ -184,7 +185,7 @@ const InteractiveCurve: React.FC<{
             <div className="flex flex-col">
               <span className="text-xs font-black text-on-surface">{selectedPoint.item.nom}</span>
               <span className="text-[9px] text-outline font-semibold">
-                Prix: {new Intl.NumberFormat('fr-FR').format(selectedPoint.item.prix)} FCFA • Stock actuel: {selectedPoint.item.quantite}
+                Prix: {formatMontantCompact(selectedPoint.item.prix)} FCFA • Stock actuel: {selectedPoint.item.quantite}
               </span>
             </div>
             <button

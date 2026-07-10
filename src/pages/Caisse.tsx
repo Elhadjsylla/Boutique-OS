@@ -10,6 +10,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { getProductIconAndGradient } from '../lib/productHelper';
+import { formatMontantCompact } from '../lib/format';
 
 interface CaisseProps {
   boutiqueId: string;
@@ -57,9 +58,9 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   } = useCart(
     (change) => {
       if (change >= 0) {
-        setToast({ message: `Vente validée. Rendu : ${new Intl.NumberFormat('fr-FR').format(change)} FCFA`, type: 'success' });
+        setToast({ message: `Vente validée. Rendu : ${formatMontantCompact(change)} FCFA`, type: 'success' });
       } else {
-        setToast({ message: `Vente enregistrée avec une dette de ${new Intl.NumberFormat('fr-FR').format(Math.abs(change))} FCFA pour ${clientNom}.`, type: 'success' });
+        setToast({ message: `Vente enregistrée avec une dette de ${formatMontantCompact(Math.abs(change))} FCFA pour ${clientNom}.`, type: 'success' });
       }
       setIsCartOpen(false);
       setClientNom('');
@@ -329,7 +330,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                       <div className="flex items-center gap-1.5">
                         <MoneyText value={item.prix} className="text-[10px] text-texte-2 font-bold" />
                         <span className="text-[10px] text-outline">•</span>
-                        <span className="text-[10px] text-outline font-semibold truncate">Total : {new Intl.NumberFormat('fr-FR').format(item.prix * item.quantite)} FCFA</span>
+                        <span className="text-[10px] text-outline font-semibold truncate">Total : {formatMontantCompact(item.prix * item.quantite)} FCFA</span>
                       </div>
                     </div>
                   </div>
@@ -407,7 +408,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                         : 'border-outline-variant bg-white text-texte-2 hover:border-primary/30 hover:bg-primary-container/20'
                     }`}
                   >
-                    {new Intl.NumberFormat('fr-FR').format(bill)}
+                    {formatMontantCompact(bill)}
                   </button>
                 ))}
               </div>
@@ -423,7 +424,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                       <span className="text-[10px] font-extrabold uppercase tracking-wide">Rendu Monnaie :</span>
                     </div>
                     <span className="font-black text-secondary text-sm">
-                      {new Intl.NumberFormat('fr-FR').format(changeDue)} FCFA
+                      {formatMontantCompact(changeDue)} FCFA
                     </span>
                   </div>
                 ) : (
@@ -433,7 +434,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                       <span className="text-[10px] font-extrabold uppercase tracking-wide">Reste à payer :</span>
                     </div>
                     <span className="font-black text-error text-sm">
-                      {new Intl.NumberFormat('fr-FR').format(Math.abs(changeDue))} FCFA
+                      {formatMontantCompact(Math.abs(changeDue))} FCFA
                     </span>
                   </div>
                 )}
@@ -572,7 +573,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                         <div className="flex flex-col text-left min-w-0 flex-1">
                           <span className="font-extrabold text-on-surface text-xs truncate">{item.nom}</span>
                           <span className="text-[10px] text-outline font-bold">
-                            {item.quantite} x {new Intl.NumberFormat('fr-FR').format(item.prix_unitaire)} FCFA
+                            {item.quantite} x {formatMontantCompact(item.prix_unitaire)} FCFA
                           </span>
                         </div>
                       </div>

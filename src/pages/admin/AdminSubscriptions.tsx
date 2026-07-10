@@ -4,6 +4,7 @@ import { Select } from '../../components/ui/Select';
 import { MaskedValue } from '../../components/admin/MaskedValue';
 import { useRevealUser } from '../../hooks/useRevealUser';
 import { callRpcWithRetry } from '../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../lib/format';
 
 interface SubscriptionEntry {
   id: string;
@@ -144,17 +145,17 @@ export const AdminSubscriptions: React.FC = () => {
                     </td>
                     <td className="py-3 px-4">
                       {isActive ? (
-                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
+                        <span className="inline-block whitespace-nowrap px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
                           Actif
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
+                        <span className="inline-block whitespace-nowrap px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
                           Expiré / Inactif
                         </span>
                       )}
                     </td>
                     <td className="py-3 px-4 font-bold font-numeric-display">
-                      {s.amount ? `${new Intl.NumberFormat('fr-FR').format(s.amount)} F` : '0 F'}
+                      {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
                     </td>
                     <td className="py-3 px-4 text-admin-text-muted" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
                       {new Date(s.expires_at).toLocaleDateString('fr-FR')}

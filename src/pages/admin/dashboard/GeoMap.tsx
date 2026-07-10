@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { DetailDrawer } from './DetailDrawer';
 import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { formatMontantCompact } from '../../../lib/format';
 
 // Custom icons for leaflet
 const activeIcon = new L.Icon({
@@ -53,7 +54,7 @@ export const GeoMap: React.FC = () => {
   };
 
   const formatMoney = (val: number) => {
-    return new Intl.NumberFormat('fr-SN', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val || 0);
+    return formatMontantCompact(val || 0) + ' F';
   };
 
   if (loading || !geoData) {

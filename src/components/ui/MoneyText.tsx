@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { formatMontantCompact } from '../../lib/format';
 
 interface MoneyTextProps extends React.HTMLAttributes<HTMLSpanElement> {
   value: number;
@@ -50,9 +51,9 @@ export const MoneyText: React.FC<MoneyTextProps> = ({
     };
   }, [value, duration]);
 
-  // Format number with spaces for thousands (Sénégal/CFA standard)
-  const formattedValue = new Intl.NumberFormat('fr-FR').format(displayValue);
-  const finalFormattedValue = new Intl.NumberFormat('fr-FR').format(value);
+  // Format number with spaces for thousands or compact M/K/Md
+  const formattedValue = formatMontantCompact(displayValue);
+  const finalFormattedValue = formatMontantCompact(value);
 
   return (
     <span

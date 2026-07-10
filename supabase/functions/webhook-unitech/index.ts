@@ -13,6 +13,8 @@ const PLAN_DURATIONS: Record<string, number> = {
 };
 
 serve(async (req) => {
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+  
   const rawBody = await req.text();
 
   const signature = req.headers.get("x-unitechpay-signature") ?? "";

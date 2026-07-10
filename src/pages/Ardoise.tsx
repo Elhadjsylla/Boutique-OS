@@ -10,6 +10,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { formatMontantCompact } from '../lib/format';
 
 const getAvatarGradient = (name: string) => {
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -22,7 +23,7 @@ const getAvatarGradient = (name: string) => {
   return gradients[hash % gradients.length];
 };
 
-const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
+const fmt = (n: number) => formatMontantCompact(n);
 
 const ArdoiseInteractiveChart: React.FC<{
   items: any[];
@@ -93,7 +94,7 @@ const ArdoiseInteractiveChart: React.FC<{
 
   // Generate WhatsApp text
   const getWhatsAppLink = (clientNom: string, remaining: number) => {
-    const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA. Merci !`;
+    const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${formatMontantCompact(remaining)} FCFA. Merci !`;
     return `https://wa.me/?text=${encodeURIComponent(message)}`;
   };
 
@@ -193,7 +194,7 @@ const ArdoiseInteractiveChart: React.FC<{
             >
               <span className="text-[10px] font-black whitespace-nowrap">{hoveredPoint.item.client_nom}</span>
               <span className="text-[9px] opacity-70 whitespace-nowrap">
-                Reste : {new Intl.NumberFormat('fr-FR').format(hoveredPoint.item.remaining)} FCFA
+                Reste : {formatMontantCompact(hoveredPoint.item.remaining)} FCFA
               </span>
             </div>
           );
@@ -207,7 +208,7 @@ const ArdoiseInteractiveChart: React.FC<{
             <div className="flex flex-col">
               <span className="text-xs font-black text-on-surface">{selectedPoint.item.client_nom}</span>
               <span className="text-[9px] text-outline font-semibold">
-                Reste dû : {new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA ({selectedPoint.item.percent}% remboursé)
+                Reste dû : {formatMontantCompact(selectedPoint.item.remaining)} FCFA ({selectedPoint.item.percent}% remboursé)
               </span>
             </div>
             <button
@@ -230,7 +231,7 @@ const ArdoiseInteractiveChart: React.FC<{
                     disabled={selectedPoint.item.remaining < amt}
                     className="flex-1 h-7 rounded-lg bg-secondary-container/60 hover:bg-secondary-container text-secondary text-[10px] font-black active:scale-95 transition-all disabled:opacity-30"
                   >
-                    +{new Intl.NumberFormat('fr-FR').format(amt)}
+                    +{formatMontantCompact(amt)}
                   </button>
                 ))}
               </div>
@@ -250,7 +251,7 @@ const ArdoiseInteractiveChart: React.FC<{
             </a>
             <button
               onClick={() => {
-                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${new Intl.NumberFormat('fr-FR').format(selectedPoint.item.remaining)} FCFA. Merci !`;
+                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${formatMontantCompact(selectedPoint.item.remaining)} FCFA. Merci !`;
                 navigator.clipboard.writeText(text);
                 if (onShowToast) {
                   onShowToast("Message de relance copié !", "success");

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { DetailDrawer } from './DetailDrawer';
 import { callRpcWithRetry } from '../../../lib/supabase-rpc';
+import { Select } from '../../../components/ui/Select';
 
 export const TrafficSection: React.FC = () => {
   const [period, setPeriod] = useState<string>('30d');
@@ -62,16 +63,18 @@ export const TrafficSection: React.FC = () => {
       <div className="bg-admin-card p-6 rounded-xl border border-admin-border flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Trafic & Nouveaux Comptes</h2>
-          <select 
+          <Select 
             value={period} 
-            onChange={(e) => setPeriod(e.target.value)}
-            className="bg-admin-surface border border-admin-border text-admin-text text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-admin-primary"
-          >
-            <option value="24h">24 Dernières Heures</option>
-            <option value="7d">7 Derniers Jours</option>
-            <option value="30d">30 Derniers Jours</option>
-            <option value="all">Depuis le début</option>
-          </select>
+            onChange={(val) => setPeriod(val)}
+            options={[
+              { value: '24h', label: '24 Dernières Heures' },
+              { value: '7d', label: '7 Derniers Jours' },
+              { value: '30d', label: '30 Derniers Jours' },
+              { value: 'all', label: 'Depuis le début' },
+            ]}
+            isAdmin={true}
+            containerClassName="w-48"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

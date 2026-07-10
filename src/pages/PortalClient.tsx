@@ -4,6 +4,7 @@ import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
 import { db } from '../db/dexie';
 import { useAuth } from '../components/AuthProvider';
+import { formatMontantCompact } from '../lib/format';
 
 interface PortalClientProps {
   token?: string;
@@ -304,7 +305,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
                   <tr>
                     <td>#${paiements.length - idx}</td>
                     <td>${new Date(p.paid_at).toLocaleDateString('fr-FR')}</td>
-                    <td style="text-align: right; font-weight: 900; color: #27AE60;">+ ${new Intl.NumberFormat('fr-FR').format(p.montant)} FCFA</td>
+                    <td style="text-align: right; font-weight: 900; color: #27AE60;">+ ${formatMontantCompact(p.montant)} FCFA</td>
                   </tr>
                 `).join('')}
                 ${paiements.length === 0 ? `
@@ -318,15 +319,15 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
             <div class="total-card">
               <div class="total-row">
                 <span>Total Dettes :</span>
-                <span style="font-weight: bold; color: #1A1A2E;">${new Intl.NumberFormat('fr-FR').format(ardoise.montant_total)} FCFA</span>
+                <span style="font-weight: bold; color: #1A1A2E;">${formatMontantCompact(ardoise.montant_total)} FCFA</span>
               </div>
               <div class="total-row">
                 <span>Total Versé :</span>
-                <span style="font-weight: bold; color: #27AE60;">${new Intl.NumberFormat('fr-FR').format(paid)} FCFA</span>
+                <span style="font-weight: bold; color: #27AE60;">${formatMontantCompact(paid)} FCFA</span>
               </div>
               <div class="total-row">
                 <span>Reste à Payer :</span>
-                <span style="font-weight: 900;">${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA</span>
+                <span style="font-weight: 900;">${formatMontantCompact(remaining)} FCFA</span>
               </div>
             </div>
 
@@ -444,7 +445,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
           <div className="flex flex-col gap-1.5 mt-2 z-10">
             <div className="flex justify-between text-[10px] font-bold">
               <span className="opacity-80">Remboursé à {percent}%</span>
-              <span className="opacity-80">{new Intl.NumberFormat('fr-FR').format(paid)} / {new Intl.NumberFormat('fr-FR').format(ardoise.montant_total)} FCFA</span>
+              <span className="opacity-80">{formatMontantCompact(paid)} / {formatMontantCompact(ardoise.montant_total)} FCFA</span>
             </div>
             <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
               <div
@@ -465,7 +466,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
             Télécharger Reçu
           </button>
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur Sama Boutik. Solde restant dû : ${new Intl.NumberFormat('fr-FR').format(remaining)} FCFA.`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur Sama Boutik. Solde restant dû : ${formatMontantCompact(remaining)} FCFA.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.97]"
