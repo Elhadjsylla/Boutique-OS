@@ -46,12 +46,12 @@ export function usePaymentPolling(
     // Poll every 4 seconds
     intervalId = setInterval(checkStatus, 4000);
     
-    // Timeout de sécurité après 2 minutes sans changement
+    // Timeout de sécurité après 15 minutes sans changement
     timeoutId = setTimeout(() => {
       if (isMounted) {
         onStatusChangeRef.current('timeout');
       }
-    }, 2 * 60 * 1000);
+    }, 15 * 60 * 1000);
 
     return () => {
       isMounted = false;
