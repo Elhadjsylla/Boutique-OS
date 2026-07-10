@@ -5,48 +5,72 @@ import { Select } from '../../components/ui/Select';
 interface SubscriptionEntry {
   id: string;
   user_id: string;
+  nom_masque: string;
+  email_masque: string;
+  boutique_nom: string | null;
   plan: 'starter' | 'pro' | 'annual';
   status: string;
   payment_method: string | null;
   amount: number | null;
+  net_amount: number | null;
+  is_trial: boolean;
   starts_at: string;
   expires_at: string;
+  confirmed_at: string | null;
+  cancelled_at: string | null;
   created_at: string;
+}
+
+interface RevealedIdentity {
+  nom: string;
+  prenom: string;
+  email: string;
+  phone_number: string;
 }
 
 export const AdminSubscriptions: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]             = useState(true);
+  const [editingSub, setEditingSub]       = useState<SubscriptionEntry | null>(null);
+  const [newPlan, setNewPlan]             = useState<'starter' | 'pro' | 'annual'>('starter');
+  const [newExpiresAt, setNewExpiresAt]   = useState('');
+  const [isUpdating, setIsUpdating]       = useState(false);
 
-  // Edit Subscription State
-  const [editingSub, setEditingSub] = useState<SubscriptionEntry | null>(null);
-  const [newPlan, setNewPlan] = useState<'starter' | 'pro' | 'annual'>('starter');
-  const [newExpiresAt, setNewExpiresAt] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
+  // Reveal state : userId → données en clair (cache local par session)
+  const [revealed, setRevealed]           = useState<Record<string, RevealedIdentity>>({});
+  const [revealingId, setRevealingId]     = useState<string | null>(null);
 
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('id, user_id, plan, status, payment_method, amount, starts_at, expires_at, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_subscriptions_list_masked');
       if (error) throw error;
       setSubscriptions(data || []);
-      setIsDemo(false);
-    } catch (e: any) {
-      console.error("[AdminSubscriptions] Erreur fetch:", e?.message ?? e);
+    } catch (e: unknown) {
+      console.error('[AdminSubscriptions] Erreur fetch:', e instanceof Error ? e.message : e);
       setSubscriptions([]);
-      setIsDemo(false);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+  useEffect(() => { fetchSubscriptions(); }, []);
+
+  const handleReveal = async (userId: string) => {
+    if (revealed[userId] || revealingId) return;
+    setRevealingId(userId);
+    try {
+      const { data, error } = await supabase.rpc('reveal_user_details', {
+        p_user_id: userId,
+      });
+      if (error) throw error;
+      setRevealed(prev => ({ ...prev, [userId]: data as RevealedIdentity }));
+    } catch (e: unknown) {
+      console.error('[AdminSubscriptions] Reveal error:', e instanceof Error ? e.message : e);
+    } finally {
+      setRevealingId(null);
+    }
+  };
 
   const handleOpenEdit = (sub: SubscriptionEntry) => {
     setEditingSub(sub);
@@ -54,27 +78,36 @@ export const AdminSubscriptions: React.FC = () => {
     setNewExpiresAt(new Date(sub.expires_at).toISOString().slice(0, 16));
   };
 
-  const handleUpdateSubscription = async (e: React.FormEvent) => {
+  const handleUpdateSubscription = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingSub) return;
-
     setIsUpdating(true);
     try {
-      const formattedDate = new Date(newExpiresAt).toISOString();
       const { error } = await supabase.rpc('sys_update_subscription', {
-        target_user: editingSub.user_id,
-        new_plan: newPlan,
-        new_expires_at: formattedDate
+        target_user:    editingSub.user_id,
+        new_plan:       newPlan,
+        new_expires_at: new Date(newExpiresAt).toISOString(),
       });
       if (error) throw error;
-
       setEditingSub(null);
       fetchSubscriptions();
-    } catch (err: any) {
-      alert("Erreur lors de la modification de l'abonnement : " + err.message);
+    } catch (err: unknown) {
+      alert("Erreur lors de la modification : " + (err instanceof Error ? err.message : err));
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const statusBadge = (s: SubscriptionEntry) => {
+    const expired = new Date(s.expires_at) < new Date();
+    const isActive = s.status === 'active' && !expired;
+    if (isActive)
+      return <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">Actif</span>;
+    if (s.status === 'pending')
+      return <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">En attente</span>;
+    if (s.status === 'failed')
+      return <span className="px-2 py-0.5 bg-red-700/20 text-red-400 border border-red-700/30 rounded-full text-[8px] font-black uppercase tracking-wider">Échoué</span>;
+    return <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">Expiré</span>;
   };
 
   return (
@@ -84,27 +117,17 @@ export const AdminSubscriptions: React.FC = () => {
         <p className="text-xs text-admin-text-muted">Consultez l'historique et modifiez manuellement les formules d'abonnements.</p>
       </div>
 
-      {isDemo && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-400 text-lg">science</span>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">Mode Démo</span>
-            <span className="text-[10px] text-amber-400/80">Données fictives. Les migrations backend ne sont pas encore déployées.</span>
-          </div>
-        </div>
-      )}
-
       {loading ? (
-        <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">
-          <div className="w-10 h-10 border-4 border-admin-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex justify-center items-center py-20">
+          <div className="w-10 h-10 border-4 border-admin-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <div className="bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
-                <th className="py-3 px-4 font-black">ID Abonnement</th>
-                <th className="py-3 px-4 font-black">User ID</th>
+                <th className="py-3 px-4 font-black">Marchand</th>
+                <th className="py-3 px-4 font-black">Boutique</th>
                 <th className="py-3 px-4 font-black">Formule</th>
                 <th className="py-3 px-4 font-black">Statut</th>
                 <th className="py-3 px-4 font-black">Montant</th>
@@ -114,31 +137,34 @@ export const AdminSubscriptions: React.FC = () => {
             </thead>
             <tbody>
               {subscriptions.map(s => {
-                const isExpired = new Date(s.expires_at) < new Date();
-                const isActive = s.status === 'active' && !isExpired;
+                const identity = revealed[s.user_id];
+                const isRevealing = revealingId === s.user_id;
 
                 return (
                   <tr key={s.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
-                    <td className="py-3 px-4 font-mono truncate max-w-[100px]" title={s.id}>
-                      {s.id}
-                    </td>
-                    <td className="py-3 px-4 font-mono truncate max-w-[100px]" title={s.user_id}>
-                      {s.user_id}
-                    </td>
-                    <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
-                      {s.plan}
-                    </td>
-                    <td className="py-3 px-4">
-                      {isActive ? (
-                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
-                          Actif
-                        </span>
+                    {/* Marchand — masqué ou révélé */}
+                    <td className="py-3 px-4 min-w-[180px]">
+                      {identity ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-semibold text-admin-text">
+                            {[identity.prenom, identity.nom].filter(Boolean).join(' ') || '—'}
+                          </span>
+                          <span className="text-admin-primary-light font-mono">{identity.email}</span>
+                        </div>
                       ) : (
-                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
-                          Expiré / Inactif
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-admin-text-muted">{s.nom_masque}</span>
+                          <span className="text-admin-text-muted font-mono">{s.email_masque}</span>
+                        </div>
                       )}
                     </td>
+                    <td className="py-3 px-4 text-admin-text-muted">
+                      {s.boutique_nom ?? '—'}
+                    </td>
+                    <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
+                      {s.plan}{s.is_trial && <span className="ml-1 text-[8px] text-amber-400">(essai)</span>}
+                    </td>
+                    <td className="py-3 px-4">{statusBadge(s)}</td>
                     <td className="py-3 px-4 font-bold font-numeric-display">
                       {s.amount ? `${new Intl.NumberFormat('fr-FR').format(s.amount)} F` : '0 F'}
                     </td>
@@ -146,51 +172,69 @@ export const AdminSubscriptions: React.FC = () => {
                       {new Date(s.expires_at).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => handleOpenEdit(s)}
-                        className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                      >
-                        Ajuster
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Bouton Révéler — tracé dans user_reveal_logs + sys_audit_log */}
+                        {!identity && (
+                          <button
+                            onClick={() => handleReveal(s.user_id)}
+                            disabled={!!revealingId}
+                            title="Révéler email et nom (action tracée)"
+                            className="h-8 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer disabled:opacity-40"
+                          >
+                            {isRevealing ? '...' : 'Révéler'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleOpenEdit(s)}
+                          className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                        >
+                          Ajuster
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+
+          {subscriptions.length === 0 && (
+            <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
+          )}
         </div>
       )}
 
-      {/* MODAL: Adjust Subscription */}
+      {/* MODAL : Ajuster abonnement */}
       {editingSub && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <form onSubmit={handleUpdateSubscription} className="bg-admin-card rounded-2xl p-6 max-w-sm w-full relative shadow-xl text-left border border-admin-border flex flex-col gap-4 animate-scale-in">
             <h3 className="text-sm font-black text-admin-text uppercase">💳 Ajuster l'Abonnement</h3>
             <div className="flex flex-col text-[10px] text-admin-text-muted font-mono leading-relaxed gap-0.5">
-              <span className="truncate">Sub ID : {editingSub.id}</span>
-              <span className="truncate">User ID : {editingSub.user_id}</span>
+              <span className="truncate">
+                {revealed[editingSub.user_id]?.email ?? editingSub.email_masque}
+              </span>
+              <span className="truncate text-admin-text-muted/60">Sub : {editingSub.id}</span>
             </div>
-            
+
             <div className="flex flex-col gap-3">
               <Select
                 label="Formule de Plan"
                 value={newPlan}
-                onChange={(val) => setNewPlan(val as any)}
+                onChange={(val) => setNewPlan(val as 'starter' | 'pro' | 'annual')}
                 options={[
                   { value: 'starter', label: 'Starter' },
-                  { value: 'pro', label: 'Pro' },
-                  { value: 'annual', label: 'Annuel (Annual)' },
+                  { value: 'pro',     label: 'Pro' },
+                  { value: 'annual',  label: 'Annuel (Annual)' },
                 ]}
                 isAdmin={true}
               />
-
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Date d'Expiration</label>
                 <input
                   type="datetime-local"
                   required
                   value={newExpiresAt}
-                  onChange={(e) => setNewExpiresAt(e.target.value)}
+                  onChange={e => setNewExpiresAt(e.target.value)}
                   className="w-full h-11 px-4 text-xs bg-admin-surface border border-admin-border rounded-xl text-admin-text focus:outline-none focus:ring-2 focus:ring-admin-primary/40"
                 />
               </div>
