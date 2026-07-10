@@ -116,6 +116,14 @@ serve(async (req) => {
             .update({ status: 'accepted', accepted_at: new Date().toISOString() })
             .eq('id', invitation.id);
 
+          await supabase.from('sys_audit_log').insert({
+            actor_id: user.id,
+            action: 'invite_user_existing',
+            target_type: 'profil',
+            target_id: existingUser.id,
+            details: { email, role, boutique_id: targetBoutiqueId, already_registered: true },
+          });
+
           return json({
             success: true,
             invitation_id: invitation.id,
@@ -132,11 +140,15 @@ serve(async (req) => {
       }
 
       // Autre erreur Auth → annuler l'invitation en DB
+      console.error('invite-user: Auth error', {
+        message: inviteError.message,
+        status: (inviteError as any).status,
+        code: (inviteError as any).code,
+        actor_id: user.id,
+        email,
+      });
       await supabase.from('invitations').delete().eq('id', invitation.id);
-      return json({
-        error: inviteError.message || "Erreur lors de l'envoi de l'invitation",
-        raw_error: { message: inviteError.message, status: (inviteError as any).status, code: (inviteError as any).code },
-      }, 400);
+      return json({ error: "Erreur lors de l'envoi de l'invitation" }, 400);
     }
 
     // Audit log

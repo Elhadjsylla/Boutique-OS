@@ -24,13 +24,20 @@ serve(async (req) => {
   const payload = JSON.parse(rawBody);
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+  // Masquage des données sensibles avant log
+  const safePayload = { ...payload };
+  if (safePayload.customer_number) safePayload.customer_number = "***";
+  if (safePayload.customer_phone) safePayload.customer_phone = "***";
+  if (safePayload.phone_number) safePayload.phone_number = "***";
+  if (safePayload.telephone) safePayload.telephone = "***";
+
   // Log brut du webhook — toujours, quelle que soit l'issue
   await supabase.from("payment_logs").insert({
     event:             payload.event,
     unitech_reference: payload.reference,
     amount:            payload.amount,
     status:            payload.status,
-    raw_payload:       payload,
+    raw_payload:       safePayload,
   });
 
   const now = new Date();

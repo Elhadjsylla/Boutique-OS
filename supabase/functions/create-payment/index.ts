@@ -20,8 +20,8 @@ const PLANS = {
   annual:  { amount: 52900, label: "Sama Boutik Annuel" },
 } as const;
 
-// Numéros Sénégal : optionnellement préfixés +221 ou 221, puis 9 chiffres
-const SENEGAL_PHONE_RE = /^(\+221|221)?[0-9]{9}$/;
+// Numéros Sénégal : optionnellement préfixés +221 ou 221, puis 7X XXX XX XX
+const SENEGAL_PHONE_RE = /^(\+221|221)?7[0-9]{8}$/;
 
 const CreatePaymentSchema = z.object({
   plan: z.enum(['starter', 'pro', 'annual']),
@@ -98,8 +98,14 @@ serve(async (req) => {
     }
 
     if (!unitechRes?.success) {
-      // Annuler la subscription pending si UnitechPay échoue
       await supabase.from("subscriptions").delete().eq("id", subscription.id);
+      // Log la tentative échouée (sans données sensibles)
+      await supabase.from("payment_logs").insert({
+        event:    "unitech_initiation_failed",
+        amount:   selectedPlan.amount,
+        status:   "failed",
+        raw_payload: { plan, payment_method, error_code: unitechRes?.error_code ?? null },
+      });
       console.error('create-payment: Unitech error', JSON.stringify(unitechRes));
       return json({ error: "Erreur de paiement, veuillez réessayer" }, 502);
     }
@@ -107,17 +113,17 @@ serve(async (req) => {
     await supabase
       .from("subscriptions")
       .update({
-        unitech_reference:      unitechRes.data.reference,
-        unitech_transaction_id: unitechRes.data.transaction_id,
-        payment_url:            unitechRes.data.payment_url ?? null,
+        unitech_reference:      unitechRes.data?.reference      ?? null,
+        unitech_transaction_id: unitechRes.data?.transaction_id ?? null,
+        payment_url:            unitechRes.data?.payment_url    ?? null,
       })
       .eq("id", subscription.id);
 
     return json({
       success: true,
       subscription_id: subscription.id,
-      payment_url:  unitechRes.data.payment_url  ?? null,
-      deep_links:   unitechRes.data.deep_links   ?? null,
+      payment_url:  unitechRes.data?.payment_url  ?? null,
+      deep_links:   unitechRes.data?.deep_links   ?? null,
     });
 
   } catch (err) {
