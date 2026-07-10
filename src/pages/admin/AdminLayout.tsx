@@ -125,7 +125,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onExit }) => {
       </header>
 
       {/* Main Panel Content */}
-      <main className="flex-1 p-6 md:p-10 pb-24 md:pb-10 overflow-y-auto max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 md:p-10 pb-24 md:pb-10 overflow-y-auto overflow-x-hidden max-w-7xl mx-auto w-full min-w-0">
         {activeTab === 'dashboard' && <AdminDashboard onNavigate={setActiveTab} />}
         {activeTab === 'boutiques' && <AdminBoutiques />}
         {activeTab === 'users' && <AdminUsers />}

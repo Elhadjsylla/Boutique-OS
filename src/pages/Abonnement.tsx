@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
+import { usePaymentPolling } from '../hooks/usePaymentPolling';
 
 interface AbonnementProps {
   onSuccess?: () => void;
@@ -21,60 +22,23 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
   const [phone, setPhone]             = useState(user?.user_metadata?.phone || '');
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
-  const [paymentData, setPaymentData] = useState<{
-    payment_url?: string;
-    deep_links?: { MAXIT?: string; OM?: string };
-  } | null>(null);
-  const [pollCount, setPollCount]     = useState(0);
+  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string }, subscription_id?: string } | null>(null);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearTimers = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (timeoutRef.current)  clearTimeout(timeoutRef.current);
-  };
-
-  // Auto-polling : vérifie le statut de la subscription toutes les 3s
-  // Seule la signature HMAC du webhook peut changer le statut — jamais l'user
-  useEffect(() => {
-    if (step !== 'waiting' || !subscriptionId) return;
-
-    const poll = async () => {
-      try {
-        const { data } = await supabase
-          .rpc('get_subscription_status', { p_subscription_id: subscriptionId });
-
-        if (!data) return;
-
-        if (data.status === 'active') {
-          clearTimers();
-          setStep('success');
-          setTimeout(() => onSuccess?.(), 2000);
-        } else if (data.status === 'failed' || data.status === 'cancelled') {
-          clearTimers();
-          setError('Paiement non abouti. Vérifiez votre solde et réessayez.');
-          setStep('failed');
-        }
-        setPollCount(c => c + 1);
-      } catch {
-        // Erreur réseau passagère — on continue à poller
+  usePaymentPolling(
+    step === 'waiting' ? paymentData?.subscription_id : null,
+    (status) => {
+      if (status === 'active') {
+        setStep('success');
+        setTimeout(() => onSuccess?.(), 2000);
+      } else if (status === 'timeout') {
+        setError("Délai dépassé (15 min). Si vous avez payé, patientez et rechargez la page.");
+        setStep('failed');
+      } else {
+        setError('Paiement non abouti. Vérifiez votre solde et réessayez.');
+        setStep('failed');
       }
-    };
-
-    poll(); // premier appel immédiat
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
-
-    // Timeout global 15 min : si le webhook n'arrive jamais, on abandonne
-    timeoutRef.current = setTimeout(() => {
-      clearTimers();
-      setError('Délai dépassé (15 min). Si vous avez payé, patientez et rechargez la page.');
-      setStep('failed');
-    }, TIMEOUT_MS);
-
-    return clearTimers;
-  }, [step, subscriptionId]);
+    }
+  );
 
   const handleSelectPlan = (plan: PlanType) => {
     setSelectedPlan(plan);
@@ -99,10 +63,17 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error ?? 'Erreur de paiement');
 
-      setSubscriptionId(data.subscription_id);
-      setPaymentData({ payment_url: data.payment_url, deep_links: data.deep_links });
-      setPollCount(0);
+      setPaymentData({
+        payment_url: data.payment_url,
+        deep_links: data.deep_links,
+        subscription_id: data.subscription_id
+      });
       setStep('waiting');
+
+      const url = data.deep_links?.MAXIT || data.deep_links?.OM || data.payment_url;
+      if (url) {
+        window.open(url, '_blank');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -111,9 +82,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
   };
 
   const handleRetry = () => {
-    clearTimers();
     setError(null);
-    setSubscriptionId(null);
     setPaymentData(null);
     setStep('payment');
   };
@@ -263,8 +232,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
               Complétez le paiement sur <strong>{paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}</strong>.
               <br />La confirmation est automatique — inutile de cliquer.
             </p>
-            <p className="text-[11px] text-outline mt-3">
-              Vérification en cours{'.'.repeat((pollCount % 3) + 1)}
             </p>
           </div>
 
