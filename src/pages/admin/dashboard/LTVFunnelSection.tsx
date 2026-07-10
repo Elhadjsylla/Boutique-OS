@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 export const LTVFunnelSection: React.FC = () => {
   const [ltvData, setLtvData] = useState<any>(null);
@@ -11,8 +12,8 @@ export const LTVFunnelSection: React.FC = () => {
       setLoading(true);
       try {
         const [ltvRes, funnelRes] = await Promise.all([
-          supabase.rpc('get_ltv_by_plan'),
-          supabase.rpc('get_conversion_funnel')
+          callRpcWithRetry('get_ltv_by_plan'),
+          callRpcWithRetry('get_conversion_funnel')
         ]);
 
         if (ltvRes.error) console.error('LTV error:', ltvRes.error);

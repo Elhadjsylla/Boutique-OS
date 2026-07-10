@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 export const TrafficSection: React.FC = () => {
   const [period, setPeriod] = useState<string>('30d');
@@ -16,7 +17,7 @@ export const TrafficSection: React.FC = () => {
     const fetchTraffic = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_new_users_by_period', { p_period: period });
+        const { data, error } = await callRpcWithRetry('get_new_users_by_period', { p_period: period });
         if (error) throw error;
         setTrafficData(data);
       } catch (err) {
@@ -32,7 +33,7 @@ export const TrafficSection: React.FC = () => {
     setDrawerOpen(true);
     setLoadingDetail(true);
     try {
-      const { data, error } = await supabase.rpc('get_new_users_detail', { p_period: period });
+      const { data, error } = await callRpcWithRetry('get_new_users_detail', { p_period: period });
       if (error) throw error;
       setNewUsers(data || []);
     } catch (err) {

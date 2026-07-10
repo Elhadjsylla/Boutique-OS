@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 // Custom icons for leaflet
 const activeIcon = new L.Icon({
@@ -34,7 +35,7 @@ export const GeoMap: React.FC = () => {
     const fetchGeo = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_boutiques_geo');
+        const { data, error } = await callRpcWithRetry('get_boutiques_geo');
         if (error) throw error;
         setGeoData(data);
       } catch (err) {

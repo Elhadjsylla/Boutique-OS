@@ -3,14 +3,14 @@ import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
 import { db } from '../db/dexie';
-
+import { useAuth } from '../components/AuthProvider';
 
 interface PortalClientProps {
   token?: string;
 }
 
 export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
-  const [session, setSession] = useState<any>(null);
+  const { session } = useAuth();
   const [claimed, setClaimed] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
@@ -20,13 +20,6 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null); // contains { ardoise: {...}, paiements: [...] }
   const [isDemo, setIsDemo] = useState(false);
-
-  // Auth State
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Fetch ardoise by token
   useEffect(() => {

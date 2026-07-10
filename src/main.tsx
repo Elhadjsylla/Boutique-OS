@@ -19,14 +19,14 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
           registration.unregister();
         }
         localStorage.setItem(SW_CLEANED_KEY, '1');
-        if ('caches' in window) {
+        if ('caches' in globalThis) {
           caches.keys().then((keys) => {
             Promise.all(keys.map(key => caches.delete(key))).then(() => {
-              window.location.reload();
+              globalThis.location.reload();
             });
           });
         } else {
-          window.location.reload();
+          globalThis.location.reload();
         }
         return; // stop here — reload is coming
       }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 export const ChurnSection: React.FC = () => {
   const [period, setPeriod] = useState<string>('30d');
@@ -16,7 +17,7 @@ export const ChurnSection: React.FC = () => {
     const fetchChurn = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_churn_rate', { p_period: period });
+        const { data, error } = await callRpcWithRetry('get_churn_rate', { p_period: period });
         if (error) throw error;
         setChurnData(data);
       } catch (err) {
@@ -32,7 +33,7 @@ export const ChurnSection: React.FC = () => {
     setDrawerOpen(true);
     setLoadingDetail(true);
     try {
-      const { data, error } = await supabase.rpc('get_churned_users_detail', { p_period: period });
+      const { data, error } = await callRpcWithRetry('get_churned_users_detail', { p_period: period });
       if (error) throw error;
       setChurnedUsers(data || []);
     } catch (err) {

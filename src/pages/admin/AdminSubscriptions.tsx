@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+
 import { Select } from '../../components/ui/Select';
 import { MaskedValue } from '../../components/admin/MaskedValue';
 import { useRevealUser } from '../../hooks/useRevealUser';
+import { callRpcWithRetry } from '../../lib/supabase-rpc';
 
 interface SubscriptionEntry {
   id: string;
@@ -34,7 +35,7 @@ export const AdminSubscriptions: React.FC = () => {
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_subscriptions_list_masked');
+      const { data, error } = await callRpcWithRetry('get_subscriptions_list_masked');
       if (error) throw error;
       setSubscriptions(data || []);
       setIsDemo(false);
@@ -64,7 +65,7 @@ export const AdminSubscriptions: React.FC = () => {
     setIsUpdating(true);
     try {
       const formattedDate = new Date(newExpiresAt).toISOString();
-      const { error } = await supabase.rpc('sys_update_subscription', {
+      const { error } = await callRpcWithRetry('sys_update_subscription', {
         target_user: editingSub.user_id,
         new_plan: newPlan,
         new_expires_at: formattedDate

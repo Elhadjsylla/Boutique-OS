@@ -3,28 +3,19 @@ import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { MoneyText } from '../components/ui/MoneyText';
+import { useAuth } from '../components/AuthProvider';
 
 export const MonEspace: React.FC = () => {
-  const [session, setSession] = useState<any>(null);
+  const { session, isLoading: sessionLoading } = useAuth();
   const [ardoises, setArdoises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Monitor Auth State
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (!data.session) {
-        // Stop loading if no session is active so we can redirect
-        setLoading(false);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (!sessionLoading && !session) {
+      setLoading(false);
+    }
+  }, [session, sessionLoading]);
 
   // Fetch ardoises when authenticated
   useEffect(() => {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DetailDrawer } from './DetailDrawer';
+import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 
 type Period = '24h' | '7d' | '30d' | '12m' | 'all';
 
@@ -20,8 +21,8 @@ export const RevenueSection: React.FC = () => {
       setLoading(true);
       try {
         const [mrrRes, revRes] = await Promise.all([
-          supabase.rpc('get_mrr_arr'),
-          supabase.rpc('get_revenue_by_period', { p_period: period })
+          callRpcWithRetry('get_mrr_arr'),
+          callRpcWithRetry('get_revenue_by_period', { p_period: period })
         ]);
 
         if (mrrRes.error) console.error('MRR error:', mrrRes.error);
@@ -42,7 +43,7 @@ export const RevenueSection: React.FC = () => {
     setDrawerOpen(true);
     setLoadingBreakdown(true);
     try {
-      const { data, error } = await supabase.rpc('get_revenue_breakdown', { p_period: period });
+      const { data, error } = await callRpcWithRetry('get_revenue_breakdown', { p_period: period });
       if (error) throw error;
       setBreakdown(data || []);
     } catch (err) {
@@ -60,10 +61,9 @@ export const RevenueSection: React.FC = () => {
     return <div className="h-96 w-full bg-admin-card animate-pulse rounded-xl"></div>;
   }
 
-  const { total_revenu, evolution_pct, revenu_par_plan, revenu_par_methode } = revenueData;
+  const { total_revenu, evolution_pct, revenu_par_plan } = revenueData;
 
   const planData = Object.entries(revenu_par_plan || {}).map(([name, value]) => ({ name, value }));
-  const methodData = Object.entries(revenu_par_methode || {}).map(([name, value]) => ({ name, value }));
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
 
   return (
@@ -122,7 +122,7 @@ export const RevenueSection: React.FC = () => {
                 <Pie data={planData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {planData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatMoney(value)} contentStyle={{ backgroundColor: '#1e1e2e', borderColor: '#2d2d44', color: '#fff', borderRadius: '8px' }} />
+                <Tooltip formatter={(value: any) => formatMoney(Number(value))} contentStyle={{ backgroundColor: '#1e1e2e', borderColor: '#2d2d44', color: '#fff', borderRadius: '8px' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -134,7 +134,7 @@ export const RevenueSection: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#2d2d44" vertical={false} />
                 <XAxis dataKey="mois" stroke="#6c7086" fontSize={10} tickMargin={10} />
                 <YAxis stroke="#6c7086" fontSize={10} tickFormatter={(val) => `${val / 1000}k`} />
-                <Tooltip formatter={(value: number) => formatMoney(value)} cursor={{ fill: '#2d2d44', opacity: 0.4 }} contentStyle={{ backgroundColor: '#1e1e2e', borderColor: '#2d2d44', color: '#fff', borderRadius: '8px' }} />
+                <Tooltip formatter={(value: any) => formatMoney(Number(value))} cursor={{ fill: '#2d2d44', opacity: 0.4 }} contentStyle={{ backgroundColor: '#1e1e2e', borderColor: '#2d2d44', color: '#fff', borderRadius: '8px' }} />
                 <Bar dataKey="mrr" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
