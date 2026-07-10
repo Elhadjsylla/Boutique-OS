@@ -4,11 +4,62 @@ import { Select } from '../../components/ui/Select';
 
 interface Profile {
   id: string;
+  nom_masque?: string;
+  email_masque?: string;
   role: string;
-  boutique_id: string | null;
+  boutique_id?: string | null;
+  boutique_nom?: string;
   created_at: string;
   boutiques?: { nom: string } | null;
 }
+
+type RevealState = 'hidden' | 'loading' | 'revealed';
+interface RevealedDetail {
+  nom: string;
+  email: string;
+}
+
+const MaskedValue = ({ 
+  maskedText, 
+  revealedText, 
+  status, 
+  onReveal, 
+  type 
+}: { 
+  maskedText: string, 
+  revealedText?: string, 
+  status: RevealState, 
+  onReveal: () => void,
+  type: 'nom' | 'email'
+}) => {
+  if (status === 'revealed' && revealedText) {
+    return <span className="text-admin-text font-bold">{revealedText}</span>;
+  }
+
+  if (status === 'loading') {
+    return (
+      <span className="flex items-center gap-2 text-admin-text-muted">
+        <div className="w-3 h-3 border-2 border-admin-primary border-t-transparent rounded-full animate-spin"></div>
+        <span className="opacity-70">{maskedText}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span 
+      onClick={(e) => { e.stopPropagation(); onReveal(); }}
+      className="group flex items-center gap-2 cursor-pointer text-admin-text-muted hover:text-admin-primary transition-colors"
+      title={`Cliquer pour révéler le ${type}`}
+    >
+      <span className="border-b border-dashed border-admin-text-muted/50 group-hover:border-admin-primary">
+        {maskedText}
+      </span>
+      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">
+        visibility
+      </span>
+    </span>
+  );
+};
 
 interface Boutique {
   id: string;
@@ -19,6 +70,10 @@ export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [boutiques, setBoutiques] = useState<Boutique[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Reveal State
+  const [revealStates, setRevealStates] = useState<Record<string, RevealState>>({});
+  const [revealedDetails, setRevealedDetails] = useState<Record<string, RevealedDetail>>({});
 
   // Edit State
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
@@ -41,7 +96,7 @@ export const AdminUsers: React.FC = () => {
       }
 
       const [{ data: usersData, error: usersErr }, { data: boutsData, error: boutsErr }] = await Promise.all([
-        supabase.rpc('sys_list_users'),
+        supabase.rpc('get_users_list_masked'),
         supabase.rpc('sys_get_boutiques'),
       ]);
 
@@ -70,6 +125,27 @@ export const AdminUsers: React.FC = () => {
   useEffect(() => {
     fetchUsersAndBoutiques();
   }, []);
+
+  const handleReveal = async (userId: string) => {
+    if (revealStates[userId] === 'loading' || revealStates[userId] === 'revealed') return;
+    
+    setRevealStates(prev => ({ ...prev, [userId]: 'loading' }));
+    try {
+      const { data, error } = await supabase.rpc('reveal_user_details', { p_user_id: userId });
+      if (error) throw error;
+      
+      const detail = Array.isArray(data) ? data[0] : data;
+      const nom = detail?.nom || detail?.nom_complet || detail?.full_name || 'Inconnu';
+      const email = detail?.email || detail?.email_complet || 'Inconnu';
+      
+      setRevealedDetails(prev => ({ ...prev, [userId]: { nom, email } }));
+      setRevealStates(prev => ({ ...prev, [userId]: 'revealed' }));
+    } catch (err: any) {
+      console.error('Erreur lors de la révélation:', err);
+      alert(err?.message || "Erreur lors de l'accès aux informations détaillées. Accès refusé.");
+      setRevealStates(prev => ({ ...prev, [userId]: 'hidden' }));
+    }
+  };
 
   const handleOpenEdit = (u: Profile) => {
     setEditingUser(u);
@@ -132,6 +208,8 @@ export const AdminUsers: React.FC = () => {
             <thead>
               <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
                 <th className="py-3 px-4 font-black">ID Utilisateur</th>
+                <th className="py-3 px-4 font-black">Nom</th>
+                <th className="py-3 px-4 font-black">Email</th>
                 <th className="py-3 px-4 font-black">Rôle</th>
                 <th className="py-3 px-4 font-black">Boutique</th>
                 <th className="py-3 px-4 font-black">Créé le</th>
@@ -144,6 +222,24 @@ export const AdminUsers: React.FC = () => {
                   <td className="py-3 px-4 font-mono select-all truncate max-w-[120px]" title={u.id}>
                     {u.id}
                   </td>
+                  <td className="py-3 px-4 truncate max-w-[150px]">
+                    <MaskedValue 
+                      maskedText={u.nom_masque || 'Anonyme'}
+                      revealedText={revealedDetails[u.id]?.nom}
+                      status={revealStates[u.id] || 'hidden'}
+                      onReveal={() => handleReveal(u.id)}
+                      type="nom"
+                    />
+                  </td>
+                  <td className="py-3 px-4 truncate max-w-[180px]">
+                    <MaskedValue 
+                      maskedText={u.email_masque || '***@***.**'}
+                      revealedText={revealedDetails[u.id]?.email}
+                      status={revealStates[u.id] || 'hidden'}
+                      onReveal={() => handleReveal(u.id)}
+                      type="email"
+                    />
+                  </td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                       u.role === 'super_admin' ? 'bg-purple-500/20 text-purple-300' :
@@ -153,8 +249,8 @@ export const AdminUsers: React.FC = () => {
                       {u.role}
                     </span>
                   </td>
-                  <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutiques?.nom || 'Aucune'}>
-                    {u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
+                  <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
+                    {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
                   </td>
                   <td className="py-3 px-4 text-admin-text-muted">
                     {new Date(u.created_at).toLocaleDateString('fr-FR')}

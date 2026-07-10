@@ -4,6 +4,7 @@ import { Toast } from '../components/ui/Toast';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
+import { usePaymentPolling } from '../hooks/usePaymentPolling';
 
 // ⚠️ PRODUCTION: remplacer par le vrai numéro WhatsApp avant le lancement
 const WHATSAPP_SUPPORT = '221700000000';
@@ -24,7 +25,23 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   const [phoneNumber, setPhoneNumber] = useState(user?.user_metadata?.phone || '');
   const [provider, setProvider] = useState<'wave' | 'orange'>('wave');
   const [isPaying, setIsPaying] = useState(false);
-  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string } } | null>(null);
+  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string }, subscription_id?: string } | null>(null);
+
+  usePaymentPolling(
+    paymentData?.subscription_id || null,
+    (status) => {
+      if (status === 'active') {
+        setToast({ message: 'Paiement confirmé avec succès !', type: 'success' });
+        setTimeout(() => window.location.reload(), 2000);
+      } else if (status === 'timeout') {
+        setToast({ message: "Le délai d'attente est écoulé. Si vous avez payé, l'activation sera faite sous peu.", type: 'error' });
+        setPaymentData(null);
+      } else {
+        setToast({ message: `Le paiement a échoué ou a expiré (${status}).`, type: 'error' });
+        setPaymentData(null);
+      }
+    }
+  );
 
   const plans = [
     {
@@ -134,8 +151,14 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       if (data && data.success) {
         setPaymentData({
           payment_url: data.payment_url,
-          deep_links: data.deep_links
+          deep_links: data.deep_links,
+          subscription_id: data.subscription_id
         });
+
+        const url = data.deep_links?.MAXIT || data.deep_links?.OM || data.payment_url;
+        if (url) {
+          window.open(url, '_blank');
+        }
       } else {
         throw new Error(data?.error || 'Erreur lors de la création du paiement.');
       }
@@ -403,9 +426,9 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900">Paiement en cours</h3>
+                  <h3 className="text-lg font-black text-slate-900">Paiement en cours de vérification...</h3>
                   <p className="text-[13px] text-slate-500 mt-1 max-w-[280px]">
-                    Complétez le paiement via l'application ou le lien ci-dessous.
+                    Veuillez valider le paiement sur l'application. Cette fenêtre se mettra à jour automatiquement.
                   </p>
                 </div>
 
@@ -441,17 +464,6 @@ export const Subscription: React.FC<SubscriptionProps> = ({
                     </a>
                   )}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToast({ message: 'Vérification du paiement...', type: 'success' });
-                    setTimeout(() => window.location.reload(), 2000);
-                  }}
-                  className="w-full h-12 rounded-xl bg-secondary text-white text-sm font-black mt-2 active:scale-95 transition-all shadow-md"
-                >
-                  J'ai payé — Confirmer
-                </button>
 
                 <button
                   type="button"

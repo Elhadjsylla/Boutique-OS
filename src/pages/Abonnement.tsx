@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
+import { usePaymentPolling } from '../hooks/usePaymentPolling';
 
 interface AbonnementProps {
   onSuccess?: () => void;
@@ -18,7 +19,23 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
   const [phone, setPhone]             = useState(user?.user_metadata?.phone || '');
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string } } | null>(null);
+  const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string }, subscription_id?: string } | null>(null);
+
+  usePaymentPolling(
+    step === 'waiting' ? paymentData?.subscription_id : null,
+    (status) => {
+      if (status === 'active') {
+        setStep('success');
+        setTimeout(() => onSuccess?.(), 2000);
+      } else if (status === 'timeout') {
+        setError("Le délai d'attente est écoulé. Si vous avez bien payé, votre compte sera activé d'ici quelques minutes.");
+        setStep('payment');
+      } else {
+        setError(`Le paiement a échoué ou a expiré (${status}). Veuillez réessayer.`);
+        setStep('payment');
+      }
+    }
+  );
 
   const handleSelectPlan = (plan: PlanType) => {
     setSelectedPlan(plan);
@@ -44,9 +61,15 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
 
       setPaymentData({
         payment_url: data.payment_url,
-        deep_links: data.deep_links
+        deep_links: data.deep_links,
+        subscription_id: data.subscription_id
       });
       setStep('waiting');
+
+      const url = data.deep_links?.MAXIT || data.deep_links?.OM || data.payment_url;
+      if (url) {
+        window.open(url, '_blank');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -54,31 +77,7 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
     }
   };
 
-  const handleConfirmPayment = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Vérifie que le webhook a bien activé la subscription en base
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('id, status')
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-
-      if (sub) {
-        setStep('success');
-        setTimeout(() => onSuccess?.(), 2000);
-      } else {
-        setError('Paiement non encore confirmé. Patientez quelques secondes et réessayez.');
-        setStep('waiting');
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur de vérification');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Confirmation is now handled automatically by usePaymentPolling
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-16 pb-10 px-4 animate-fade-in">
@@ -224,11 +223,11 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
             </span>
           </div>
           <div>
-            <h2 className="font-headline-sm text-on-surface">Paiement en cours...</h2>
+            <h2 className="font-headline-sm text-on-surface">Paiement en cours de vérification...</h2>
             <p className="font-body-md text-on-surface-variant mt-2">
-              Complétez le paiement sur votre application{' '}
+              Veuillez valider le paiement sur l'application{' '}
               <strong>{paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}</strong>.
-              <br />Une fois payé, appuyez sur "Confirmer".
+              <br />Cette page se mettra à jour automatiquement une fois le paiement confirmé.
             </p>
           </div>
           <div className="flex flex-col gap-3 w-full mt-2">
@@ -263,12 +262,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
               </a>
             )}
           </div>
-          <button
-            onClick={handleConfirmPayment}
-            className="w-full h-12 rounded-2xl bg-secondary text-white text-sm font-black active:scale-95 transition-all shadow-sm"
-          >
-            J'ai payé — Confirmer
-          </button>
           <button
             onClick={() => setStep('plans')}
             className="text-sm text-outline underline underline-offset-2"
