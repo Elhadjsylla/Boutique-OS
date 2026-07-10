@@ -70,7 +70,7 @@ export const RevenueSection: React.FC = () => {
     <>
       <div className="flex flex-col gap-6">
         {/* Header & Selector */}
-        <div className="flex justify-between items-center bg-admin-card p-5 rounded-xl border border-admin-border">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-card p-5 rounded-xl border border-admin-border">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Revenus & Croissance</h2>
           <select 
             value={period} 
@@ -115,7 +115,7 @@ export const RevenueSection: React.FC = () => {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-admin-card p-6 rounded-xl border border-admin-border h-80">
+          <div className="bg-admin-card p-6 rounded-xl border border-admin-border h-80 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-admin-text-muted mb-6">Répartition par Plan</h3>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -127,7 +127,7 @@ export const RevenueSection: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-admin-card p-6 rounded-xl border border-admin-border h-80">
+          <div className="bg-admin-card p-6 rounded-xl border border-admin-border h-80 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-admin-text-muted mb-6">Historique MRR (6 mois)</h3>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mrrData.historique_6_mois || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>

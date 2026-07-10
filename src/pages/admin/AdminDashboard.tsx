@@ -16,7 +16,7 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   return (
-    <div className="flex flex-col gap-8 pb-10">
+    <div className="flex flex-col gap-8 pb-10 min-w-0 w-full">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-black uppercase tracking-tight text-admin-text">
           Tableau de Bord

@@ -126,7 +126,7 @@ export const SignalementsTable: React.FC = () => {
   return (
     <>
       <div className="bg-admin-card rounded-xl border border-admin-border overflow-hidden">
-        <div className="p-5 border-b border-admin-border flex justify-between items-center bg-admin-surface">
+        <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Signalements Utilisateurs</h2>
           <select 
             value={statusFilter}

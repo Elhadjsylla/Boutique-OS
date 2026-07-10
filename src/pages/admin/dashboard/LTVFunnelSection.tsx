@@ -71,7 +71,7 @@ export const LTVFunnelSection: React.FC = () => {
 
       {/* Funnel */}
       <div className="flex-1 bg-admin-card p-6 rounded-xl border border-admin-border">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Funnel de Conversion</h2>
           {funnelData.conversion_free_30j && (
             <span className="px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/20 rounded-lg text-xs font-bold">

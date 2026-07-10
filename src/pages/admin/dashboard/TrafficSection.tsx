@@ -59,7 +59,7 @@ export const TrafficSection: React.FC = () => {
   return (
     <>
       <div className="bg-admin-card p-6 rounded-xl border border-admin-border flex flex-col gap-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Trafic & Nouveaux Comptes</h2>
           <select 
             value={period} 
@@ -96,7 +96,7 @@ export const TrafficSection: React.FC = () => {
             <span className="text-[10px] uppercase tracking-wider text-admin-primary mt-4 opacity-0 group-hover:opacity-100 transition-opacity">Voir la liste complète →</span>
           </div>
 
-          <div className="h-48 cursor-pointer" onClick={openDetails}>
+          <div className="h-48 cursor-pointer min-w-0" onClick={openDetails}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2d2d44" horizontal={false} />

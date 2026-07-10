@@ -68,7 +68,7 @@ export const ActiveDormantBoutiques: React.FC = () => {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* KPI Actives vs Dormantes */}
-        <div className="lg:col-span-1 bg-admin-card p-6 rounded-xl border border-admin-border flex flex-col items-center justify-center cursor-pointer hover:border-admin-primary/50 transition-colors" onClick={openDormantes}>
+        <div className="lg:col-span-1 bg-admin-card p-6 rounded-xl border border-admin-border flex flex-col items-center justify-center cursor-pointer hover:border-admin-primary/50 transition-colors min-w-0" onClick={openDormantes}>
           <h2 className="text-sm font-black tracking-tight text-admin-text mb-4 w-full text-left uppercase">Santé du Parc (30j)</h2>
           
           <div className="h-48 w-full">
@@ -106,7 +106,7 @@ export const ActiveDormantBoutiques: React.FC = () => {
         </div>
 
         {/* Top 10 Table */}
-        <div className="lg:col-span-2 bg-admin-card rounded-xl border border-admin-border flex flex-col">
+        <div className="lg:col-span-2 bg-admin-card rounded-xl border border-admin-border flex flex-col min-w-0">
           <div className="p-5 border-b border-admin-border">
             <h2 className="text-lg font-black tracking-tight text-admin-text">Top 10 Boutiques (30j)</h2>
           </div>
@@ -173,7 +173,7 @@ export const ActiveDormantBoutiques: React.FC = () => {
               Ces boutiques n'ont enregistré aucune vente sur les 30 derniers jours.
             </p>
             {data.detail?.filter((b: any) => b.statut === 'dormante').map((b: any, idx: number) => (
-              <div key={idx} className="bg-admin-card p-4 rounded-xl border border-admin-border flex justify-between items-center">
+              <div key={idx} className="bg-admin-card p-4 rounded-xl border border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex flex-col">
                   <span className="font-bold text-admin-text">{b.nom}</span>
                   <span className="text-[10px] text-admin-text-muted uppercase mt-1">Dernière activité: il y a {b.jours_inactivite} jours</span>

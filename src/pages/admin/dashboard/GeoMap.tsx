@@ -65,7 +65,7 @@ export const GeoMap: React.FC = () => {
   return (
     <>
       <div className="bg-admin-card rounded-xl border border-admin-border overflow-hidden flex flex-col">
-        <div className="p-5 border-b border-admin-border flex justify-between items-center bg-admin-surface">
+        <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Couverture Géographique (Dakar)</h2>
           <span className="px-3 py-1 bg-admin-primary/10 text-admin-primary border border-admin-primary/20 rounded-lg text-xs font-bold">
             {geoData.boutiques_localisees} boutiques localisées sur {geoData.total_boutiques}
