@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
 import { db, queueMutation } from '../../db/dexie';
-import { formatMontantCompact } from '../../lib/format';
+import { formatMontantFull } from '../../lib/format';
 
 // Validation schemas using Zod
 export const createArdoiseSchema = z.object({
@@ -64,7 +64,7 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
       const remaining = ardoise.montant_total - currentPaid;
 
       if (montantPaiement > remaining) {
-        onError(`Le versement dépasse le solde restant (${formatMontantCompact(remaining)} FCFA).`);
+        onError(`Le versement dépasse le solde restant (${formatMontantFull(remaining)} FCFA).`);
         return;
       }
 
@@ -132,7 +132,7 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
         await queueMutation('ardoises', 'UPDATE', ardoiseId, updatedArdoise);
       });
 
-      onSuccess(`${formatMontantCompact(montantDebt)} FCFA ajoutés à l'ardoise.`);
+      onSuccess(`${formatMontantFull(montantDebt)} FCFA ajoutés à l'ardoise.`);
     } catch (err) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Montant invalide.");

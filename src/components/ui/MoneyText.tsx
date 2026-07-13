@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { formatMontantCompact } from '../../lib/format';
+import { formatMontantCompact, formatMontantFull } from '../../lib/format';
 
 interface MoneyTextProps extends React.HTMLAttributes<HTMLSpanElement> {
   value: number;
   duration?: number;
+  /** Abrège l'affichage (45K, 2,5M, 1Md) — à réserver aux cartes/listes/résumés, jamais aux montants liés à la manipulation d'argent réel (caisse, dettes). */
+  compact?: boolean;
 }
 
 export const MoneyText: React.FC<MoneyTextProps> = ({
   value,
   className = '',
   duration = 800,
+  compact = false,
   ...props
 }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -51,9 +54,9 @@ export const MoneyText: React.FC<MoneyTextProps> = ({
     };
   }, [value, duration]);
 
-  // Format number with spaces for thousands or compact M/K/Md
-  const formattedValue = formatMontantCompact(displayValue);
-  const finalFormattedValue = formatMontantCompact(value);
+  // Format number with spaces for thousands (Sénégal/CFA standard), ou abrégé si compact
+  const formattedValue = compact ? formatMontantCompact(displayValue) : formatMontantFull(displayValue);
+  const finalFormattedValue = compact ? formatMontantCompact(value) : formatMontantFull(value);
 
   return (
     <span

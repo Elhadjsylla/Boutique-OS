@@ -12,7 +12,7 @@ import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
-import { formatMontantCompact } from '../lib/format';
+import { formatMontantCompact, formatMontantFull } from '../lib/format';
 
 interface DashboardProps {
   onNavigate?: (tab: any) => void;
@@ -136,7 +136,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           ].map((item, i) => (
             <Card key={i} elevation={1} className="flex flex-col gap-1 p-3.5 hover:border-primary/20 hover:shadow-md transition-all">
               <span className="text-[10px] text-outline font-bold uppercase tracking-wider">{item.label}</span>
-              <MoneyText value={item.value} className="text-base text-primary font-extrabold" />
+              <MoneyText value={item.value} compact className="text-base text-primary font-extrabold" />
             </Card>
           ))}
         </div>
@@ -153,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           ].map((item, i) => (
             <Card key={i} elevation={1} className="flex flex-col gap-1 p-3.5 hover:border-secondary/20 hover:shadow-md transition-all bg-secondary-container/10 border-secondary-container/20">
               <span className="text-[10px] text-secondary font-bold uppercase tracking-wider">{item.label}</span>
-              <MoneyText value={item.value} className="text-base text-secondary font-extrabold" />
+              <MoneyText value={item.value} compact className="text-base text-secondary font-extrabold" />
             </Card>
           ))}
         </div>
@@ -430,7 +430,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       {/* Performance Reports Section */}
       {renderLockedSection("Bilans de Clôture", (() => {
-        const fmtFr = (n: number) => formatMontantCompact(n);
+        const fmtFr = (n: number) => formatMontantFull(n);
         const now = new Date();
         let start = new Date();
         let end = new Date();
@@ -564,11 +564,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div className="grid grid-cols-2 gap-3 mt-1">
                 <div className="bg-surface-container-lowest border border-outline-variant/60 p-3 rounded-xl flex flex-col justify-between h-20 shadow-sm">
                   <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Chiffre d'Affaires</span>
-                  <span className="text-base font-black text-primary font-numeric-display">{fmtFr(totalRevenue)} F</span>
+                  <span className="text-base font-black text-primary font-numeric-display">{formatMontantCompact(totalRevenue)} F</span>
                 </div>
                 <div className="bg-surface-container-lowest border border-outline-variant/60 p-3 rounded-xl flex flex-col justify-between h-20 shadow-sm">
                   <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Bénéfice Estimé</span>
-                  <span className="text-base font-black text-secondary font-numeric-display">{fmtFr(estimatedProfit)} F</span>
+                  <span className="text-base font-black text-secondary font-numeric-display">{formatMontantCompact(estimatedProfit)} F</span>
                 </div>
                 <div className="bg-surface-container-lowest border border-outline-variant/60 p-3 rounded-xl flex flex-col justify-between h-20 shadow-sm">
                   <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Transactions</span>
@@ -576,7 +576,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 </div>
                 <div className="bg-surface-container-lowest border border-outline-variant/60 p-3 rounded-xl flex flex-col justify-between h-20 shadow-sm">
                   <span className="text-[9px] font-bold text-outline uppercase tracking-wide">Panier Moyen</span>
-                  <span className="text-base font-black text-tertiary font-numeric-display">{fmtFr(avgBasket)} F</span>
+                  <span className="text-base font-black text-tertiary font-numeric-display">{formatMontantCompact(avgBasket)} F</span>
                 </div>
               </div>
 
@@ -946,7 +946,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Produit</th><th>Prix (FCFA)</th><th>Quantité en Stock</th></tr>
                           </thead>
                           <tbody>
-                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${formatMontantCompact(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
+                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${formatMontantFull(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -1001,7 +1001,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Nom Client</th><th>Crédit Total (FCFA)</th><th>Statut</th></tr>
                           </thead>
                           <tbody>
-                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${formatMontantCompact(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
+                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${formatMontantFull(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -1056,7 +1056,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Date</th><th>Montant (FCFA)</th><th>ID Caissier</th></tr>
                           </thead>
                           <tbody>
-                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${formatMontantCompact(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
+                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${formatMontantFull(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>

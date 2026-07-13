@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DetailDrawer } from './DetailDrawer';
 import { callRpcWithRetry } from '../../../lib/supabase-rpc';
 import { Select } from '../../../components/ui/Select';
+import { formatMontantCompact } from '../../../lib/format';
 
 export const ChurnSection: React.FC = () => {
   const [period, setPeriod] = useState<string>('30d');
@@ -125,7 +126,7 @@ export const ChurnSection: React.FC = () => {
                 </div>
                 <div className="mt-2 pt-2 border-t border-admin-border flex justify-between text-[10px] uppercase tracking-wider text-admin-text-muted">
                   <span>Annulé le: {new Date(u.date_annulation).toLocaleDateString()}</span>
-                  <span>Valeur: {u.montant_paye} FCFA payés</span>
+                  <span>Valeur: {formatMontantCompact(u.montant_paye)} FCFA payés</span>
                 </div>
               </div>
             ))}
