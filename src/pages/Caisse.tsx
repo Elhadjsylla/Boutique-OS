@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import { MontantInput } from '../components/ui/MontantInput';
 import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -375,11 +376,10 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           {/* Payment Input & Quick Bills */}
           <div className="flex flex-col gap-2">
             <div className="relative">
-              <Input
+              <MontantInput
                 label="Montant Reçu (FCFA)"
-                type="number"
                 value={amountReceived}
-                onChange={(e) => setAmountReceived(e.target.value)}
+                onChange={setAmountReceived}
                 placeholder="Saisir la somme reçue..."
                 className="pr-16 text-base font-bold text-primary h-11"
               />

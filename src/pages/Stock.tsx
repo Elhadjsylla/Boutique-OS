@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import { MontantInput } from '../components/ui/MontantInput';
 import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
@@ -485,7 +486,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <Input label="Nom du Produit" value={newNom} onChange={(e) => setNewNom(e.target.value)} placeholder="Ex: Sac de Riz 5kg" />
           {/* Champs numériques en grille compacte */}
           <div className="grid grid-cols-3 gap-2">
-            <Input label="Prix (FCFA)" type="number" value={newPrix} onChange={(e) => setNewPrix(e.target.value)} placeholder="6750" />
+            <MontantInput label="Prix (FCFA)" value={newPrix} onChange={setNewPrix} placeholder="6750" />
             <Input label="Quantité" type="number" value={newQuantite} onChange={(e) => setNewQuantite(e.target.value)} placeholder="15" />
             <Input label="Seuil alerte" type="number" value={newSeuilAlerte} onChange={(e) => setNewSeuilAlerte(e.target.value)} placeholder="5" />
           </div>
@@ -506,7 +507,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
           <Input label="Nom du Produit" value={editNom} onChange={(e) => setEditNom(e.target.value)} />
           {/* Champs numériques en grille compacte */}
           <div className="grid grid-cols-3 gap-2">
-            <Input label="Prix (FCFA)" type="number" value={editPrix} onChange={(e) => setEditPrix(e.target.value)} />
+            <MontantInput label="Prix (FCFA)" value={editPrix} onChange={setEditPrix} />
             <Input label="Quantité" type="number" value={editQuantite} onChange={(e) => setEditQuantite(e.target.value)} />
             <Input label="Seuil" type="number" value={editSeuilAlerte} onChange={(e) => setEditSeuilAlerte(e.target.value)} />
           </div>

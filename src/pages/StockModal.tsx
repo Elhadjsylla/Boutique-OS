@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
+import { MontantInput } from '../components/ui/MontantInput';
 import { Button } from '../components/ui/Button';
 import type { Produit } from '../db/dexie';
 
@@ -71,14 +72,12 @@ export const StockModal: React.FC<StockModalProps> = ({
         />
 
         <div className="grid grid-cols-2 gap-sm">
-          <Input
+          <MontantInput
             label="Prix (FCFA)"
-            type="number"
             value={prix}
-            onChange={(e) => setPrix(e.target.value)}
+            onChange={setPrix}
             placeholder="Ex: 5000"
             required
-            min="1"
           />
           <Input
             label="Quantité"

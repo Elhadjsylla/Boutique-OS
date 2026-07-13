@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import { MontantInput } from '../components/ui/MontantInput';
 import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
@@ -536,7 +537,7 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nouveau compte Ardoise">
         <div className="flex flex-col gap-4">
           <Input label="Nom du Client" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Nom complet..." />
-          <Input label="Montant Initial Dû (FCFA)" type="number" value={newInitialAmount} onChange={(e) => setNewInitialAmount(e.target.value)} placeholder="Ex: 5000" />
+          <MontantInput label="Montant Initial Dû (FCFA)" value={newInitialAmount} onChange={setNewInitialAmount} placeholder="Ex: 5000" />
           <Button onClick={() => createArdoise(boutiqueId, newClientName, parseFloat(newInitialAmount))} disabled={!newClientName || !newInitialAmount} className="w-full mt-2">
             CRÉER LA FICHE
           </Button>
@@ -631,11 +632,10 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                   <h4 className="text-xs text-on-surface font-extrabold uppercase tracking-wider">Enregistrer un versement</h4>
                 </div>
 
-                <Input
+                <MontantInput
                   label={`Montant versé (FCFA) — Reste : ${fmt(selectedArdoise.remaining)} FCFA`}
-                  type="number"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  onChange={setPaymentAmount}
                   placeholder="Saisir le montant..."
                 />
 
@@ -752,11 +752,10 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                     <span className="material-symbols-outlined text-error text-lg">add_shopping_cart</span>
                     <h4 className="text-xs text-error font-extrabold uppercase tracking-wider">Nouvel achat à crédit</h4>
                   </div>
-                  <Input
+                  <MontantInput
                     label="Montant à ajouter à l'ardoise (FCFA)"
-                    type="number"
                     value={addDebtAmount}
-                    onChange={(e) => setAddDebtAmount(e.target.value)}
+                    onChange={setAddDebtAmount}
                     placeholder="Ex: 3 500"
                   />
                   <div className="flex gap-2">

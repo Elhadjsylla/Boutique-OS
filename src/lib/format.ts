@@ -51,3 +51,15 @@ export function formatMontantFull(valeur: number | string | null | undefined): s
   if (isNaN(num)) return "0";
   return new Intl.NumberFormat('fr-FR').format(num);
 }
+
+/** Ne garde que les chiffres d'une saisie (retire espaces et tout autre caractère non numérique). */
+export function stripMontantInput(raw: string): string {
+  return raw.replace(/\D/g, '');
+}
+
+/** Formate une saisie de chiffres bruts avec des espaces tous les 3 chiffres, pour affichage live dans un input (ex: "450000" -> "450 000"). */
+export function formatMontantInput(rawDigits: string): string {
+  const digits = stripMontantInput(rawDigits);
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
