@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { ImageCropModal } from './ImageCropModal';
 
 /* ─── Compression via Canvas ─────────────────────────────────────────────── */
 const compressFromFile = (file: File, maxPx = 480, quality = 0.78): Promise<string> =>
@@ -178,17 +179,23 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 }) => {
   const galleryRef = useRef<HTMLInputElement>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const handleFileChange = async (file: File | undefined) => {
     if (!file) return;
-    const dataUrl = await compressFromFile(file);
-    onChange(dataUrl);
+    const dataUrl = await compressFromFile(file, 1200); // résolution large, le crop final recompresse à 480px
+    setCropSrc(dataUrl);
     if (galleryRef.current) galleryRef.current.value = '';
   };
 
   const handleCapture = (dataUrl: string) => {
     setShowCamera(false);
-    onChange(dataUrl);
+    setCropSrc(dataUrl);
+  };
+
+  const handleCropConfirm = (croppedDataUrl: string) => {
+    onChange(croppedDataUrl);
+    setCropSrc(null);
   };
 
   return (
@@ -204,6 +211,14 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           {value ? (
             <>
               <img src={value} alt="Aperçu produit" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setCropSrc(value)}
+                className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/55 text-white h-7 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wide hover:bg-black/75 active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[14px]">crop</span>
+                Recadrer
+              </button>
               <button
                 type="button"
                 onClick={() => onChange('')}
@@ -258,6 +273,16 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         <CameraModal
           onCapture={handleCapture}
           onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      {/* Éditeur de recadrage — même ratio que les cartes produits (carré) */}
+      {cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          aspect={1}
+          onCancel={() => setCropSrc(null)}
+          onConfirm={handleCropConfirm}
         />
       )}
     </>
