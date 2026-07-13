@@ -1,6 +1,7 @@
 // Origines autorisées à appeler les Edge Functions depuis un navigateur.
 // Ajouter ici tout nouveau domaine personnalisé (ex: 'https://samaboutik.com') le jour où il est branché sur Vercel.
 const ALLOWED_ORIGINS = [
+  'https://boutique-os-seven.vercel.app',
   'https://boutique-os-elhadjsyllas-projects.vercel.app',
   'https://boutique-os-git-main-elhadjsyllas-projects.vercel.app',
   'http://localhost:2000', // port configuré dans vite.config.ts
