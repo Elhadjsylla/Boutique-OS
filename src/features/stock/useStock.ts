@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
-import { db, queueMutation } from '../../db/dexie';
+import { supabase } from '../../lib/supabase';
+import { supabaseService } from '../../services/supabaseService';
 
 export const produitSchema = z.object({
   nom: z.string().min(1, "Le nom du produit est obligatoire."),
@@ -16,100 +17,138 @@ export function useStock(onSuccess: (msg: string) => void, onError: (msg: string
     try {
       produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
       const produitId = crypto.randomUUID();
-      const timestamp = new Date().toISOString();
       const produitData = {
-        id: produitId, boutique_id: boutiqueId, nom: nom.trim(), prix, quantite,
-        seuil_alerte: seuilAlerte, archive: 0, updated_at: timestamp,
+        id: produitId,
+        boutique_id: boutiqueId,
+        nom: nom.trim(),
+        prix,
+        quantite,
+        seuil_alerte: seuilAlerte,
+        archive: 0,
         image_url: imageUrl?.trim() || undefined,
       };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.add(produitData);
-        await queueMutation('produits', 'INSERT', produitId, produitData);
-      });
+      await supabaseService.upsertProduit(produitData);
       onSuccess("Produit créé avec succès.");
-    } catch (err) {
-      if (err instanceof z.ZodError) onError(err.issues[0]?.message || "Erreur de validation");
-      else { console.error(err); onError("Une erreur est survenue lors de la création."); }
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        onError(err.issues[0]?.message || "Erreur de validation");
+      } else {
+        console.error(err);
+        onError(err?.message || "Une erreur est survenue lors de la création.");
+      }
     }
   }, [onSuccess, onError]);
 
   const updateProduit = useCallback(async (produitId: string, nom: string, prix: number, quantite: number, seuilAlerte: number, imageUrl?: string) => {
     try {
       produitSchema.parse({ nom, prix, quantite, seuilAlerte, imageUrl });
-      const current = await db.produits.get(produitId);
-      if (!current) { onError("Produit introuvable."); return; }
-      const timestamp = new Date().toISOString();
+      
+      const { data: current, error: fetchError } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('id', produitId)
+        .maybeSingle();
+
+      if (fetchError || !current) {
+        onError("Produit introuvable.");
+        return;
+      }
+
       const produitData = {
-        ...current, nom: nom.trim(), prix, quantite, seuil_alerte: seuilAlerte,
-        updated_at: timestamp, image_url: imageUrl?.trim() || undefined,
+        id: produitId,
+        boutique_id: current.boutique_id,
+        nom: nom.trim(),
+        prix,
+        quantite,
+        seuil_alerte: seuilAlerte,
+        archive: current.archive ?? 0,
+        image_url: imageUrl?.trim() || undefined,
       };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(produitData);
-        await queueMutation('produits', 'UPDATE', produitId, produitData);
-      });
+
+      await supabaseService.upsertProduit(produitData);
       onSuccess("Produit mis à jour avec succès.");
-    } catch (err) {
-      if (err instanceof z.ZodError) onError(err.issues[0]?.message || "Erreur de validation");
-      else { console.error(err); onError("Une erreur est survenue lors de la mise à jour."); }
+    } catch (err: any) {
+      if (err instanceof z.ZodError) {
+        onError(err.issues[0]?.message || "Erreur de validation");
+      } else {
+        console.error(err);
+        onError(err?.message || "Une erreur est survenue lors de la mise à jour.");
+      }
     }
   }, [onSuccess, onError]);
 
   const archiveProduit = useCallback(async (produitId: string) => {
     try {
-      const current = await db.produits.get(produitId);
-      if (!current) { onError("Produit introuvable."); return; }
-      const timestamp = new Date().toISOString();
-      const produitData = { ...current, archive: 1, updated_at: timestamp };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(produitData);
-        await queueMutation('produits', 'UPDATE', produitId, produitData);
-      });
+      const { data: current, error: fetchError } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('id', produitId)
+        .maybeSingle();
+
+      if (fetchError || !current) {
+        onError("Produit introuvable.");
+        return;
+      }
+
+      const produitData = {
+        ...current,
+        archive: 1,
+      };
+
+      await supabaseService.upsertProduit(produitData);
       onSuccess("Produit archivé avec succès.");
-    } catch (err) { console.error(err); onError("Une erreur est survenue lors de l'archivage."); }
+    } catch (err: any) {
+      console.error(err);
+      onError(err?.message || "Une erreur est survenue lors de l'archivage.");
+    }
   }, [onSuccess, onError]);
 
-  /**
-   * Retire manuellement des unités du stock (casse, vol, perte...).
-   * Appelle onSuccess SANS fermer la fiche — le composant gère l'UI.
-   */
   const retirerStock = useCallback(async (produitId: string, quantiteARetirer: number): Promise<boolean> => {
     try {
-      if (quantiteARetirer <= 0) { onError("La quantité à retirer doit être supérieure à 0."); return false; }
-      const produit = await db.produits.get(produitId);
-      if (!produit) { onError("Produit introuvable."); return false; }
+      if (quantiteARetirer <= 0) {
+        onError("La quantité à retirer doit être supérieure à 0.");
+        return false;
+      }
+
+      const { data: produit, error: fetchError } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('id', produitId)
+        .maybeSingle();
+
+      if (fetchError || !produit) {
+        onError("Produit introuvable.");
+        return false;
+      }
+
       if (quantiteARetirer > produit.quantite) {
         onError(`Stock insuffisant — seulement ${produit.quantite} unité(s) disponible(s).`);
         return false;
       }
-      const timestamp = new Date().toISOString();
+
       const newQty = produit.quantite - quantiteARetirer;
-      const produitData = { ...produit, quantite: newQty, updated_at: timestamp };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(produitData);
-        await queueMutation('produits', 'UPDATE', produitId, produitData);
-      });
+      const produitData = {
+        ...produit,
+        quantite: newQty,
+      };
+
+      await supabaseService.upsertProduit(produitData);
       onSuccess(`${quantiteARetirer} unité(s) retirée(s) du stock.`);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      onError("Une erreur est survenue lors du retrait.");
+      onError(err?.message || "Une erreur est survenue lors du retrait.");
       return false;
     }
   }, [onSuccess, onError]);
 
-  /**
-   * Supprime définitivement un produit de la base (hard delete).
-   */
   const deleteProduit = useCallback(async (produitId: string) => {
     try {
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.delete(produitId);
-        await queueMutation('produits', 'DELETE', produitId, {});
-      });
+      await supabaseService.deleteProduit(produitId);
       onSuccess("Produit supprimé définitivement.");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      onError("Une erreur est survenue lors de la suppression.");
+      onError(err?.message || "Une erreur est survenue lors de la suppression.");
     }
   }, [onSuccess, onError]);
 

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { z } from 'zod';
-import { db, queueMutation } from '../../db/dexie';
+import { supabase } from '../../lib/supabase';
+import { supabaseService } from '../../services/supabaseService';
 import { formatMontantFull } from '../../lib/format';
 
 // Validation schemas using Zod
@@ -33,18 +34,14 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
         updated_at: timestamp,
       };
 
-      await db.transaction('rw', [db.ardoises, db.outbox], async () => {
-        await db.ardoises.add(ardoiseData);
-        await queueMutation('ardoises', 'INSERT', ardoiseId, ardoiseData);
-      });
-
+      await supabaseService.upsertArdoise(ardoiseData);
       onSuccess("Ardoise créée avec succès.");
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Erreur de validation");
       } else {
         console.error(err);
-        onError("Une erreur est survenue.");
+        onError(err?.message || "Une erreur est survenue.");
       }
     }
   }, [onSuccess, onError]);
@@ -53,13 +50,18 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
     try {
       paymentSchema.parse({ montant: montantPaiement });
 
-      const ardoise = await db.ardoises.get(ardoiseId);
-      if (!ardoise) {
+      const { data: ardoise, error: fetchError } = await supabase
+        .from('ardoises')
+        .select('*')
+        .eq('id', ardoiseId)
+        .maybeSingle();
+
+      if (fetchError || !ardoise) {
         onError("Ardoise introuvable.");
         return;
       }
 
-      const payments = await db.ardoise_paiements.where('ardoise_id').equals(ardoiseId).toArray();
+      const payments = await supabaseService.getArdoisePaiements(ardoiseId);
       const currentPaid = payments.reduce((sum, p) => sum + p.montant, 0);
       const remaining = ardoise.montant_total - currentPaid;
 
@@ -71,74 +73,63 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
       const paymentId = crypto.randomUUID();
       const timestamp = new Date().toISOString();
 
-      await db.transaction('rw', [db.ardoises, db.ardoise_paiements, db.outbox], async () => {
-        const paymentData = {
-          id: paymentId,
-          ardoise_id: ardoiseId,
-          montant: montantPaiement,
-          paid_at: timestamp,
-          updated_at: timestamp,
-        };
+      const paymentData = {
+        id: paymentId,
+        ardoise_id: ardoiseId,
+        montant: montantPaiement,
+        paid_at: timestamp,
+        updated_at: timestamp,
+      };
 
-        await db.ardoise_paiements.add(paymentData);
-        await queueMutation('ardoise_paiements', 'INSERT', paymentId, paymentData);
+      await supabaseService.addArdoisePaiement(paymentData);
 
-        const isFullyPaid = (currentPaid + montantPaiement) >= ardoise.montant_total;
-        const updatedArdoise = {
-          ...ardoise,
-          statut: isFullyPaid ? ('soldee' as const) : ('en_cours' as const),
-          updated_at: timestamp,
-        };
+      const isFullyPaid = (currentPaid + montantPaiement) >= ardoise.montant_total;
+      const updatedArdoise = {
+        ...ardoise,
+        statut: isFullyPaid ? ('soldee' as const) : ('en_cours' as const),
+      };
 
-        await db.ardoises.put(updatedArdoise);
-        await queueMutation('ardoises', 'UPDATE', ardoiseId, updatedArdoise);
-      });
-
+      await supabaseService.upsertArdoise(updatedArdoise);
       onSuccess("Versement enregistré ✓");
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Erreur de validation");
       } else {
         console.error(err);
-        onError("Une erreur est survenue lors de l'enregistrement du versement.");
+        onError(err?.message || "Une erreur est survenue lors de l'enregistrement du versement.");
       }
     }
   }, [onSuccess, onError]);
 
-  /**
-   * Ajoute un montant supplémentaire à la dette du client (nouvel achat à crédit).
-   * Si l'ardoise était soldée, elle est réouverte automatiquement.
-   */
   const addDebt = useCallback(async (ardoiseId: string, montantDebt: number) => {
     try {
       paymentSchema.parse({ montant: montantDebt });
 
-      const ardoise = await db.ardoises.get(ardoiseId);
-      if (!ardoise) {
+      const { data: ardoise, error: fetchError } = await supabase
+        .from('ardoises')
+        .select('*')
+        .eq('id', ardoiseId)
+        .maybeSingle();
+
+      if (fetchError || !ardoise) {
         onError("Ardoise introuvable.");
         return;
       }
 
-      const timestamp = new Date().toISOString();
       const updatedArdoise = {
         ...ardoise,
         montant_total: ardoise.montant_total + montantDebt,
         statut: 'en_cours' as const,
-        updated_at: timestamp,
       };
 
-      await db.transaction('rw', [db.ardoises, db.outbox], async () => {
-        await db.ardoises.put(updatedArdoise);
-        await queueMutation('ardoises', 'UPDATE', ardoiseId, updatedArdoise);
-      });
-
+      await supabaseService.upsertArdoise(updatedArdoise);
       onSuccess(`${formatMontantFull(montantDebt)} FCFA ajoutés à l'ardoise.`);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Montant invalide.");
       } else {
         console.error(err);
-        onError("Une erreur est survenue.");
+        onError(err?.message || "Une erreur est survenue.");
       }
     }
   }, [onSuccess, onError]);

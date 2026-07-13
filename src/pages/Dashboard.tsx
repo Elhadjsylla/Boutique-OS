@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOnline } from '../hooks/useOnline';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/dexie';
+import { supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { useDashboardData } from '../features/dashboard/useDashboardData';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
@@ -69,25 +69,115 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     );
   };
 
-  const sales = useLiveQuery(() => db.ventes.toArray(), []) || [];
-  const allProducts = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
-  const saleItems = useLiveQuery(() => db.vente_items.toArray(), []) || [];
+  const [unsoldProducts, setUnsoldProducts] = useState<any[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
-  const productSalesMap: Record<string, number> = {};
-  saleItems.forEach(item => {
-    productSalesMap[item.produit_id] = (productSalesMap[item.produit_id] || 0) + item.quantite;
-  });
+  const fetchSales = async () => {
+    const boutiqueId = profile?.boutique_id;
+    if (!boutiqueId) return;
+    try {
+      const data = await supabaseService.getVentesAll(boutiqueId);
+      setSales(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  const unsoldProducts = allProducts
-    .map(p => ({
-      id: p.id,
-      nom: p.nom,
-      quantite: p.quantite,
-      prix: p.prix,
-      qtySold: productSalesMap[p.id] || 0
-    }))
-    .sort((a, b) => a.qtySold - b.qtySold || b.quantite - a.quantite)
-    .slice(0, 5);
+  useEffect(() => {
+    fetchSales();
+  }, [profile?.boutique_id]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchSales();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [profile?.boutique_id]);
+
+  useEffect(() => {
+    const boutiqueId = profile?.boutique_id;
+    if (!boutiqueId) return;
+
+    const channel = supabase
+      .channel('realtime_dashboard_sales')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ventes', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchSales()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.boutique_id]);
+
+  const fetchUnsoldProducts = async () => {
+    const boutiqueId = profile?.boutique_id;
+    if (!boutiqueId) return;
+    try {
+      const allProds = await supabaseService.getProduits(boutiqueId);
+      const items = await supabaseService.getVenteItemsAll(boutiqueId);
+
+      const productSalesMap: Record<string, number> = {};
+      items.forEach(item => {
+        productSalesMap[item.produit_id] = (productSalesMap[item.produit_id] || 0) + item.quantite;
+      });
+
+      const unsold = allProds
+        .map(p => ({
+          id: p.id,
+          nom: p.nom,
+          quantite: p.quantite,
+          prix: p.prix,
+          qtySold: productSalesMap[p.id] || 0
+        }))
+        .sort((a, b) => a.qtySold - b.qtySold || b.quantite - a.quantite)
+        .slice(0, 5);
+
+      setUnsoldProducts(unsold);
+      setAllProducts(allProds);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnsoldProducts();
+  }, [profile?.boutique_id]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchUnsoldProducts();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [profile?.boutique_id]);
+
+  useEffect(() => {
+    const boutiqueId = profile?.boutique_id;
+    if (!boutiqueId) return;
+
+    const channel = supabase
+      .channel('realtime_dashboard_unsold')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'produits', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchUnsoldProducts()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'vente_items' },
+        () => fetchUnsoldProducts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.boutique_id]);
 
   return (
     <div className="pb-40 pt-20 px-4 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
@@ -199,11 +289,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             const windowStart = new Date(d.getTime() - 1 * 60 * 60 * 1000);
             const windowEnd = new Date(d.getTime() + 1 * 60 * 60 * 1000);
             const val = sales
-              .filter(s => {
+              .filter((s: any) => {
                 const sDate = new Date(s.created_at);
                 return sDate >= windowStart && sDate < windowEnd;
               })
-              .reduce((sum, s) => sum + s.total, 0);
+              .reduce((sum: number, s: any) => sum + s.total, 0);
 
             chartData.push({ 
               label, 
@@ -218,8 +308,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             const label = i === 0 ? "Aujourd'hui" : days[d.getDay()];
             const dateStr = d.toDateString();
             const val = sales
-              .filter(s => new Date(s.created_at).toDateString() === dateStr)
-              .reduce((sum, s) => sum + s.total, 0);
+              .filter((s: any) => new Date(s.created_at).toDateString() === dateStr)
+              .reduce((sum: number, s: any) => sum + s.total, 0);
             chartData.push({ 
               label, 
               value: val, 
@@ -233,8 +323,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             const label = `${d.getDate()}/${d.getMonth() + 1}`;
             const dateStr = d.toDateString();
             const val = sales
-              .filter(s => new Date(s.created_at).toDateString() === dateStr)
-              .reduce((sum, s) => sum + s.total, 0);
+              .filter((s: any) => new Date(s.created_at).toDateString() === dateStr)
+              .reduce((sum: number, s: any) => sum + s.total, 0);
             
             // Only show labels for every 5th day to avoid clutter
             const showLabel = i % 5 === 0 ? label : '';
@@ -251,11 +341,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             const label = months[d.getMonth()];
             const year = d.getFullYear();
             const val = sales
-              .filter(s => {
+              .filter((s: any) => {
                 const sDate = new Date(s.created_at);
                 return sDate.getFullYear() === year && sDate.getMonth() === d.getMonth();
               })
-              .reduce((sum, s) => sum + s.total, 0);
+              .reduce((sum: number, s: any) => sum + s.total, 0);
             chartData.push({ 
               label, 
               value: val, 
@@ -471,12 +561,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           nextAvailableDate = `Prochain bilan dispo le 01 jan. ${now.getFullYear() + 1}`;
         }
 
-        const periodSales = sales.filter(s => {
+        const periodSales = sales.filter((s: any) => {
           const sDate = new Date(s.created_at);
           return sDate >= start && sDate <= end;
         });
 
-        const totalRevenue = periodSales.reduce((sum, s) => sum + s.total, 0);
+        const totalRevenue = periodSales.reduce((sum: number, s: any) => sum + s.total, 0);
         const estimatedProfit = Math.round(totalRevenue * 0.20);
         const transactionsCount = periodSales.length;
         const avgBasket = transactionsCount > 0 ? Math.round(totalRevenue / transactionsCount) : 0;
@@ -905,14 +995,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             onClick={async () => {
               setIsExporting(true);
               try {
+                const boutiqueId = profile?.boutique_id;
+                if (!boutiqueId) {
+                  setToast({ message: 'Boutique introuvable.', type: 'error' });
+                  return;
+                }
+
                 // Generate exports client-side for offline-first resilience
                 if (exportScope === 'stock') {
-                  const produits = await db.produits.where('archive').equals(0).toArray();
+                  const produits = await supabaseService.getProduits(boutiqueId);
                   
                   if (exportType === 'excel') {
                     let csvContent = '\ufeff'; // UTF-8 BOM for Excel
                     csvContent += 'Nom Produit;Prix (FCFA);Quantité;Seuil d Alerte\n';
-                    produits.forEach(p => {
+                    produits.forEach((p: any) => {
                       csvContent += `"${p.nom.replace(/"/g, '""')}";${p.prix};${p.quantite};${p.seuil_alerte}\n`;
                     });
                     
@@ -946,7 +1042,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Produit</th><th>Prix (FCFA)</th><th>Quantité en Stock</th></tr>
                           </thead>
                           <tbody>
-                            ${produits.map(p => `<tr><td>${p.nom}</td><td>${formatMontantFull(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
+                            ${produits.map((p: any) => `<tr><td>${p.nom}</td><td>${formatMontantFull(p.prix)}</td><td>${p.quantite}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -962,12 +1058,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     }
                   }
                 } else if (exportScope === 'ardoises') {
-                  const ardoises = await db.ardoises.toArray();
+                  const ardoises = await supabaseService.getArdoises(boutiqueId);
                   
                   if (exportType === 'excel') {
                     let csvContent = '\ufeff';
                     csvContent += 'Client;Montant Total (FCFA);Statut\n';
-                    ardoises.forEach(a => {
+                    ardoises.forEach((a: any) => {
                       csvContent += `"${a.client_nom.replace(/"/g, '""')}";${a.montant_total};${a.statut}\n`;
                     });
                     
@@ -1001,7 +1097,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Nom Client</th><th>Crédit Total (FCFA)</th><th>Statut</th></tr>
                           </thead>
                           <tbody>
-                            ${ardoises.map(a => `<tr><td>${a.client_nom}</td><td>${formatMontantFull(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
+                            ${ardoises.map((a: any) => `<tr><td>${a.client_nom}</td><td>${formatMontantFull(a.montant_total)}</td><td>${a.statut === 'soldee' ? 'Soldée' : 'En cours'}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>
@@ -1017,12 +1113,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     }
                   }
                 } else { // ventes
-                  const ventes = await db.ventes.toArray();
+                  const ventes = await supabaseService.getVentesAll(boutiqueId);
                   
                   if (exportType === 'excel') {
                     let csvContent = '\ufeff';
                     csvContent += 'Date;Montant Total (FCFA);ID Caissier\n';
-                    ventes.forEach(v => {
+                    ventes.forEach((v: any) => {
                       csvContent += `${new Date(v.created_at).toLocaleString('fr-FR')};${v.total};${v.caissier_id}\n`;
                     });
                     
@@ -1056,7 +1152,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                             <tr><th>Date</th><th>Montant (FCFA)</th><th>ID Caissier</th></tr>
                           </thead>
                           <tbody>
-                            ${ventes.map(v => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${formatMontantFull(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
+                            ${ventes.map((v: any) => `<tr><td>${new Date(v.created_at).toLocaleString('fr-FR')}</td><td>${formatMontantFull(v.total)}</td><td>${v.caissier_id.slice(0, 8)}</td></tr>`).join('')}
                           </tbody>
                         </table>
                         <script>window.onload = function() { window.print(); }</script>

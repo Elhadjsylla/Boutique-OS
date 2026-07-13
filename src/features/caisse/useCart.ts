@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
-import { db, queueMutation, type Ardoise } from '../../db/dexie';
+import { supabase } from '../../lib/supabase';
 import type { CartItem } from './types';
 
 // Zod Schema for Cart Validation
@@ -85,103 +85,123 @@ export function useCart(onSuccess: (change: number) => void, onError: (msg: stri
       const venteId = crypto.randomUUID();
       const timestamp = new Date().toISOString();
 
-      // Execute all db changes in a single Dexie transaction for robustness
-      await db.transaction('rw', [db.ventes, db.vente_items, db.produits, db.ardoises, db.outbox], async () => {
-        const venteData = {
+      // Write Vente directly to Supabase
+      const { error: venteError } = await supabase
+        .from('ventes')
+        .insert({
           id: venteId,
           boutique_id: boutiqueId,
           caissier_id: caissierId,
           total: cartTotal,
           created_at: timestamp,
           updated_at: timestamp,
+        });
+
+      if (venteError) throw venteError;
+
+      // Write VenteItems and update stocks
+      const itemsToInsert = [];
+      for (const item of cart) {
+        const itemData = {
+          id: crypto.randomUUID(),
+          vente_id: venteId,
+          produit_id: item.produitId,
+          quantite: item.quantite,
+          prix_unitaire: item.prix,
+          updated_at: timestamp,
         };
+        itemsToInsert.push(itemData);
 
-        // Write Vente locally
-        await db.ventes.add(venteData);
-        await queueMutation('ventes', 'INSERT', venteId, venteData);
+        // Fetch current product stock to update safely
+        const { data: dbProduct } = await supabase
+          .from('produits')
+          .select('quantite')
+          .eq('id', item.produitId)
+          .maybeSingle();
 
-        for (const item of cart) {
-          const itemData = {
-            id: crypto.randomUUID(),
-            vente_id: venteId,
-            produit_id: item.produitId,
-            quantite: item.quantite,
-            prix_unitaire: item.prix,
-            updated_at: timestamp,
-          };
-
-          // Write VenteItem locally
-          await db.vente_items.add(itemData);
-          await queueMutation('vente_items', 'INSERT', itemData.id, itemData);
-
-          // Decrement local stock in Dexie
-          const dbProduct = await db.produits.get(item.produitId);
-          if (dbProduct) {
-            const updatedProduct = {
-              ...dbProduct,
+        if (dbProduct) {
+          await supabase
+            .from('produits')
+            .update({
               quantite: Math.max(0, dbProduct.quantite - item.quantite),
               updated_at: timestamp,
-            };
-            await db.produits.put(updatedProduct);
-            await queueMutation('produits', 'UPDATE', item.produitId, updatedProduct);
+            })
+            .eq('id', item.produitId);
+        }
+      }
+
+      const { error: itemsError } = await supabase
+        .from('vente_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
+
+      // Handle partial payment (debt)
+      if (isPartial && clientNom) {
+        const trimmedClientNom = clientNom.trim();
+        let targetArdoiseId = selectedArdoiseId;
+        let ardoise = null;
+
+        if (targetArdoiseId) {
+          const { data } = await supabase
+            .from('ardoises')
+            .select('*')
+            .eq('id', targetArdoiseId)
+            .maybeSingle();
+          ardoise = data;
+        }
+
+        if (!ardoise) {
+          // Look for an existing active ardoise with the same client name
+          const { data } = await supabase
+            .from('ardoises')
+            .select('*')
+            .eq('boutique_id', boutiqueId)
+            .ilike('client_nom', trimmedClientNom)
+            .is('deleted_at', null)
+            .maybeSingle();
+          
+          if (data) {
+            ardoise = data;
+            targetArdoiseId = data.id;
           }
         }
 
-        // Handle partial payment (debt)
-        if (isPartial && clientNom) {
-          const trimmedClientNom = clientNom.trim();
-          let targetArdoiseId = selectedArdoiseId;
-          let ardoise = null;
-
-          if (targetArdoiseId) {
-            ardoise = await db.ardoises.get(targetArdoiseId);
-          }
-          if (!ardoise) {
-            const existing = await db.ardoises
-              .filter((a: Ardoise) => a.client_nom.toLowerCase() === trimmedClientNom.toLowerCase())
-              .first();
-            if (existing) {
-              ardoise = existing;
-              targetArdoiseId = existing.id;
-            }
-          }
-
-          if (ardoise && targetArdoiseId) {
-            // Add debt to existing ardoise
-            const updatedArdoise = {
-              ...ardoise,
+        if (ardoise && targetArdoiseId) {
+          // Add debt to existing ardoise
+          await supabase
+            .from('ardoises')
+            .update({
               montant_total: ardoise.montant_total + debtAmount,
-              statut: 'en_cours' as const,
+              statut: 'en_cours',
               updated_at: timestamp,
-            };
-            await db.ardoises.put(updatedArdoise);
-            await queueMutation('ardoises', 'UPDATE', targetArdoiseId, updatedArdoise);
-          } else {
-            // Create a new ardoise
-            const newArdoiseId = crypto.randomUUID();
-            const ardoiseData = {
+            })
+            .eq('id', targetArdoiseId);
+        } else {
+          // Create a new ardoise
+          const newArdoiseId = crypto.randomUUID();
+          await supabase
+            .from('ardoises')
+            .insert({
               id: newArdoiseId,
               boutique_id: boutiqueId,
               client_nom: trimmedClientNom,
               montant_total: debtAmount,
-              statut: 'en_cours' as const,
+              statut: 'en_cours',
               created_at: timestamp,
               updated_at: timestamp,
-            };
-            await db.ardoises.add(ardoiseData);
-            await queueMutation('ardoises', 'INSERT', newArdoiseId, ardoiseData);
-          }
+            });
         }
-      });
+      }
 
       onSuccess(changeDue);
       clearCart();
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         onError(err.issues[0]?.message || "Erreur de validation du panier");
       } else {
         console.error(err);
-        onError("Une erreur est survenue lors de l'enregistrement.");
+        onError(err?.message || "Une erreur est survenue lors de l'enregistrement.");
       }
     }
   };
@@ -199,3 +219,4 @@ export function useCart(onSuccess: (change: number) => void, onError: (msg: stri
     validateAndCheckout,
   };
 }
+export type { CartItem };

@@ -17,8 +17,6 @@ import { BottomNav, type TabType } from './components/ui/BottomNav';
 import { LandingPage } from './pages/LandingPage';
 import { useOnline } from './hooks/useOnline';
 import { BottomSheet } from './components/ui/BottomSheet';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './db/dexie';
 import { useAuthStore } from './store/useAuthStore';
 import { useAuth } from './hooks/useAuth';
 import { useSyncEngine } from './hooks/useSyncEngine';
@@ -62,6 +60,7 @@ const VALID_TABS = ['caisse', 'stock', 'ardoise', 'dashboard', 'settings', 'regl
 
 function App() {
   const { session, isLoading: isProfileLoading, signOut: handleLogout } = useAuth();
+  const storeProfile = useAuthStore(state => state.profile);
   useSyncEngine();
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -104,24 +103,71 @@ function App() {
 
 
 
-  // One-time cleanup: remove demo data seeded during early development.
-  // Demo entries used boutique_id='boutique-1' (not a real UUID).
+  const [outOfStockCount, setOutOfStockCount] = useState(0);
+  const [activeArdoisesCount, setActiveArdoisesCount] = useState(0);
+
+  const fetchBadgeCounts = async () => {
+    const boutiqueId = storeProfile?.boutique_id || session?.user?.user_metadata?.boutique_id;
+    if (!boutiqueId) return;
+
+    try {
+      const { count: outOfStock } = await supabase
+        .from('produits')
+        .select('*', { count: 'exact', head: true })
+        .eq('boutique_id', boutiqueId)
+        .eq('archive', 0)
+        .eq('quantite', 0)
+        .is('deleted_at', null);
+
+      const { count: activeArdoises } = await supabase
+        .from('ardoises')
+        .select('*', { count: 'exact', head: true })
+        .eq('boutique_id', boutiqueId)
+        .eq('statut', 'en_cours')
+        .is('deleted_at', null);
+
+      setOutOfStockCount(outOfStock || 0);
+      setActiveArdoisesCount(activeArdoises || 0);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
-    const CLEANUP_KEY = 'sb_demo_cleaned_v1';
-    if (localStorage.getItem(CLEANUP_KEY)) return;
-    (async () => {
-      try {
-        await db.produits.where('boutique_id').equals('boutique-1').delete();
-        await db.ardoises.where('boutique_id').equals('boutique-1').delete();
-        await db.ardoise_paiements.bulkDelete([
-          'p1b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be1',
-          'p2b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be2',
-          'p3b9d6bc-bbfd-4b2d-9b5d-ab8dfbbd4be3',
-        ]);
-        localStorage.setItem(CLEANUP_KEY, '1');
-      } catch { /* IndexedDB not available */ }
-    })();
-  }, []);
+    fetchBadgeCounts();
+  }, [storeProfile?.boutique_id, session]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchBadgeCounts();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [storeProfile?.boutique_id, session]);
+
+  // Realtime
+  useEffect(() => {
+    const boutiqueId = storeProfile?.boutique_id || session?.user?.user_metadata?.boutique_id;
+    if (!boutiqueId) return;
+
+    const channel = supabase
+      .channel('realtime_app_badges')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'produits', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchBadgeCounts()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ardoises', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchBadgeCounts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeProfile?.boutique_id, session]);
 
   useEffect(() => {
     if (!isOnline) {
@@ -135,17 +181,12 @@ function App() {
     }
   }, [isOnline]);
 
-  const outOfStockCount = useLiveQuery(() => db.produits.where('archive').equals(0).filter(p => p.quantite === 0).count(), []) || 0;
-  const activeArdoises = useLiveQuery(() => db.ardoises.where('statut').equals('en_cours').toArray(), []) || [];
-  const activeArdoisesCount = activeArdoises?.length || 0;
-
   useEffect(() => {
     const timer = setInterval(() => setLiveTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Check role from Zustand store (loaded from profils table)
-  const storeProfile = useAuthStore(state => state.profile);
+
 
   // Known admin emails — bypass is immediate, no need to wait for DB profile.
   // This list is the single source of truth for email-based admin detection.

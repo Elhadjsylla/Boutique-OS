@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, queueMutation } from '../db/dexie';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { useStock } from '../features/stock/useStock';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -261,7 +261,54 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
     onConfirm: () => void;
   } | null>(null);
 
-  const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProducts = async () => {
+    try {
+      const data = await supabaseService.getProduits(boutiqueId);
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
+      setToast({ message: "Erreur lors du chargement des produits", type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [boutiqueId]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchProducts();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [boutiqueId]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime_produits_stock')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'produits',
+          filter: `boutique_id=eq.${boutiqueId}`
+        },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [boutiqueId]);
 
   const handleSuccess = (msg: string) => {
     setToast({ message: msg, type: 'success' });
@@ -280,18 +327,20 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   // ── Réapprovisionnement rapide (inline pour rester sur le menu) ──────────
   const quickReplenish = async (productId: string, amount: number) => {
     try {
-      const produit = await db.produits.get(productId);
-      if (!produit) {
+      const { data: produit, error } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('id', productId)
+        .maybeSingle();
+
+      if (error || !produit) {
         setToast({ message: 'Produit introuvable.', type: 'error' });
         return;
       }
-      const timestamp = new Date().toISOString();
-      const updated = { ...produit, quantite: produit.quantite + amount, updated_at: timestamp };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(updated);
-        await queueMutation('produits', 'UPDATE', productId, updated);
-      });
+      const updated = { ...produit, quantite: produit.quantite + amount };
+      await supabaseService.upsertProduit(updated);
       setToast({ message: `${produit.nom} réapprovisionné (+${amount} unité(s)) ✓`, type: 'success' });
+      fetchProducts();
     } catch {
       setToast({ message: 'Erreur lors du réapprovisionnement.', type: 'error' });
     }
@@ -301,22 +350,23 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const handleRetrait = async (qty: number) => {
     if (!selectedProductId || qty <= 0) return;
     try {
-      const produit = await db.produits.get(selectedProductId);
-      if (!produit) { setToast({ message: 'Produit introuvable.', type: 'error' }); return; }
+      const { data: produit, error } = await supabase
+        .from('produits')
+        .select('*')
+        .eq('id', selectedProductId)
+        .maybeSingle();
+
+      if (error || !produit) { setToast({ message: 'Produit introuvable.', type: 'error' }); return; }
       if (qty > produit.quantite) {
         setToast({ message: `Stock insuffisant — ${produit.quantite} unité(s) disponible(s).`, type: 'error' });
         return;
       }
-      const timestamp = new Date().toISOString();
-      const updated = { ...produit, quantite: produit.quantite - qty, updated_at: timestamp };
-      await db.transaction('rw', [db.produits, db.outbox], async () => {
-        await db.produits.put(updated);
-        await queueMutation('produits', 'UPDATE', selectedProductId, updated);
-      });
+      const updated = { ...produit, quantite: produit.quantite - qty };
+      await supabaseService.upsertProduit(updated);
       setToast({ message: `${qty} unité(s) retirée(s) du stock ✓`, type: 'success' });
       setRetraitQty('');
       setShowCustomRetrait(false);
-      // La fiche reste ouverte : l'utilisateur voit le stock se mettre à jour
+      fetchProducts();
     } catch {
       setToast({ message: 'Erreur lors du retrait.', type: 'error' });
     }
@@ -331,12 +381,10 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
       message: 'Voulez-vous vraiment supprimer définitivement ce produit ? Cette action est irréversible.',
       onConfirm: async () => {
         try {
-          await db.transaction('rw', [db.produits, db.outbox], async () => {
-            await db.produits.delete(selectedProductId);
-            await queueMutation('produits', 'DELETE', selectedProductId, {});
-          });
+          await supabaseService.deleteProduit(selectedProductId);
           setIsEditOpen(false);
           setToast({ message: 'Produit supprimé définitivement.', type: 'success' });
+          fetchProducts();
         } catch {
           setToast({ message: 'Erreur lors de la suppression.', type: 'error' });
         }
@@ -420,7 +468,11 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
 
       {/* Products List */}
       <div className="flex flex-col gap-2">
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <p className="text-sm text-outline text-center py-10 bg-white rounded-2xl border border-outline-variant">Aucun produit en stock.</p>
         ) : (
           filteredProducts.map((p) => {

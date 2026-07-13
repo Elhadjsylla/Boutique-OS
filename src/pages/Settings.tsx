@@ -4,7 +4,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toast } from '../components/ui/Toast';
-import { db } from '../db/dexie';
+import { supabaseService } from '../services/supabaseService';
 import { useAuthStore } from '../store/useAuthStore';
 import { Select } from '../components/ui/Select';
 const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
@@ -256,20 +256,40 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleExportDB = async () => {
-    const tableNames = ['produits', 'ventes', 'vente_items', 'ardoises', 'ardoise_paiements'];
-    const exportData: Record<string, any[]> = {};
-    
-    for (const name of tableNames) {
-      exportData[name] = await db.table(name).toArray();
+    const boutiqueId = storeProfile?.boutique_id || useAuthStore.getState().profile?.boutique_id;
+    if (!boutiqueId) {
+      setToast({ message: "Boutique introuvable.", type: "error" });
+      return;
     }
+    
+    try {
+      const [produits, ventes, ardoises, items, paiements] = await Promise.all([
+        supabaseService.getProduits(boutiqueId),
+        supabaseService.getVentesAll(boutiqueId),
+        supabaseService.getArdoises(boutiqueId),
+        supabaseService.getVenteItemsAll(boutiqueId),
+        supabaseService.getArdoisePaiementsAll(boutiqueId),
+      ]);
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    const link = document.createElement("a");
-    link.setAttribute("href", dataStr);
-    link.setAttribute("download", `boutique_os_export_${new Date().toISOString().slice(0,10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const exportData = {
+        produits,
+        ventes,
+        vente_items: items,
+        ardoises,
+        ardoise_paiements: paiements,
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `boutique_os_export_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setToast({ message: "Base de données exportée avec succès.", type: "success" });
+    } catch (err: any) {
+      setToast({ message: "Erreur lors de l'export : " + err.message, type: "error" });
+    }
   };
 
   return (

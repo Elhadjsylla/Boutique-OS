@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/dexie';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { useArdoise } from '../features/ardoise/useArdoise';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -305,8 +305,70 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   const [showAddDebt, setShowAddDebt] = useState(false);
   const [addDebtAmount, setAddDebtAmount] = useState('');
 
-  const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
-  const payments = useLiveQuery(() => db.ardoise_paiements.toArray(), []) || [];
+  const [ardoises, setArdoises] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchArdoises = async () => {
+    try {
+      const data = await supabaseService.getArdoises(boutiqueId);
+      setArdoises(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const data = await supabaseService.getArdoisePaiementsAll(boutiqueId);
+      setPayments(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([fetchArdoises(), fetchPayments()]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [boutiqueId]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      loadData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [boutiqueId]);
+
+  // Realtime subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime_ardoise_page')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ardoises', filter: `boutique_id=eq.${boutiqueId}` },
+        () => {
+          fetchArdoises();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ardoise_paiements' },
+        () => {
+          fetchPayments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [boutiqueId]);
 
   const handleSuccess = (msg: string) => {
     setToast({ message: msg, type: 'success' });
@@ -461,13 +523,17 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
 
       {/* List */}
       <div className="flex flex-col gap-3">
-        {filteredArdoises.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredArdoises.length === 0 ? (
           <p className="text-sm text-outline text-center py-10 bg-white rounded-2xl border border-outline-variant">
             Aucune ardoise trouvée.
           </p>
         ) : (
           filteredArdoises.map((a) => {
-            const initials = a.client_nom.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+            const initials = a.client_nom.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
             const isSold = a.statut === 'soldee';
 
             return (

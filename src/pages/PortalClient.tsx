@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
-import { db } from '../db/dexie';
 import { useAuth } from '../components/AuthProvider';
 import { formatMontantFull } from '../lib/format';
 
@@ -44,33 +43,6 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
     const fetchArdoise = async () => {
       setLoading(true);
       try {
-        if (token.startsWith('mock-token-')) {
-          const ardoiseId = token.replace('mock-token-', '');
-          const localArdoise = await db.ardoises.get(ardoiseId);
-          if (!localArdoise) throw new Error("Ardoise locale introuvable.");
-          
-          const localPaiements = await db.ardoise_paiements
-            .where('ardoise_id')
-            .equals(ardoiseId)
-            .toArray();
-            
-          setData({
-            ardoise: {
-              client_nom: localArdoise.client_nom,
-              montant_total: localArdoise.montant_total,
-              statut: localArdoise.statut,
-            },
-            paiements: localPaiements.map(p => ({
-              id: p.id,
-              montant: p.montant,
-              paid_at: p.paid_at,
-            }))
-          });
-          setIsDemo(false);
-          setLoading(false);
-          return;
-        }
-
         const { data: res, error: err } = await supabase.rpc('get_ardoise_by_token', { p_token: token });
         if (err) throw err;
         if (!res) throw new Error("Ardoise introuvable.");

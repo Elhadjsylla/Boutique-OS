@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/dexie';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { useCart } from '../features/caisse/useCart';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -27,29 +27,114 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   const [selectedArdoiseId, setSelectedArdoiseId] = useState<string | null>(null);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
-  const products = useLiveQuery(() => db.produits.where('archive').equals(0).toArray(), []) || [];
-  const todaySales = useLiveQuery(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return db.ventes.where('created_at').aboveOrEqual(today).reverse().toArray();
-  }, []) || [];
-  const ardoises = useLiveQuery(() => db.ardoises.toArray(), []) || [];
+  const [products, setProducts] = useState<any[]>([]);
+  const [todaySales, setTodaySales] = useState<any[]>([]);
+  const [ardoises, setArdoises] = useState<any[]>([]);
+  const [selectedSaleItems, setSelectedSaleItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [isSaleDetailOpen, setIsSaleDetailOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'vente' | 'tickets'>('vente');
 
-  const selectedSaleItems = useLiveQuery(async () => {
-    if (!selectedSaleId) return [];
-    const items = await db.vente_items.where('vente_id').equals(selectedSaleId).toArray();
-    const itemsWithProduct = await Promise.all(items.map(async (item) => {
-      const prod = await db.produits.get(item.produit_id);
-      return {
-        ...item,
-        nom: prod ? prod.nom : 'Produit inconnu'
-      };
-    }));
-    return itemsWithProduct;
-  }, [selectedSaleId]) || [];
+  const fetchProducts = async () => {
+    try {
+      const data = await supabaseService.getProduits(boutiqueId);
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchTodaySales = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
+      const data = await supabaseService.getVentes(boutiqueId, today);
+      setTodaySales(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchArdoises = async () => {
+    try {
+      const data = await supabaseService.getArdoises(boutiqueId);
+      setArdoises(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([fetchProducts(), fetchTodaySales(), fetchArdoises()]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [boutiqueId]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      loadData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [boutiqueId]);
+
+  useEffect(() => {
+    const fetchSaleItems = async () => {
+      if (!selectedSaleId) {
+        setSelectedSaleItems([]);
+        return;
+      }
+      try {
+        const items = await supabaseService.getVenteItems([selectedSaleId]);
+        const itemsWithProduct = await Promise.all(items.map(async (item) => {
+          const { data: prod } = await supabase
+            .from('produits')
+            .select('nom')
+            .eq('id', item.produit_id)
+            .maybeSingle();
+          return {
+            ...item,
+            nom: prod ? prod.nom : 'Produit inconnu'
+          };
+        }));
+        setSelectedSaleItems(itemsWithProduct);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSaleItems();
+  }, [selectedSaleId]);
+
+  // Realtime subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime_caisse')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'produits', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchProducts()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ventes', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchTodaySales()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ardoises', filter: `boutique_id=eq.${boutiqueId}` },
+        () => fetchArdoises()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [boutiqueId]);
 
   const selectedSale = todaySales.find(s => s.id === selectedSaleId);
 
@@ -118,7 +203,16 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
 
           {/* Grid */}
           <div className="grid grid-cols-2 gap-4">
-            {filteredProducts.map((p) => {
+            {loading ? (
+              <div className="col-span-2 flex justify-center items-center py-20">
+                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="col-span-2 py-10 text-center text-outline text-sm bg-white border border-outline-variant/30 rounded-2xl">
+                Aucun produit en stock.
+              </div>
+            ) : (
+              filteredProducts.map((p) => {
               const isOutOfStock = p.quantite === 0;
               const isLowStock = p.quantite <= p.seuil_alerte && !isOutOfStock;
               const style = getProductIconAndGradient(p.nom);
@@ -187,7 +281,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
 
           {/* Sales History Preview */}

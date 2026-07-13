@@ -3,7 +3,7 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { MontantInput } from '../components/ui/MontantInput';
 import { Button } from '../components/ui/Button';
-import type { Produit } from '../db/dexie';
+import type { Produit } from '../services/supabaseService';
 
 export interface ProductFormInput {
   nom: string;
