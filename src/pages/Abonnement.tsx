@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAN_CONFIG, type PlanType, type PaymentMethod } from '../hooks/useSubscription';
 import { useAuthStore } from '../store/useAuthStore';
@@ -10,9 +10,6 @@ interface AbonnementProps {
 }
 
 type Step = 'plans' | 'payment' | 'waiting' | 'success' | 'failed';
-
-const POLL_INTERVAL_MS = 3000;
-const TIMEOUT_MS       = 15 * 60 * 1000; // 15 minutes
 
 export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) => {
   const user = useAuthStore(state => state.user);
@@ -231,7 +228,6 @@ export const Abonnement: React.FC<AbonnementProps> = ({ onSuccess, onLogout }) =
             <p className="font-body-md text-on-surface-variant mt-2">
               Complétez le paiement sur <strong>{paymentMethod === 'wave' ? 'Wave' : 'Orange Money'}</strong>.
               <br />La confirmation est automatique — inutile de cliquer.
-            </p>
             </p>
           </div>
 

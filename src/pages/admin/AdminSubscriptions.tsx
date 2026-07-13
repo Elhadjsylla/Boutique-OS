@@ -23,14 +23,6 @@ interface SubscriptionEntry {
   confirmed_at: string | null;
   cancelled_at: string | null;
   created_at: string;
-  email_masque?: string;
-}
-
-interface RevealedIdentity {
-  nom: string;
-  prenom: string;
-  email: string;
-  phone_number: string;
 }
 
 export const AdminSubscriptions: React.FC = () => {
@@ -40,10 +32,6 @@ export const AdminSubscriptions: React.FC = () => {
   const [newPlan, setNewPlan]             = useState<'starter' | 'pro' | 'annual'>('starter');
   const [newExpiresAt, setNewExpiresAt]   = useState('');
   const [isUpdating, setIsUpdating]       = useState(false);
-
-  // Reveal state : userId → données en clair (cache local par session)
-  const [revealed, setRevealed]           = useState<Record<string, RevealedIdentity>>({});
-  const [revealingId, setRevealingId]     = useState<string | null>(null);
 
   // Reveal State
   const { revealStates, revealedDetails, handleReveal } = useRevealUser();
@@ -63,22 +51,6 @@ export const AdminSubscriptions: React.FC = () => {
   };
 
   useEffect(() => { fetchSubscriptions(); }, []);
-
-  const handleReveal = async (userId: string) => {
-    if (revealed[userId] || revealingId) return;
-    setRevealingId(userId);
-    try {
-      const { data, error } = await supabase.rpc('reveal_user_details', {
-        p_user_id: userId,
-      });
-      if (error) throw error;
-      setRevealed(prev => ({ ...prev, [userId]: data as RevealedIdentity }));
-    } catch (e: unknown) {
-      console.error('[AdminSubscriptions] Reveal error:', e instanceof Error ? e.message : e);
-    } finally {
-      setRevealingId(null);
-    }
-  };
 
   const handleOpenEdit = (sub: SubscriptionEntry) => {
     setEditingSub(sub);
@@ -157,7 +129,7 @@ export const AdminSubscriptions: React.FC = () => {
                         <span className="font-semibold text-admin-text">
                           <MaskedValue 
                             maskedText={s.nom_masque || 'Anonyme'}
-                            revealedText={[identity?.prenom, identity?.nom].filter(Boolean).join(' ') || identity?.nom}
+                            revealedText={identity?.nom}
                             status={revealStatus}
                             onReveal={() => handleReveal(s.user_id)}
                             type="nom"
@@ -216,7 +188,7 @@ export const AdminSubscriptions: React.FC = () => {
             <h3 className="text-sm font-black text-admin-text uppercase">💳 Ajuster l'Abonnement</h3>
             <div className="flex flex-col text-[10px] text-admin-text-muted font-mono leading-relaxed gap-0.5">
               <span className="truncate">
-                {revealed[editingSub.user_id]?.email ?? editingSub.email_masque}
+                {revealedDetails[editingSub.user_id]?.email ?? editingSub.email_masque}
               </span>
               <span className="truncate text-admin-text-muted/60">Sub : {editingSub.id}</span>
             </div>
