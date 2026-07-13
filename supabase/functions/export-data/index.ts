@@ -2,14 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 const ExportDataSchema = z.object({
   type: z.enum(['pdf', 'excel']),
@@ -18,6 +14,14 @@ const ExportDataSchema = z.object({
 });
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  function json(data: object, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
@@ -240,11 +244,4 @@ function escHtml(s: string | null | undefined): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function json(data: object, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 }

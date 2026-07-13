@@ -1,14 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 const CreateBoutiqueSchema = z.object({
   nom: z.string().min(1, 'Nom de boutique requis'),
@@ -17,6 +13,14 @@ const CreateBoutiqueSchema = z.object({
 });
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  function json(data: object, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
   try {
@@ -96,10 +100,3 @@ serve(async (req) => {
     return json({ error: 'Une erreur interne est survenue' }, 500);
   }
 });
-
-function json(data: object, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-  });
-}

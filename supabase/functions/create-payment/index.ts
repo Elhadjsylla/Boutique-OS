@@ -2,17 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const UNITECH_API       = "https://api.unitech.sn/api.php";
 const UNITECH_WAVE_KEY  = Deno.env.get("UNITECH_WAVE_API_KEY")!;
 const UNITECH_OM_KEY    = Deno.env.get("UNITECH_OM_API_KEY")!;
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 const PLANS = {
   starter: { amount: 2900,  label: "Sama Boutik Starter" },
@@ -33,6 +29,14 @@ const CreatePaymentSchema = z.object({
 });
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  function json(data: object, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
 
@@ -150,11 +154,4 @@ async function callUnitech(action: string, apiKey: string, body: object) {
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-function json(data: object, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 }
