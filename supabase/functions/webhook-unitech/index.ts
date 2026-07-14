@@ -56,8 +56,11 @@ serve(async (req) => {
       return new Response("Subscription introuvable", { status: 404 });
     }
 
-    // Idempotence : webhook reçu 2× pour la même ref → ne rien faire
-    if (newSub.status === "active") {
+    // Idempotence : webhook reçu 2× pour la même ref → ne rien faire. N'active plus
+    // que depuis 'pending' : un abonnement 'suspended'/'cancelled' (révoqué par un
+    // Super Admin, voir revoke_subscription) ne doit jamais être réactivé par une
+    // confirmation de paiement tardive.
+    if (newSub.status !== "pending") {
       return new Response("OK", { status: 200 });
     }
 
