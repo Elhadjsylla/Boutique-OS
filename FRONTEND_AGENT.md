@@ -418,6 +418,22 @@ session présente ?
 
 ---
 
+### 6.5 Session offline — résilience réseau
+
+**Invariant : ne jamais faire expirer une session activement pendant une phase offline détectée côté client.** Un utilisateur qui reste hors-ligne (coupure réseau, veille prolongée) ne doit jamais être déconnecté de force à la reconnexion tant que son refresh token est encore valide côté Supabase — seule une révocation réelle du refresh token (déconnexion explicite, session révoquée côté serveur) doit terminer la session.
+
+Ce qui est déjà en place :
+- `persistSession: true` + `autoRefreshToken: true` dans `src/lib/supabase.ts` — le SDK tente de rafraîchir le token en arrière-plan avant expiration.
+- `storageKey: 'boutikos-session'` → `localStorage`, qui survit nativement aux redémarrages d'une PWA (pas besoin de Dexie/IndexedDB pour ça — `localStorage` n'est pas `sessionStorage`).
+- Un `fetch` custom (`fetchWithAuthRetry`, dans `src/lib/supabase.ts`, passé via `global.fetch` à `createClient`) intercepte **toute** requête REST/RPC de l'app : sur un 401, il rafraîchit le token une fois (un seul refresh partagé même si plusieurs requêtes échouent en même temps) puis rejoue la requête originale. Ça couvre le cas où le timer de refresh en arrière-plan a raté son créneau après une longue coupure (courant : le navigateur suspend les timers d'un onglet en veille). Si le refresh échoue réellement (refresh token invalide/révoqué), le 401 remonte tel quel et `onAuthStateChange('SIGNED_OUT')` prend le relais normalement dans `AuthProvider.tsx`.
+- `callRpcWithRetry` (`src/lib/supabase-rpc.ts`, utilisé par les pages admin) fait la même chose au niveau applicatif — redondant avec `fetchWithAuthRetry` maintenant, mais inoffensif.
+
+**Ne pas** : ajouter un mécanisme qui déconnecte l'utilisateur ou vide le store d'auth (`clearAuth()`) simplement parce qu'une requête réseau échoue pendant l'offline (`useOnline()` renvoie `false`) — `fetchProfileAndBoutique` dans `AuthProvider.tsx` dégrade déjà proprement (fallback sur les métadonnées du JWT) plutôt que de déconnecter.
+
+**Hors de portée du code** : la durée du JWT et la fenêtre de tolérance du refresh token (rotation, reuse interval) se configurent dans Auth → Settings du dashboard Supabase (ou via la Management API) — pas dans ce repo, pas via migration SQL.
+
+---
+
 ## 7. Système de rôles
 
 | Rôle DB | Badge affiché | Icône | Accès |
@@ -568,3 +584,4 @@ npm install
 4. La détection d'erreur réseau dans `Login.tsx` doit être `err instanceof TypeError && err.message === 'Failed to fetch'` — toute condition plus large masque les vrais messages d'erreur Supabase
 5. Ne jamais supprimer `storageKey: 'boutikos-session'` dans `src/lib/supabase.ts` — les sessions existantes en localStorage seraient cassées
 6. `queueMutation()` est la seule porte d'entrée pour les mutations Dexie — ne pas écrire directement dans les tables sans passer par l'outbox
+7. Ne jamais faire expirer une session activement pendant une phase offline détectée côté client (voir §6.5) — pas de `clearAuth()`/`signOut()` déclenché par un simple échec réseau tant que le refresh token est valide
