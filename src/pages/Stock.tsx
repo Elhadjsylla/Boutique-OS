@@ -226,6 +226,15 @@ interface StockProps {
 
 export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [stockFilter, setStockFilter] = useState<'all' | 'rupture' | 'alerte'>('all');
   const [activeMetricMenu, setActiveMetricMenu] = useState<'articles' | 'ruptures' | 'alertes' | null>(null);
@@ -393,7 +402,7 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.nom.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = p.nom.toLowerCase().includes(debouncedSearch.toLowerCase());
     if (!matchesSearch) return false;
     if (stockFilter === 'rupture') return p.quantite === 0;
     if (stockFilter === 'alerte') return p.quantite > 0 && p.quantite <= p.seuil_alerte;
@@ -469,8 +478,22 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
       {/* Products List */}
       <div className="flex flex-col gap-2">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col gap-2 animate-pulse">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-white border border-outline-variant rounded-2xl gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-slate-100 rounded w-2/3" />
+                    <div className="h-3 bg-slate-100 rounded w-1/3" />
+                  </div>
+                </div>
+                <div className="text-right space-y-1">
+                  <div className="h-5 bg-slate-100 rounded w-8 ml-auto" />
+                  <div className="h-3 bg-slate-100 rounded w-12 ml-auto" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredProducts.length === 0 ? (
           <p className="text-sm text-outline text-center py-10 bg-white rounded-2xl border border-outline-variant">Aucun produit en stock.</p>

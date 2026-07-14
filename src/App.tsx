@@ -1,16 +1,9 @@
-import { useState, useEffect, Component, type ErrorInfo, type ReactNode } from 'react';
+import { useState, useEffect, Component, type ErrorInfo, type ReactNode, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { Caisse } from './pages/Caisse';
 import { Stock } from './pages/Stock';
 import { Dashboard } from './pages/Dashboard';
 import { Ardoise } from './pages/Ardoise';
-import { Settings } from './pages/Settings';
-import { Reglages } from './pages/Reglages';
-import { Subscription } from './pages/Subscription';
-import { PortalClient } from './pages/PortalClient';
-import { MonEspace } from './pages/MonEspace';
-import { Abonnement } from './pages/Abonnement';
-import { AdminLayout } from './pages/admin/AdminLayout';
 import { TrialBanner } from './components/ui/TrialBanner';
 import { AuthProvider } from './components/AuthProvider';
 import { BottomNav, type TabType } from './components/ui/BottomNav';
@@ -20,6 +13,21 @@ import { BottomSheet } from './components/ui/BottomSheet';
 import { useAuthStore } from './store/useAuthStore';
 import { useAuth } from './hooks/useAuth';
 import { useSyncEngine } from './hooks/useSyncEngine';
+
+// Lazy load non-critical page components
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const Reglages = lazy(() => import('./pages/Reglages').then(m => ({ default: m.Reglages })));
+const Subscription = lazy(() => import('./pages/Subscription').then(m => ({ default: m.Subscription })));
+const PortalClient = lazy(() => import('./pages/PortalClient').then(m => ({ default: m.PortalClient })));
+const MonEspace = lazy(() => import('./pages/MonEspace').then(m => ({ default: m.MonEspace })));
+const Abonnement = lazy(() => import('./pages/Abonnement').then(m => ({ default: m.Abonnement })));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+
+const LazyFallback = () => (
+  <div className="flex justify-center items-center py-20 min-h-[300px]">
+    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -305,7 +313,9 @@ function App() {
           </button>
         </header>
         <main className="w-full">
-          <PortalClient />
+          <Suspense fallback={<LazyFallback />}>
+            <PortalClient />
+          </Suspense>
         </main>
       </div>
     );
@@ -313,11 +323,19 @@ function App() {
 
   // 0a. PORTAL CLIENT — ardoise view by token
   const portalToken = new URLSearchParams(window.location.search).get('token');
-  if (portalToken) return <PortalClient token={portalToken} />;
+  if (portalToken) return (
+    <Suspense fallback={<LazyFallback />}>
+      <PortalClient token={portalToken} />
+    </Suspense>
+  );
 
   // 0b. MON ESPACE CLIENT — dashboard client connecté
   const espaceParam = new URLSearchParams(window.location.search).get('espace');
-  if (espaceParam === 'client') return <MonEspace />;
+  if (espaceParam === 'client') return (
+    <Suspense fallback={<LazyFallback />}>
+      <MonEspace />
+    </Suspense>
+  );
 
   const isSessionOrProfileLoading = !forceUnlock && (isProfileLoading);
 
@@ -328,12 +346,20 @@ function App() {
   // This fixes cedricbenoitdieme@gmail.com (and any other admin) getting stuck
   // on the subscription-check spinner or "Profil Incomplet" screen.
   if (session?.user && isAdminEmail && !adminManuallyDismissed) {
-    return <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />;
+    return (
+      <Suspense fallback={<LazyFallback />}>
+        <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />
+      </Suspense>
+    );
   }
 
   // Admin console: also shows for admins detected via DB role (non-email path)
   if (!isSessionOrProfileLoading && session?.user && isAdmin && !adminManuallyDismissed) {
-    return <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />;
+    return (
+      <Suspense fallback={<LazyFallback />}>
+        <AdminLayout onExit={() => setAdminManuallyDismissed(true)} />
+      </Suspense>
+    );
   }
 
   if (isSessionOrProfileLoading) {
@@ -601,32 +627,42 @@ function App() {
         {activeTab === 'ardoise' && <Ardoise boutiqueId={boutiqueId} />}
         {activeTab === 'dashboard' && <Dashboard onNavigate={setActiveTab} />}
         {activeTab === 'settings' && (
-          <Settings 
-            session={session} 
-            onLogout={handleLogout} 
-            activePlan={activePlan}
-            onManageSubscription={() => setActiveTab('subscription')}
-            onNavigateToPortal={() => setIsClientViewingPortal(true)}
-            onActivateAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
-          />
+          <Suspense fallback={<LazyFallback />}>
+            <Settings 
+              session={session} 
+              onLogout={handleLogout} 
+              activePlan={activePlan}
+              onManageSubscription={() => setActiveTab('subscription')}
+              onNavigateToPortal={() => setIsClientViewingPortal(true)}
+              onActivateAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
+            />
+          </Suspense>
         )}
         {(activeTab === 'reglages' as any) && (
-          <Reglages
-            boutiqueId={boutiqueId}
-            onOpenAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
-          />
+          <Suspense fallback={<LazyFallback />}>
+            <Reglages
+              boutiqueId={boutiqueId}
+              onOpenAdmin={isAdmin ? () => setAdminManuallyDismissed(false) : undefined}
+            />
+          </Suspense>
         )}
         {activeTab === 'subscription' && (
-          <Subscription 
-            currentPlan={activePlan}
-            onUpdatePlan={(plan) => {
-              setActivePlan(plan);
-              localStorage.setItem('active_subscription_plan', plan);
-            }}
-            onBack={() => setActiveTab('settings')}
-          />
+          <Suspense fallback={<LazyFallback />}>
+            <Subscription 
+              currentPlan={activePlan}
+              onUpdatePlan={(plan) => {
+                setActivePlan(plan);
+                localStorage.setItem('active_subscription_plan', plan);
+              }}
+              onBack={() => setActiveTab('settings')}
+            />
+          </Suspense>
         )}
-        {activeTab === 'portal_client' && <PortalClient />}
+        {activeTab === 'portal_client' && (
+          <Suspense fallback={<LazyFallback />}>
+            <PortalClient />
+          </Suspense>
+        )}
       </main>
 
       {/* Global Bottom Navigation */}

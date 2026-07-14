@@ -204,9 +204,19 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
           {/* Grid */}
           <div className="grid grid-cols-2 gap-4">
             {loading ? (
-              <div className="col-span-2 flex justify-center items-center py-20">
-                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-outline-variant/60 flex flex-col overflow-hidden animate-pulse h-48 justify-between p-3.5">
+                  <div className="flex justify-between items-start">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100" />
+                    <div className="h-4 bg-slate-100 rounded w-10" />
+                  </div>
+                  <div className="space-y-2 mt-4 text-left">
+                    <div className="h-4 bg-slate-100 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  </div>
+                  <div className="h-5 bg-slate-100 rounded w-1/3 mt-2" />
+                </div>
+              ))
             ) : filteredProducts.length === 0 ? (
               <div className="col-span-2 py-10 text-center text-outline text-sm bg-white border border-outline-variant/30 rounded-2xl">
                 Aucun produit en stock.

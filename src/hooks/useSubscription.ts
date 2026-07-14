@@ -63,11 +63,25 @@ interface UseSubscriptionReturn {
   refetch: () => Promise<void>;
 }
 
-export function useSubscription(): UseSubscriptionReturn {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+let globalCachedSubscription: Subscription | null = null;
+let lastFetchTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
-  const fetchSubscription = async () => {
+export function useSubscription(): UseSubscriptionReturn {
+  const [subscription, setSubscription] = useState<Subscription | null>(globalCachedSubscription);
+  const [isLoading, setIsLoading] = useState(() => {
+    // If we have a valid cache, don't show loading spinner
+    return !(globalCachedSubscription && Date.now() - lastFetchTime < CACHE_TTL);
+  });
+
+  const fetchSubscription = async (force = false) => {
+    // Check cache
+    if (!force && globalCachedSubscription && Date.now() - lastFetchTime < CACHE_TTL) {
+      setSubscription(globalCachedSubscription);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -79,6 +93,9 @@ export function useSubscription(): UseSubscriptionReturn {
         .maybeSingle();
 
       if (error) throw error;
+      
+      globalCachedSubscription = data ?? null;
+      lastFetchTime = Date.now();
       setSubscription(data ?? null);
     } catch (err) {
       console.error('useSubscription fetch error:', err);
@@ -100,5 +117,5 @@ export function useSubscription(): UseSubscriptionReturn {
     ? Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  return { subscription, isActive, isLoading, daysLeft, refetch: fetchSubscription };
+  return { subscription, isActive, isLoading, daysLeft, refetch: () => fetchSubscription(true) };
 }
