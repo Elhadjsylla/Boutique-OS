@@ -25,8 +25,8 @@ interface SubscriptionEntry {
   created_at: string;
   revoked_at?: string | null;
   revoked_by?: string | null;
-  revoked_reason?: string | null;
-  revoked_type?: string | null;
+  revocation_reason?: string | null;
+  revocation_type?: string | null;
   revoked_by_name?: string | null;
   revoked_previous_plan?: string | null;
 }
@@ -154,10 +154,10 @@ export const AdminSubscriptions: React.FC = () => {
         throw new Error("Le motif est obligatoire.");
       }
 
-      const { error } = await callRpcWithRetry('sys_revoke_subscription', {
-        target_user: revokingSub.user_id,
-        revoke_type: revokeType,
-        reason: finalReason
+      const { error } = await callRpcWithRetry('revoke_subscription', {
+        p_subscription_id: revokingSub.id,
+        p_revocation_type: revokeType === 'delayed' ? 'end_of_period' : 'immediate',
+        p_reason: finalReason
       });
       if (error) throw error;
       
@@ -183,8 +183,8 @@ export const AdminSubscriptions: React.FC = () => {
     if (!reactivatingSub || !doubleConfirmReactivate) return;
     setIsReactivating(true);
     try {
-      const { error } = await callRpcWithRetry('sys_reactivate_subscription', {
-        target_user: reactivatingSub.user_id
+      const { error } = await callRpcWithRetry('reactivate_subscription', {
+        p_subscription_id: reactivatingSub.id
       });
       if (error) throw error;
 
@@ -203,7 +203,7 @@ export const AdminSubscriptions: React.FC = () => {
 
   const statusBadge = (s: SubscriptionEntry) => {
     if (s.revoked_at) {
-      const mode = s.revoked_type === 'immediate' ? 'Immédiat' : 'Fin de période';
+      const mode = s.revocation_type === 'immediate' ? 'Immédiat' : 'Fin de période';
       return (
         <div className="flex flex-col gap-0.5 items-start">
           <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">
@@ -354,11 +354,11 @@ export const AdminSubscriptions: React.FC = () => {
                                   <div className="flex flex-col border border-admin-border rounded-xl overflow-hidden divide-y divide-admin-border/50 bg-admin-card/50">
                                     {(auditLogs[s.user_id] || []).map((log: any) => {
                                       let actionText = log.action;
-                                      if (log.action === 'subscription.revoked') {
+                                      if (log.action === 'revoke') {
                                         actionText = "Révocation";
-                                      } else if (log.action === 'subscription.reactivated') {
+                                      } else if (log.action === 'reactivate') {
                                         actionText = "Réactivation";
-                                      } else if (log.action === 'subscription.updated') {
+                                      } else if (log.action === 'adjust') {
                                         actionText = "Ajustement";
                                       }
                                       
@@ -366,9 +366,9 @@ export const AdminSubscriptions: React.FC = () => {
                                         <div key={log.id} className="p-3 text-[10px] flex flex-col md:flex-row md:items-center justify-between gap-2 text-admin-text">
                                           <div className="flex items-start md:items-center gap-2">
                                             <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase font-black border ${
-                                              log.action === 'subscription.revoked' 
+                                              log.action === 'revoke' 
                                                 ? 'bg-red-500/10 border-red-500/20 text-red-400' 
-                                                : log.action === 'subscription.reactivated' 
+                                                : log.action === 'reactivate' 
                                                   ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
                                                   : 'bg-admin-primary/10 border-admin-primary/20 text-admin-primary-light'
                                             }`}>
@@ -382,10 +382,17 @@ export const AdminSubscriptions: React.FC = () => {
                                             </div>
                                           </div>
                                           <div className="flex flex-col gap-0.5 text-right font-mono text-[9px] bg-admin-surface/40 p-2 rounded-lg border border-admin-border/30 max-w-md self-start md:self-auto">
-                                            {log.details?.reason && <div><span className="text-admin-text-muted">Motif:</span> {log.details.reason}</div>}
-                                            {log.details?.revoke_type && <div><span className="text-admin-text-muted">Type:</span> {log.details.revoke_type === 'immediate' ? 'Immédiat' : 'Différé'}</div>}
-                                            {log.details?.old_plan && log.details?.new_plan && <div><span className="text-admin-text-muted">Plan:</span> {log.details.old_plan} → {log.details.new_plan}</div>}
-                                            {log.details?.restored_plan && <div><span className="text-admin-text-muted">Plan restauré:</span> {log.details.restored_plan}</div>}
+                                            {log.reason && <div><span className="text-admin-text-muted">Motif:</span> {log.reason}</div>}
+                                            {log.previous_state?.plan && log.new_state?.plan && (
+                                              <div>
+                                                <span className="text-admin-text-muted">Transition:</span> {log.previous_state.plan} ({log.previous_state.status}) → {log.new_state.plan} ({log.new_state.status})
+                                              </div>
+                                            )}
+                                            {log.new_state?.revocation_type && (
+                                              <div>
+                                                <span className="text-admin-text-muted">Type:</span> {log.new_state.revocation_type === 'immediate' ? 'Immédiat' : 'Différé'}
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       );
