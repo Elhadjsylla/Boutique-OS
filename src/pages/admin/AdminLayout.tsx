@@ -14,12 +14,36 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash.startsWith('admin-')) {
+      const tab = hash.replace('admin-', '') as AdminTab;
+      if (['dashboard', 'boutiques', 'users', 'subscriptions', 'logs'].includes(tab)) {
+        return tab;
+      }
+    }
     return (localStorage.getItem('admin_active_tab') as AdminTab) || 'dashboard';
   });
 
   React.useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab);
+    if (window.location.hash !== `#admin-${activeTab}`) {
+      window.history.pushState(null, '', `#admin-${activeTab}`);
+    }
   }, [activeTab]);
+
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash.startsWith('admin-')) {
+        const tab = hash.replace('admin-', '') as AdminTab;
+        if (['dashboard', 'boutiques', 'users', 'subscriptions', 'logs'].includes(tab)) {
+          setActiveTab(tab);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
