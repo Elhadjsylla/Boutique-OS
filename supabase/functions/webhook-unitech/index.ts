@@ -26,12 +26,24 @@ serve(async (req) => {
   const payload = JSON.parse(rawBody);
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  // Masquage des données sensibles avant log
+  // Numéro payeur tel que renvoyé par Unitech, avant tout masquage — Unitech ne
+  // documente pas un nom de champ unique et stable, donc on couvre les variantes
+  // déjà anticipées par le masquage historique ci-dessous.
+  const payerPhone: string | null =
+    payload.customer_number ?? payload.customer_phone ?? payload.phone_number ?? payload.telephone ?? null;
+
+  // Masquage partiel avant log (ex: 77****34) — même convention que mask_phone()
+  // côté DB (get_users_list_masked), au lieu d'un masquage total qui rendait les
+  // logs inutilisables pour du support/debug.
+  const maskPhone = (n: string) => {
+    const digits = n.replace(/^\+?221/, "");
+    return digits.length >= 4 ? digits.slice(0, 2) + "****" + digits.slice(-2) : "****";
+  };
   const safePayload = { ...payload };
-  if (safePayload.customer_number) safePayload.customer_number = "***";
-  if (safePayload.customer_phone) safePayload.customer_phone = "***";
-  if (safePayload.phone_number) safePayload.phone_number = "***";
-  if (safePayload.telephone) safePayload.telephone = "***";
+  if (safePayload.customer_number) safePayload.customer_number = maskPhone(String(safePayload.customer_number));
+  if (safePayload.customer_phone) safePayload.customer_phone = maskPhone(String(safePayload.customer_phone));
+  if (safePayload.phone_number) safePayload.phone_number = maskPhone(String(safePayload.phone_number));
+  if (safePayload.telephone) safePayload.telephone = maskPhone(String(safePayload.telephone));
 
   // Log brut du webhook — toujours, quelle que soit l'issue
   await supabase.from("payment_logs").insert({
@@ -104,6 +116,17 @@ serve(async (req) => {
       .from("payment_logs")
       .update({ subscription_id: newSub.id })
       .eq("unitech_reference", payload.reference);
+
+    // Mémorise le numéro pour préremplissage aux prochains paiements. Best-effort :
+    // ne doit jamais faire échouer la confirmation du paiement lui-même.
+    if (payerPhone) {
+      const { error: saveErr } = await supabase.rpc("save_or_update_payment_method", {
+        p_user_id: newSub.user_id,
+        p_provider: newSub.payment_method,
+        p_phone_number: payerPhone,
+      });
+      if (saveErr) console.error("save_or_update_payment_method error:", saveErr.message);
+    }
   }
 
   // ── Paiement échoué / annulé ─────────────────────────────────
