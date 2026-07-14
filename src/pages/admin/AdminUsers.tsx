@@ -136,82 +136,158 @@ export const AdminUsers: React.FC = () => {
           <div className="w-10 h-10 border-4 border-admin-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
-        <div className="bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
-                <th className="py-3 px-4 font-black">ID Utilisateur</th>
-                <th className="py-3 px-4 font-black">Nom</th>
-                <th className="py-3 px-4 font-black">Email</th>
-                <th className="py-3 px-4 font-black">Rôle</th>
-                <th className="py-3 px-4 font-black">Boutique</th>
-                <th className="py-3 px-4 font-black">Créé le</th>
-                <th className="py-3 px-4 font-black text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
-                  <td className="py-3 px-4 font-mono select-all truncate max-w-[120px]" title={u.id}>
-                    {u.id}
-                  </td>
-                  <td className="py-3 px-4 truncate max-w-[150px]">
-                    <MaskedValue 
-                      maskedText={u.nom_masque || 'Anonyme'}
-                      revealedText={revealedDetails[u.id]?.nom}
-                      status={revealStates[u.id] || 'hidden'}
-                      onReveal={() => handleReveal(u.id)}
-                      type="nom"
-                    />
-                  </td>
-                  <td className="py-3 px-4 truncate max-w-[180px]">
-                    <MaskedValue 
-                      maskedText={u.email_masque || '***@***.**'}
-                      revealedText={revealedDetails[u.id]?.email}
-                      status={revealStates[u.id] || 'hidden'}
-                      onReveal={() => handleReveal(u.id)}
-                      type="email"
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                      u.role === 'super_admin' ? 'bg-purple-500/20 text-purple-300' :
-                      u.role === 'gerant' ? 'bg-sky-500/20 text-sky-300' :
-                      'bg-emerald-500/20 text-emerald-300'
-                    }`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
-                    {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
-                  </td>
-                  <td className="py-3 px-4 text-admin-text-muted">
-                    {new Date(u.created_at).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="py-3 px-4 text-right flex justify-end gap-2">
-                    <button
-                      onClick={() => handleOpenEdit(u)}
-                      className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                    >
-                      Modifier
-                    </button>
-
-                    <div className="relative group inline-block">
-                      <button
-                        disabled
-                        className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
-                      >
-                        Reset MDP
-                      </button>
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-admin-surface border border-admin-border text-admin-text text-[9px] font-semibold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
-                        Bientôt disponible (SMTP)
-                      </div>
-                    </div>
-                  </td>
+        <div className="flex flex-col gap-4">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
+                  <th className="py-3 px-4 font-black">ID Utilisateur</th>
+                  <th className="py-3 px-4 font-black">Nom</th>
+                  <th className="py-3 px-4 font-black">Email</th>
+                  <th className="py-3 px-4 font-black">Rôle</th>
+                  <th className="py-3 px-4 font-black">Boutique</th>
+                  <th className="py-3 px-4 font-black">Créé le</th>
+                  <th className="py-3 px-4 font-black text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
+                    <td className="py-3 px-4 font-mono select-all truncate max-w-[120px]" title={u.id}>
+                      {u.id}
+                    </td>
+                    <td className="py-3 px-4 truncate max-w-[150px]">
+                      <MaskedValue 
+                        maskedText={u.nom_masque || 'Anonyme'}
+                        revealedText={revealedDetails[u.id]?.nom}
+                        status={revealStates[u.id] || 'hidden'}
+                        onReveal={() => handleReveal(u.id)}
+                        type="nom"
+                      />
+                    </td>
+                    <td className="py-3 px-4 truncate max-w-[180px]">
+                      <MaskedValue 
+                        maskedText={u.email_masque || '***@***.**'}
+                        revealedText={revealedDetails[u.id]?.email}
+                        status={revealStates[u.id] || 'hidden'}
+                        onReveal={() => handleReveal(u.id)}
+                        type="email"
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                        u.role === 'super_admin' ? 'bg-purple-500/20 text-purple-300' :
+                        u.role === 'gerant' ? 'bg-sky-500/20 text-sky-300' :
+                        'bg-emerald-500/20 text-emerald-300'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
+                      {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
+                    </td>
+                    <td className="py-3 px-4 text-admin-text-muted">
+                      {new Date(u.created_at).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="py-3 px-4 text-right flex justify-end gap-2">
+                      <button
+                        onClick={() => handleOpenEdit(u)}
+                        className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                      >
+                        Modifier
+                      </button>
+
+                      <div className="relative group inline-block">
+                        <button
+                          disabled
+                          className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
+                        >
+                          Reset MDP
+                        </button>
+                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-admin-surface border border-admin-border text-admin-text text-[9px] font-semibold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
+                          Bientôt disponible (SMTP)
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden flex flex-col gap-4">
+            {users.map(u => (
+              <div key={u.id} className="bg-admin-card border border-admin-border rounded-2xl p-4 flex flex-col gap-3.5 shadow-sm text-xs">
+                <div className="flex justify-between items-center border-b border-admin-border pb-2.5">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="text-[10px] text-admin-text-muted font-mono truncate select-all" title={u.id}>
+                      ID: {u.id}
+                    </span>
+                    <span className="font-bold text-sm text-admin-text truncate">
+                      <MaskedValue 
+                        maskedText={u.nom_masque || 'Anonyme'}
+                        revealedText={revealedDetails[u.id]?.nom}
+                        status={revealStates[u.id] || 'hidden'}
+                        onReveal={() => handleReveal(u.id)}
+                        type="nom"
+                      />
+                    </span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider flex-shrink-0 ${
+                    u.role === 'super_admin' ? 'bg-purple-500/20 text-purple-300' :
+                    u.role === 'gerant' ? 'bg-sky-500/20 text-sky-300' :
+                    'bg-emerald-500/20 text-emerald-300'
+                  }`}>
+                    {u.role}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3.5">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Email</span>
+                    <span className="font-semibold text-admin-text truncate">
+                      <MaskedValue 
+                        maskedText={u.email_masque || '***@***.**'}
+                        revealedText={revealedDetails[u.id]?.email}
+                        status={revealStates[u.id] || 'hidden'}
+                        onReveal={() => handleReveal(u.id)}
+                        type="email"
+                      />
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Boutique</span>
+                    <span className="font-semibold text-admin-text truncate">
+                      {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Créé le</span>
+                    <span className="font-medium text-admin-text">
+                      {new Date(u.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-admin-border/50 pt-3 flex justify-end gap-2">
+                  <button
+                    onClick={() => handleOpenEdit(u)}
+                    className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    disabled
+                    className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
+                  >
+                    Reset MDP
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

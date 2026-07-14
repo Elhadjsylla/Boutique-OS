@@ -149,54 +149,89 @@ export const SignalementsTable: React.FC = () => {
             Aucun signalement trouvé.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold">
-                <tr>
-                  <th className="px-5 py-3">Boutique / User</th>
-                  <th className="px-5 py-3">Sujet</th>
-                  <th className="px-5 py-3">Statut</th>
-                  <th className="px-5 py-3">Priorité</th>
-                  <th className="px-5 py-3 text-right">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-admin-border">
-                {signalements.map((sig) => (
-                  <tr 
-                    key={sig.id} 
-                    className="hover:bg-admin-surface/50 transition-colors cursor-pointer"
-                    onClick={() => openThread(sig)}
-                  >
-                    <td className="px-5 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-admin-text">{sig.nom_boutique}</span>
-                        <span className="text-[10px] text-admin-text-muted">{sig.nom_user}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-admin-text">{sig.sujet}</span>
-                        <span className="text-[10px] text-admin-text-muted uppercase tracking-wider">{sig.type} • {sig.nb_reponses} réponses</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded border text-[9px] uppercase font-bold tracking-wider ${getStatusColor(sig.statut)}`}>
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold">
+                  <tr>
+                    <th className="px-5 py-3">Boutique / User</th>
+                    <th className="px-5 py-3">Sujet</th>
+                    <th className="px-5 py-3">Statut</th>
+                    <th className="px-5 py-3">Priorité</th>
+                    <th className="px-5 py-3 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-admin-border">
+                  {signalements.map((sig) => (
+                    <tr 
+                      key={sig.id} 
+                      className="hover:bg-admin-surface/50 transition-colors cursor-pointer"
+                      onClick={() => openThread(sig)}
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-admin-text">{sig.nom_boutique}</span>
+                          <span className="text-[10px] text-admin-text-muted">{sig.nom_user}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-admin-text">{sig.sujet}</span>
+                          <span className="text-[10px] text-admin-text-muted uppercase tracking-wider">{sig.type} • {sig.nb_reponses} réponses</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2 py-0.5 rounded border text-[9px] uppercase font-bold tracking-wider ${getStatusColor(sig.statut)}`}>
+                          {sig.statut}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2 py-0.5 rounded border text-[9px] uppercase font-bold tracking-wider ${getPriorityColor(sig.priorite)}`}>
+                          {sig.priorite}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right text-xs text-admin-text-muted">
+                        {new Date(sig.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden flex flex-col divide-y divide-admin-border">
+              {signalements.map((sig) => (
+                <div 
+                  key={sig.id} 
+                  className="p-4 hover:bg-admin-surface/35 transition-colors cursor-pointer flex flex-col gap-3 text-left"
+                  onClick={() => openThread(sig)}
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-admin-text text-sm truncate">{sig.sujet}</span>
+                      <span className="text-[10px] text-admin-text-muted uppercase tracking-wider mt-0.5">{sig.type} • {sig.nb_reponses} rep.</span>
+                    </div>
+                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                      <span className={`px-1.5 py-0.5 rounded border text-[8px] uppercase font-bold tracking-wider ${getStatusColor(sig.statut)}`}>
                         {sig.statut}
                       </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2 py-0.5 rounded border text-[9px] uppercase font-bold tracking-wider ${getPriorityColor(sig.priorite)}`}>
+                      <span className={`px-1.5 py-0.5 rounded border text-[8px] uppercase font-bold tracking-wider ${getPriorityColor(sig.priorite)}`}>
                         {sig.priorite}
                       </span>
-                    </td>
-                    <td className="px-5 py-3 text-right text-xs text-admin-text-muted">
-                      {new Date(sig.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-admin-text-muted">
+                    <div>
+                      <span className="text-[9px] uppercase tracking-wider block">Boutique / Auteur</span>
+                      <span className="font-semibold text-admin-text text-[11px] truncate block max-w-[180px]">{sig.nom_boutique} ({sig.nom_user})</span>
+                    </div>
+                    <span className="text-[11px] self-end">{new Date(sig.created_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

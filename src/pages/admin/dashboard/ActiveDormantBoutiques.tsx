@@ -118,46 +118,88 @@ export const ActiveDormantBoutiques: React.FC = () => {
                 <span className="text-admin-text-muted">Chargement du classement...</span>
               </div>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold sticky top-0">
-                  <tr>
-                    <th className="px-5 py-3">Boutique</th>
-                    <th className="px-5 py-3 text-right">Revenu</th>
-                    <th className="px-5 py-3 text-right">Ventes</th>
-                    <th className="px-5 py-3 text-center">Plan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-admin-border">
+              <>
+                <div className="hidden md:block">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold sticky top-0">
+                      <tr>
+                        <th className="px-5 py-3">Boutique</th>
+                        <th className="px-5 py-3 text-right">Revenu</th>
+                        <th className="px-5 py-3 text-right">Ventes</th>
+                        <th className="px-5 py-3 text-center">Plan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-admin-border">
+                      {topBoutiques.map((b) => (
+                        <tr 
+                          key={b.boutique_id} 
+                          className="hover:bg-admin-surface/50 transition-colors cursor-pointer"
+                          onClick={() => openBoutique(b)}
+                        >
+                          <td className="px-5 py-3">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-admin-text flex items-center gap-2">
+                                {b.nom}
+                                {b.suspended && <span className="w-2 h-2 rounded-full bg-red-500" title="Suspendue"></span>}
+                              </span>
+                              <span className="text-[10px] text-admin-text-muted mt-0.5">{b.quartier || 'Non localisée'}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-right font-black text-admin-primary">{formatMoney(b.revenu)}</td>
+                          <td className="px-5 py-3 text-right text-admin-text-muted font-bold">{b.nb_transactions}</td>
+                          <td className="px-5 py-3 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${
+                              b.plan === 'pro' ? 'bg-purple-500/10 text-purple-500' :
+                              b.plan === 'starter' ? 'bg-blue-500/10 text-blue-500' :
+                              b.plan === 'annual' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
+                            }`}>
+                              {b.plan || 'Free'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile top list view */}
+                <div className="md:hidden flex flex-col divide-y divide-admin-border">
                   {topBoutiques.map((b) => (
-                    <tr 
+                    <div 
                       key={b.boutique_id} 
-                      className="hover:bg-admin-surface/50 transition-colors cursor-pointer"
+                      className="p-4 hover:bg-admin-surface/35 transition-colors cursor-pointer flex flex-col gap-2.5 text-left"
                       onClick={() => openBoutique(b)}
                     >
-                      <td className="px-5 py-3">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-admin-text flex items-center gap-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-admin-text text-sm flex items-center gap-1.5 truncate">
                             {b.nom}
                             {b.suspended && <span className="w-2 h-2 rounded-full bg-red-500" title="Suspendue"></span>}
                           </span>
                           <span className="text-[10px] text-admin-text-muted mt-0.5">{b.quartier || 'Non localisée'}</span>
                         </div>
-                      </td>
-                      <td className="px-5 py-3 text-right font-black text-admin-primary">{formatMoney(b.revenu)}</td>
-                      <td className="px-5 py-3 text-right text-admin-text-muted font-bold">{b.nb_transactions}</td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase font-bold tracking-wider flex-shrink-0 ${
                           b.plan === 'pro' ? 'bg-purple-500/10 text-purple-500' :
                           b.plan === 'starter' ? 'bg-blue-500/10 text-blue-500' :
                           b.plan === 'annual' ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-500'
                         }`}>
                           {b.plan || 'Free'}
                         </span>
-                      </td>
-                    </tr>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <div>
+                          <span className="text-[9px] uppercase tracking-wider text-admin-text-muted block">Revenu</span>
+                          <span className="font-black text-admin-primary text-xs">{formatMoney(b.revenu)}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] uppercase tracking-wider text-admin-text-muted block">Ventes</span>
+                          <span className="font-bold text-admin-text-muted text-xs">{b.nb_transactions}</span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>

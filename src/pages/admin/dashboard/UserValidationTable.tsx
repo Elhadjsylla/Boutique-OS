@@ -127,7 +127,7 @@ export const UserValidationTable: React.FC = () => {
         <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Comptes à valider ({users.length})</h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold">
               <tr>
@@ -172,6 +172,43 @@ export const UserValidationTable: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile stacked card view */}
+        <div className="md:hidden flex flex-col divide-y divide-admin-border">
+          {users.map((user) => (
+            <div 
+              key={user.id} 
+              className="p-4 hover:bg-admin-surface/35 transition-colors cursor-pointer flex flex-col gap-3"
+              onClick={() => openUserDetails(user.id)}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-admin-text text-sm truncate">{user.prenom} {user.nom}</span>
+                  <span className="text-[11px] text-admin-text-muted mt-0.5 truncate">{user.email_masque} • {user.telephone_masque}</span>
+                </div>
+                <span className="px-2 py-0.5 bg-admin-primary/10 text-admin-primary rounded-lg text-[9px] uppercase font-black tracking-wider flex-shrink-0">
+                  {user.role_demande}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-admin-text-muted">
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider block">Boutique</span>
+                  <span className="font-bold text-admin-text text-xs">{user.boutique_nom}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] uppercase tracking-wider block">Date</span>
+                  <span className="text-[11px]">{new Date(user.created_at).toLocaleDateString('fr-FR')}</span>
+                </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <button className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-xs">visibility</span>
+                  <span>Détails</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

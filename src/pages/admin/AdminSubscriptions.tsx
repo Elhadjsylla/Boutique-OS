@@ -236,184 +236,343 @@ export const AdminSubscriptions: React.FC = () => {
           <div className="w-10 h-10 border-4 border-admin-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
-                <th className="py-3 px-4 font-black">Marchand</th>
-                <th className="py-3 px-4 font-black">Boutique</th>
-                <th className="py-3 px-4 font-black">Formule</th>
-                <th className="py-3 px-4 font-black">Statut</th>
-                <th className="py-3 px-4 font-black">Montant</th>
-                <th className="py-3 px-4 font-black">Expiration</th>
-                <th className="py-3 px-4 text-right font-black">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subscriptions.map(s => {
-                const identity = revealedDetails[s.user_id];
-                const revealStatus = revealStates[s.user_id] || 'hidden';
+        <div className="flex flex-col gap-4">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
+                  <th className="py-3 px-4 font-black">Marchand</th>
+                  <th className="py-3 px-4 font-black">Boutique</th>
+                  <th className="py-3 px-4 font-black">Formule</th>
+                  <th className="py-3 px-4 font-black">Statut</th>
+                  <th className="py-3 px-4 font-black">Montant</th>
+                  <th className="py-3 px-4 font-black">Expiration</th>
+                  <th className="py-3 px-4 text-right font-black">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subscriptions.map(s => {
+                  const identity = revealedDetails[s.user_id];
+                  const revealStatus = revealStates[s.user_id] || 'hidden';
 
-                return (
-                  <React.Fragment key={s.id}>
-                    <tr className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
-                      {/* Marchand */}
-                      <td className="py-3 px-4 min-w-[180px]">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold text-admin-text">
-                            <MaskedValue 
-                              maskedText={s.nom_masque || 'Anonyme'}
-                              revealedText={identity?.nom}
-                              status={revealStatus}
-                              onReveal={() => handleReveal(s.user_id)}
-                              type="nom"
-                            />
-                          </span>
-                          <span className="text-admin-primary-light font-mono">
-                            <MaskedValue 
-                              maskedText={s.email_masque || '***@***.**'}
-                              revealedText={identity?.email}
-                              status={revealStatus}
-                              onReveal={() => handleReveal(s.user_id)}
-                              type="email"
-                            />
-                          </span>
-                          {s.revoked_at && (
-                            <span className="text-[8px] text-admin-text-muted leading-tight font-mono">
-                              Révoqué par {s.revoked_by_name} le {new Date(s.revoked_at).toLocaleDateString('fr-FR')}
+                  return (
+                    <React.Fragment key={s.id}>
+                      <tr className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
+                        {/* Marchand */}
+                        <td className="py-3 px-4 min-w-[180px]">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-admin-text">
+                              <MaskedValue 
+                                maskedText={s.nom_masque || 'Anonyme'}
+                                revealedText={identity?.nom}
+                                status={revealStatus}
+                                onReveal={() => handleReveal(s.user_id)}
+                                type="nom"
+                              />
                             </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-admin-text-muted">
-                        {s.boutique_nom ?? '—'}
-                      </td>
-                      <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
-                        {s.plan}{s.is_trial && <span className="ml-1 text-[8px] text-amber-400">(essai)</span>}
-                      </td>
-                      <td className="py-3 px-4">{statusBadge(s)}</td>
-                      <td className="py-3 px-4 font-bold font-numeric-display">
-                        {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
-                      </td>
-                      <td className="py-3 px-4 text-admin-text-muted" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
-                        {new Date(s.expires_at).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleToggleLogs(s)}
-                            className={`h-8 px-2.5 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer ${
-                              expandedSubId === s.id 
-                                ? 'bg-admin-surface text-admin-text border border-admin-border' 
-                                : 'bg-admin-surface/60 hover:bg-admin-surface text-admin-text-muted'
-                            }`}
-                          >
-                            Logs
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(s)}
-                            className="h-8 px-2.5 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                          >
-                            Ajuster
-                          </button>
-                          {s.revoked_at ? (
+                            <span className="text-admin-primary-light font-mono">
+                              <MaskedValue 
+                                maskedText={s.email_masque || '***@***.**'}
+                                revealedText={identity?.email}
+                                status={revealStatus}
+                                onReveal={() => handleReveal(s.user_id)}
+                                type="email"
+                              />
+                            </span>
+                            {s.revoked_at && (
+                              <span className="text-[8px] text-admin-text-muted leading-tight font-mono">
+                                Révoqué par {s.revoked_by_name} le {new Date(s.revoked_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-admin-text-muted">
+                          {s.boutique_nom ?? '—'}
+                        </td>
+                        <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
+                          {s.plan}{s.is_trial && <span className="ml-1 text-[8px] text-amber-400">(essai)</span>}
+                        </td>
+                        <td className="py-3 px-4">{statusBadge(s)}</td>
+                        <td className="py-3 px-4 font-bold font-numeric-display">
+                          {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
+                        </td>
+                        <td className="py-3 px-4 text-admin-text-muted" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
+                          {new Date(s.expires_at).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => handleOpenReactivate(s)}
-                              className="h-8 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                              onClick={() => handleToggleLogs(s)}
+                              className={`h-8 px-2.5 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer ${
+                                expandedSubId === s.id 
+                                  ? 'bg-admin-surface text-admin-text border border-admin-border' 
+                                  : 'bg-admin-surface/60 hover:bg-admin-surface text-admin-text-muted'
+                              }`}
                             >
-                              Réactiver
+                              Logs
                             </button>
-                          ) : (
                             <button
-                              onClick={() => handleOpenRevoke(s)}
-                              className="h-8 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                              onClick={() => handleOpenEdit(s)}
+                              className="h-8 px-2.5 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                             >
-                              Révoquer
+                              Ajuster
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedSubId === s.id && (
-                      <tr className="bg-admin-surface/30">
-                        <td colSpan={7} className="py-4 px-6 border-b border-admin-border">
-                          <div className="flex flex-col gap-3">
-                            <h4 className="font-black text-[10px] text-admin-primary-light uppercase tracking-wider">
-                              📜 Historique des Actions d'Abonnement
-                            </h4>
-                            {loadingLogs[s.user_id] ? (
-                              <div className="flex items-center gap-2 text-admin-text-muted text-[10px]">
-                                <div className="w-3.5 h-3.5 border-2 border-admin-primary border-t-transparent rounded-full animate-spin" />
-                                <span>Chargement de l'historique...</span>
-                              </div>
+                            {s.revoked_at ? (
+                              <button
+                                onClick={() => handleOpenReactivate(s)}
+                                className="h-8 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                              >
+                                Réactiver
+                              </button>
                             ) : (
-                              <div className="flex flex-col gap-2">
-                                {(auditLogs[s.user_id] || []).length === 0 ? (
-                                  <p className="text-[10px] text-admin-text-muted italic">Aucun log d'audit d'abonnement trouvé pour ce marchand.</p>
-                                ) : (
-                                  <div className="flex flex-col border border-admin-border rounded-xl overflow-hidden divide-y divide-admin-border/50 bg-admin-card/50">
-                                    {(auditLogs[s.user_id] || []).map((log: any) => {
-                                      let actionText = log.action;
-                                      if (log.action === 'revoke') {
-                                        actionText = "Révocation";
-                                      } else if (log.action === 'reactivate') {
-                                        actionText = "Réactivation";
-                                      } else if (log.action === 'adjust') {
-                                        actionText = "Ajustement";
-                                      }
-                                      
-                                      return (
-                                        <div key={log.id} className="p-3 text-[10px] flex flex-col md:flex-row md:items-center justify-between gap-2 text-admin-text">
-                                          <div className="flex items-start md:items-center gap-2">
-                                            <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase font-black border ${
-                                              log.action === 'revoke' 
-                                                ? 'bg-red-500/10 border-red-500/20 text-red-400' 
-                                                : log.action === 'reactivate' 
-                                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                                                  : 'bg-admin-primary/10 border-admin-primary/20 text-admin-primary-light'
-                                            }`}>
-                                              {actionText}
-                                            </span>
-                                            <div className="flex flex-col gap-0.5">
-                                              <span className="font-semibold">{log.actor_name} ({log.actor_email})</span>
-                                              <span className="text-[9px] text-admin-text-muted">
-                                                Le {new Date(log.created_at).toLocaleString('fr-FR')}
-                                              </span>
-                                            </div>
-                                          </div>
-                                          <div className="flex flex-col gap-0.5 text-right font-mono text-[9px] bg-admin-surface/40 p-2 rounded-lg border border-admin-border/30 max-w-md self-start md:self-auto">
-                                            {log.reason && <div><span className="text-admin-text-muted">Motif:</span> {log.reason}</div>}
-                                            {log.previous_state?.plan && log.new_state?.plan && (
-                                              <div>
-                                                <span className="text-admin-text-muted">Transition:</span> {log.previous_state.plan} ({log.previous_state.status}) → {log.new_state.plan} ({log.new_state.status})
-                                              </div>
-                                            )}
-                                            {log.new_state?.revocation_type && (
-                                              <div>
-                                                <span className="text-admin-text-muted">Type:</span> {log.new_state.revocation_type === 'immediate' ? 'Immédiat' : 'Différé'}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
+                              <button
+                                onClick={() => handleOpenRevoke(s)}
+                                className="h-8 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                              >
+                                Révoquer
+                              </button>
                             )}
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                      {expandedSubId === s.id && (
+                        <tr className="bg-admin-surface/30">
+                          <td colSpan={7} className="py-4 px-6 border-b border-admin-border">
+                            <div className="flex flex-col gap-3">
+                              <h4 className="font-black text-[10px] text-admin-primary-light uppercase tracking-wider">
+                                📜 Historique des Actions d'Abonnement
+                              </h4>
+                              {loadingLogs[s.user_id] ? (
+                                <div className="flex items-center gap-2 text-admin-text-muted text-[10px]">
+                                  <div className="w-3.5 h-3.5 border-2 border-admin-primary border-t-transparent rounded-full animate-spin" />
+                                  <span>Chargement de l'historique...</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-2">
+                                  {(auditLogs[s.user_id] || []).length === 0 ? (
+                                    <p className="text-[10px] text-admin-text-muted italic">Aucun log d'audit d'abonnement trouvé pour ce marchand.</p>
+                                  ) : (
+                                    <div className="flex flex-col border border-admin-border rounded-xl overflow-hidden divide-y divide-admin-border/50 bg-admin-card/50">
+                                      {(auditLogs[s.user_id] || []).map((log: any) => {
+                                        let actionText = log.action;
+                                        if (log.action === 'revoke') {
+                                          actionText = "Révocation";
+                                        } else if (log.action === 'reactivate') {
+                                          actionText = "Réactivation";
+                                        } else if (log.action === 'adjust') {
+                                          actionText = "Ajustement";
+                                        }
+                                        
+                                        return (
+                                          <div key={log.id} className="p-3 text-[10px] flex flex-col md:flex-row md:items-center justify-between gap-2 text-admin-text">
+                                            <div className="flex items-start md:items-center gap-2">
+                                              <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase font-black border ${
+                                                log.action === 'revoke' 
+                                                  ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                                                  : log.action === 'reactivate' 
+                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                                                    : 'bg-admin-primary/10 border-admin-primary/20 text-admin-primary-light'
+                                              }`}>
+                                                {actionText}
+                                              </span>
+                                              <div className="flex flex-col gap-0.5">
+                                                <span className="font-semibold">{log.actor_name} ({log.actor_email})</span>
+                                                <span className="text-[9px] text-admin-text-muted">
+                                                  Le {new Date(log.created_at).toLocaleString('fr-FR')}
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 text-right font-mono text-[9px] bg-admin-surface/40 p-2 rounded-lg border border-admin-border/30 max-w-md self-start md:self-auto">
+                                              {log.reason && <div><span className="text-admin-text-muted">Motif:</span> {log.reason}</div>}
+                                              {log.previous_state?.plan && log.new_state?.plan && (
+                                                <div>
+                                                  <span className="text-admin-text-muted">Transition:</span> {log.previous_state.plan} ({log.previous_state.status}) → {log.new_state.plan} ({log.new_state.status})
+                                                </div>
+                                              )}
+                                              {log.new_state?.revocation_type && (
+                                                <div>
+                                                  <span className="text-admin-text-muted">Type:</span> {log.new_state.revocation_type === 'immediate' ? 'Immédiat' : 'Différé'}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {subscriptions.length === 0 && (
-            <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
-          )}
+            {subscriptions.length === 0 && (
+              <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
+            )}
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden flex flex-col gap-4">
+            {subscriptions.map(s => {
+              const identity = revealedDetails[s.user_id];
+              const revealStatus = revealStates[s.user_id] || 'hidden';
+              const isExpanded = expandedSubId === s.id;
+
+              return (
+                <div key={s.id} className="bg-admin-card border border-admin-border rounded-2xl p-4 flex flex-col gap-3.5 shadow-sm text-xs text-left">
+                  <div className="flex justify-between items-start border-b border-admin-border pb-2.5">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-bold text-sm text-admin-text truncate">
+                        <MaskedValue 
+                          maskedText={s.nom_masque || 'Anonyme'}
+                          revealedText={identity?.nom}
+                          status={revealStatus}
+                          onReveal={() => handleReveal(s.user_id)}
+                          type="nom"
+                        />
+                      </span>
+                      <span className="text-admin-primary-light font-mono text-[10px] truncate">
+                        <MaskedValue 
+                          maskedText={s.email_masque || '***@***.**'}
+                          revealedText={identity?.email}
+                          status={revealStatus}
+                          onReveal={() => handleReveal(s.user_id)}
+                          type="email"
+                        />
+                      </span>
+                      {s.revoked_at && (
+                        <span className="text-[8px] text-admin-text-muted font-mono mt-0.5">
+                          Révoqué par {s.revoked_by_name} le {new Date(s.revoked_at).toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
+                    </div>
+                    {statusBadge(s)}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Boutique</span>
+                      <span className="font-semibold text-admin-text truncate">
+                        {s.boutique_nom ?? '—'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Formule</span>
+                      <span className="font-bold uppercase text-admin-primary-light truncate">
+                        {s.plan}{s.is_trial && <span className="ml-1 text-[8px] text-amber-400">(essai)</span>}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Montant</span>
+                      <span className="font-bold text-admin-text font-numeric-display">
+                        {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Expiration</span>
+                      <span className="font-medium text-admin-text-muted">
+                        {new Date(s.expires_at).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Collapsible logs inside card */}
+                  {isExpanded && (
+                    <div className="bg-admin-surface/30 p-3.5 border border-admin-border rounded-xl flex flex-col gap-2.5 mt-1">
+                      <h4 className="font-black text-[9px] text-admin-primary-light uppercase tracking-wider">
+                        📜 Historique des Actions
+                      </h4>
+                      {loadingLogs[s.user_id] ? (
+                        <div className="flex items-center gap-2 text-admin-text-muted text-[9px]">
+                          <div className="w-3 h-3 border-2 border-admin-primary border-t-transparent rounded-full animate-spin" />
+                          <span>Chargement...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto custom-scrollbar">
+                          {(auditLogs[s.user_id] || []).length === 0 ? (
+                            <p className="text-[9px] text-admin-text-muted italic">Aucun log d'audit.</p>
+                          ) : (
+                            (auditLogs[s.user_id] || []).map((log: any) => {
+                              let actionText = log.action;
+                              if (log.action === 'revoke') actionText = "Révocation";
+                              else if (log.action === 'reactivate') actionText = "Réactivation";
+                              else if (log.action === 'adjust') actionText = "Ajustement";
+
+                              return (
+                                <div key={log.id} className="p-2 border border-admin-border rounded-lg bg-admin-card text-[9px] flex flex-col gap-1 text-admin-text">
+                                  <div className="flex justify-between items-center gap-2">
+                                    <span className={`px-1 rounded text-[7px] uppercase font-black border ${
+                                      log.action === 'revoke' 
+                                        ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                                        : log.action === 'reactivate' 
+                                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                                          : 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                    }`}>
+                                      {actionText}
+                                    </span>
+                                    <span className="text-admin-text-muted font-mono text-[8px]">
+                                      {new Date(log.created_at).toLocaleString('fr-FR')}
+                                    </span>
+                                  </div>
+                                  <p className="opacity-90 leading-tight">Motif : {log.reason || '—'}</p>
+                                  <p className="text-[8px] text-admin-text-muted font-semibold">Par : {log.actor_name || 'System'}</p>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="border-t border-admin-border/50 pt-3 flex justify-end gap-2">
+                    <button
+                      onClick={() => handleToggleLogs(s)}
+                      className={`h-8 px-2.5 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer ${
+                        isExpanded 
+                          ? 'bg-admin-surface text-admin-text border border-admin-border' 
+                          : 'bg-admin-surface/60 hover:bg-admin-surface text-admin-text-muted'
+                      }`}
+                    >
+                      Logs
+                    </button>
+                    <button
+                      onClick={() => handleOpenEdit(s)}
+                      className="h-8 px-2.5 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                    >
+                      Ajuster
+                    </button>
+                    {s.revoked_at ? (
+                      <button
+                        onClick={() => handleOpenReactivate(s)}
+                        className="h-8 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                      >
+                        Réactiver
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenRevoke(s)}
+                        className="h-8 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                      >
+                        Révoquer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {subscriptions.length === 0 && (
+              <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
+            )}
+          </div>
         </div>
       )}
 
