@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Toast } from '../components/ui/Toast';
 import { supabase } from '../lib/supabase';
@@ -27,10 +27,62 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   const [isPaying, setIsPaying] = useState(false);
   const [paymentData, setPaymentData] = useState<{ payment_url?: string; deep_links?: { MAXIT?: string; OM?: string }, subscription_id?: string } | null>(null);
 
+  // Saved Payment Methods State
+  const [savedMethods, setSavedMethods] = useState<any[]>([]);
+  const [defaultMethods, setDefaultMethods] = useState<any>({});
+  const [selectedSavedPhone, setSelectedSavedPhone] = useState<string>('');
+  const [isCustomPhone, setIsCustomPhone] = useState(false);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data: defaults, error: defErr } = await supabase.rpc('get_default_payment_method');
+      if (defErr) throw defErr;
+      if (defaults) setDefaultMethods(defaults);
+
+      const { data: list, error: listErr } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .order('last_used_at', { ascending: false });
+      if (listErr) throw listErr;
+      if (list) setSavedMethods(list);
+    } catch (err) {
+      console.error('[Subscription] Erreur chargement payment methods:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchPaymentMethods();
+    }
+  }, [user]);
+
+  // Sync selection and prefill based on provider changes
+  useEffect(() => {
+    const dbProvider = provider === 'orange' ? 'orange_money' : 'wave';
+    const defaultForProvider = defaultMethods[dbProvider]?.phone_number;
+    const providerSaved = savedMethods.filter(m => m.provider === dbProvider);
+    
+    if (providerSaved.length > 1) {
+      const mostRecent = providerSaved[0].phone_number;
+      setSelectedSavedPhone(mostRecent);
+      setIsCustomPhone(false);
+      setPhoneNumber(mostRecent);
+    } else if (defaultForProvider) {
+      setPhoneNumber(defaultForProvider);
+      setSelectedSavedPhone(defaultForProvider);
+      setIsCustomPhone(false);
+    } else {
+      setPhoneNumber(user?.user_metadata?.phone || '');
+      setSelectedSavedPhone('');
+      setIsCustomPhone(true);
+    }
+  }, [provider, defaultMethods, savedMethods]);
+
   usePaymentPolling(
     paymentData?.subscription_id || null,
     (status) => {
       if (status === 'active') {
+        fetchPaymentMethods();
         setToast({ message: 'Paiement confirmé avec succès !', type: 'success' });
         setTimeout(() => window.location.reload(), 2000);
       } else if (status === 'timeout') {
@@ -71,7 +123,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       description: 'Pour les boutiques en croissance qui veulent éliminer toutes les limites.',
       features: [
         { text: 'Produits illimités', type: 'yes' },
-        { text: 'Transactions illimitées', type: 'yes' },
+        { text: 'Transactions illimités', type: 'yes' },
         { text: 'Jusqu\'à 5 caissiers', type: 'yes' },
         { text: 'Crédits clients illimités', type: 'yes' },
         { text: 'Rapports & historique complet', type: 'yes' },
@@ -104,7 +156,7 @@ export const Subscription: React.FC<SubscriptionProps> = ({
   const [trialStatus, setTrialStatus] = useState<any>(null);
   const [trialLoading, setTrialLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchStatus = async () => {
       try {
         const { data } = await supabase.rpc('get_trial_status');
@@ -169,6 +221,9 @@ export const Subscription: React.FC<SubscriptionProps> = ({
       setIsPaying(false);
     }
   };
+
+  const dbProvider = provider === 'orange' ? 'orange_money' : 'wave';
+  const filteredSaved = savedMethods.filter(m => m.provider === dbProvider);
 
   return (
     <div className="pb-40 pt-20 px-4 max-w-6xl mx-auto flex flex-col gap-6 animate-fade-in text-left">
@@ -379,26 +434,6 @@ export const Subscription: React.FC<SubscriptionProps> = ({
         })}
       </div>
 
-      {/* Trust & Guarantee Badge */}
-      <Card elevation={1} className="p-4 bg-surface-container/20 border border-outline-variant/60 flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
-        <div className="flex items-center gap-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-secondary-container/55 flex items-center justify-center text-secondary">
-            <span className="material-symbols-outlined text-xl">shield</span>
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold text-on-surface">Paiements Locaux 100% Sécurisés</span>
-            <span className="text-[10px] text-outline">Intégration directe Wave et Orange Money sans frais cachés.</span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {['Wave', 'Orange Money'].map((p) => (
-            <span key={p} className="px-2.5 py-1 bg-white border border-outline-variant/50 rounded-lg text-[9px] font-black text-outline">
-              {p}
-            </span>
-          ))}
-        </div>
-      </Card>
-
       {/* Simulated Mobile Money Payment Modal */}
       {selectedPlanForPayment && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
@@ -521,20 +556,78 @@ export const Subscription: React.FC<SubscriptionProps> = ({
               </div>
 
               {/* Phone number Input */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 text-left">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Numéro de téléphone mobile</label>
-                <div className="border border-slate-200 rounded-2xl h-[60px] flex items-center px-5 bg-white focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all shadow-sm">
-                  <span className="text-[16px] font-bold text-slate-400 mr-2">+221</span>
-                  <input
-                    type="tel"
-                    required
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="77 000 00 00"
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 placeholder-slate-300"
-                  />
-                </div>
-                <span className="text-[11px] text-slate-400 italic mt-1 font-medium">Saisissez votre numéro pour initier la demande de débit USSD/OTP.</span>
+                
+                {filteredSaved.length > 1 ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="border border-slate-200 rounded-2xl h-[60px] flex items-center px-5 bg-white focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all shadow-sm">
+                      <select
+                        value={selectedSavedPhone}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setSelectedSavedPhone(val);
+                          if (val === 'custom') {
+                            setIsCustomPhone(true);
+                            setPhoneNumber('');
+                          } else {
+                            setIsCustomPhone(false);
+                            setPhoneNumber(val);
+                          }
+                        }}
+                        className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 cursor-pointer"
+                      >
+                        {filteredSaved.map(m => (
+                          <option key={m.phone_number} value={m.phone_number}>
+                            +221 {m.phone_number} {m.is_default ? '(Par défaut)' : ''}
+                          </option>
+                        ))}
+                        <option value="custom">Saisir un autre numéro...</option>
+                      </select>
+                    </div>
+
+                    {isCustomPhone && (
+                      <div className="border border-slate-200 rounded-2xl h-[60px] flex items-center px-5 bg-white focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all shadow-sm">
+                        <span className="text-[16px] font-bold text-slate-400 mr-2">+221</span>
+                        <input
+                          type="tel"
+                          required
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder="77 000 00 00"
+                          className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 placeholder-slate-300"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="border border-slate-200 rounded-2xl h-[60px] flex items-center px-5 bg-white focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all shadow-sm relative">
+                      <span className="text-[16px] font-bold text-slate-400 mr-2">+221</span>
+                      <input
+                        type="tel"
+                        required
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="77 000 00 00"
+                        className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 placeholder-slate-300 pr-10"
+                      />
+                      {filteredSaved.length === 1 && phoneNumber === filteredSaved[0].phone_number && (
+                        <span className="absolute right-5 text-primary material-symbols-outlined text-base" title="Numéro enregistré">
+                          edit
+                        </span>
+                      )}
+                    </div>
+                    {filteredSaved.length === 1 && phoneNumber === filteredSaved[0].phone_number ? (
+                      <span className="text-[10px] text-primary/80 font-bold flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">history</span>
+                        Numéro utilisé la dernière fois
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic font-medium">Saisissez votre numéro pour initier la demande de débit USSD/OTP.</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
