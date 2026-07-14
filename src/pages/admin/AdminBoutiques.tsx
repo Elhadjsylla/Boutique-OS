@@ -37,8 +37,10 @@ interface BoutiqueDetails {
 export const AdminBoutiques: React.FC = () => {
   const [boutiques, setBoutiques] = useState<Boutique[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(null);
   const [selectedBoutiqueDetails, setSelectedBoutiqueDetails] = useState<BoutiqueDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
 
   // Suspension Modals State
   const [suspendingBoutique, setSuspendingBoutique] = useState<Boutique | null>(null);
@@ -88,15 +90,16 @@ export const AdminBoutiques: React.FC = () => {
   }, []);
 
   const handleOpenDetails = async (id: string) => {
+    setSelectedBoutiqueId(id);
     setDetailsLoading(true);
+    setDetailsError(null);
     try {
       const { data, error } = await callRpcWithRetry('sys_boutique_details', { boutique_uuid: id });
       if (error) throw error;
       setSelectedBoutiqueDetails(data);
     } catch (e: any) {
-      console.error('[AdminBoutiques] RPC admin_boutique_details indisponible:', e);
-      // We can just leave selectedBoutiqueDetails null or set an empty state
-      // but without demo data. We'll set it to null and let the UI handle the missing details or loading state.
+      console.error('[AdminBoutiques] Erreur de chargement des détails de la boutique:', e);
+      setDetailsError(e.message || 'Erreur de chargement des détails de la boutique.');
       setSelectedBoutiqueDetails(null);
     } finally {
       setDetailsLoading(false);
@@ -115,7 +118,7 @@ export const AdminBoutiques: React.FC = () => {
       setSuspendingBoutique(null);
       setSuspendReason('');
       fetchBoutiques();
-      if (selectedBoutiqueDetails && selectedBoutiqueDetails.id === b.id) {
+      if (selectedBoutiqueId === b.id) {
         handleOpenDetails(b.id);
       }
     } catch (e: any) {
@@ -202,7 +205,7 @@ export const AdminBoutiques: React.FC = () => {
                   key={b.id}
                   onClick={() => handleOpenDetails(b.id)}
                   className={`p-3.5 border rounded-xl flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] ${
-                    selectedBoutiqueDetails?.id === b.id
+                    selectedBoutiqueId === b.id
                       ? 'bg-admin-primary/10 border-admin-primary'
                       : 'border-admin-border hover:bg-admin-surface/30'
                   }`}
@@ -235,6 +238,22 @@ export const AdminBoutiques: React.FC = () => {
             {detailsLoading ? (
               <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">
                 <div className="w-8 h-8 border-3 border-admin-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : detailsError ? (
+              <div className="p-5 bg-red-950/20 border border-red-900/40 rounded-xl flex flex-col items-center gap-3 text-center">
+                <span className="material-symbols-outlined text-red-400 text-3xl">error</span>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-bold text-red-400">Impossible de charger cette section</p>
+                  <p className="text-[10px] text-admin-text-muted/80">{detailsError}</p>
+                </div>
+                {selectedBoutiqueId && (
+                  <button
+                    onClick={() => handleOpenDetails(selectedBoutiqueId)}
+                    className="h-8 px-4 bg-red-900/30 hover:bg-red-900/50 border border-red-800 text-red-400 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all active:scale-95 cursor-pointer"
+                  >
+                    Réessayer
+                  </button>
+                )}
               </div>
             ) : selectedBoutiqueDetails ? (
               <div className="flex flex-col gap-4 animate-scale-in">
