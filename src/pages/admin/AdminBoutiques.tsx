@@ -37,7 +37,9 @@ interface BoutiqueDetails {
 export const AdminBoutiques: React.FC = () => {
   const [boutiques, setBoutiques] = useState<Boutique[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(null);
+  const [selectedBoutiqueId, setSelectedBoutiqueId] = useState<string | null>(() => {
+    return localStorage.getItem('selected_admin_boutique_id');
+  });
   const [selectedBoutiqueDetails, setSelectedBoutiqueDetails] = useState<BoutiqueDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -85,12 +87,9 @@ export const AdminBoutiques: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBoutiques();
-  }, []);
-
   const handleOpenDetails = async (id: string) => {
     setSelectedBoutiqueId(id);
+    localStorage.setItem('selected_admin_boutique_id', id);
     setDetailsLoading(true);
     setDetailsError(null);
     try {
@@ -105,6 +104,14 @@ export const AdminBoutiques: React.FC = () => {
       setDetailsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchBoutiques();
+    const storedId = localStorage.getItem('selected_admin_boutique_id');
+    if (storedId) {
+      handleOpenDetails(storedId);
+    }
+  }, []);
 
   const handleToggleSuspend = async (b: Boutique, actionSuspend: boolean) => {
     try {
@@ -231,9 +238,21 @@ export const AdminBoutiques: React.FC = () => {
 
           {/* Details & Action Card */}
           <div className="bg-admin-card border border-admin-border rounded-2xl p-5 flex flex-col gap-4">
-            <h2 className="text-[10px] font-black uppercase tracking-wider text-admin-text-muted border-b border-admin-border pb-2">
-              Détails & Actions Administration
-            </h2>
+            <div className="flex justify-between items-center border-b border-admin-border pb-2">
+              <h2 className="text-[10px] font-black uppercase tracking-wider text-admin-text-muted">
+                Détails & Actions Administration
+              </h2>
+              {selectedBoutiqueId && !detailsLoading && (
+                <button
+                  onClick={() => handleOpenDetails(selectedBoutiqueId)}
+                  className="flex items-center gap-1 text-[9px] font-bold text-admin-primary hover:text-admin-primary-light uppercase tracking-wider transition-all active:scale-95 cursor-pointer"
+                  title="Rafraîchir les détails de la boutique"
+                >
+                  <span className="material-symbols-outlined text-[12px]">refresh</span>
+                  Rafraîchir
+                </button>
+              )}
+            </div>
             
             {detailsLoading ? (
               <div className="flex flex-col justify-center items-center py-20 text-admin-text-muted">
