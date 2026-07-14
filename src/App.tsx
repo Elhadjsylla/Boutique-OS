@@ -79,26 +79,38 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('active_tab', activeTab);
-    if (window.location.hash !== `#${activeTab}`) {
+    if (window.location.hash !== `#${activeTab}` && !window.location.hash.replace('#', '').startsWith('admin-')) {
       window.history.pushState(null, '', `#${activeTab}`);
     }
   }, [activeTab]);
 
+  const [adminManuallyDismissed, setAdminManuallyDismissed] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash.startsWith('admin-')) return false;
+    return localStorage.getItem('admin_dismissed') === 'true';
+  });
+
   useEffect(() => {
     const handlePopState = () => {
       const hash = window.location.hash.replace('#', '');
-      if (VALID_TABS.includes(hash)) {
+      if (hash.startsWith('admin-')) {
+        setAdminManuallyDismissed(false);
+        localStorage.setItem('admin_dismissed', 'false');
+      } else if (VALID_TABS.includes(hash)) {
         setActiveTab(hash as TabType);
+        setAdminManuallyDismissed(true);
+        localStorage.setItem('admin_dismissed', 'true');
       }
     };
     window.addEventListener('popstate', handlePopState);
+    // Sync on mount
+    handlePopState();
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const [activePlan, setActivePlan] = useState(() => localStorage.getItem('active_subscription_plan') || 'Starter');
   const [showLandingOverride, setShowLandingOverride] = useState(false);
   const [trialStatus, setTrialStatus] = useState<any>(null);
-  const [adminManuallyDismissed, setAdminManuallyDismissed] = useState(false);
 
   // Always start as 'checking' — resolved by useEffect once profile loads
   const [subStatus, setSubStatus] = useState<'checking' | 'active' | 'trial' | 'paywall'>('checking');
