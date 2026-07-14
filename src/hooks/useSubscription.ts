@@ -1,20 +1,9 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/useAuthStore';
+import { supabaseService } from '../services/supabaseService';
 
 export type PlanType = 'free' | 'starter' | 'pro' | 'annual';
 export type SubscriptionStatus = 'pending' | 'active' | 'expired' | 'cancelled' | 'trial' | 'trial_cancelled';
 export type PaymentMethod = 'wave' | 'orange_money' | 'admin';
-
-export interface Subscription {
-  id: string;
-  plan: PlanType;
-  status: SubscriptionStatus;
-  payment_method: PaymentMethod;
-  amount: number;
-  starts_at: string | null;
-  expires_at: string | null;
-  created_at: string;
-}
 
 export interface PlanLimits {
   plan: PlanType;
@@ -56,66 +45,47 @@ export const PLAN_CONFIG: Record<PlanType, { label: string; amount: number; dura
 };
 
 interface UseSubscriptionReturn {
-  subscription: Subscription | null;
+  subscription: { plan: PlanType | null; date_fin: string | null } | null;
   isActive: boolean;
   isLoading: boolean;
   daysLeft: number | null;
   refetch: () => Promise<void>;
 }
 
-let globalCachedSubscription: Subscription | null = null;
-let lastFetchTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 min
-
+/**
+ * Lit le statut d'abonnement mis en cache dans le store d'auth (chargé une seule fois à la
+ * connexion via get_boutique_subscription_status — voir AuthProvider). N'effectue plus son
+ * propre fetch séparé à chaque montage.
+ */
 export function useSubscription(): UseSubscriptionReturn {
-  const [subscription, setSubscription] = useState<Subscription | null>(globalCachedSubscription);
-  const [isLoading, setIsLoading] = useState(() => {
-    // If we have a valid cache, don't show loading spinner
-    return !(globalCachedSubscription && Date.now() - lastFetchTime < CACHE_TTL);
-  });
+  const boutiqueId = useAuthStore(state => state.profile?.boutique_id ?? state.boutique?.id ?? null);
+  const status = useAuthStore(state => state.subscriptionStatus);
+  const isAuthLoading = useAuthStore(state => state.isLoading);
+  const setSubscriptionStatus = useAuthStore(state => state.setSubscriptionStatus);
 
-  const fetchSubscription = async (force = false) => {
-    // Check cache
-    if (!force && globalCachedSubscription && Date.now() - lastFetchTime < CACHE_TTL) {
-      setSubscription(globalCachedSubscription);
-      setIsLoading(false);
+  const refetch = async () => {
+    if (!boutiqueId) {
+      setSubscriptionStatus(null);
       return;
     }
-
-    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('status', 'active')
-        .order('expires_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      globalCachedSubscription = data ?? null;
-      lastFetchTime = Date.now();
-      setSubscription(data ?? null);
+      const fresh = await supabaseService.getBoutiqueSubscriptionStatus(boutiqueId);
+      setSubscriptionStatus(fresh);
     } catch (err) {
-      console.error('useSubscription fetch error:', err);
-      setSubscription(null);
-    } finally {
-      setIsLoading(false);
+      console.error('useSubscription refetch error:', err);
+      setSubscriptionStatus(null);
     }
   };
 
-  useEffect(() => {
-    fetchSubscription();
-  }, []);
-
-  const isActive = subscription?.status === 'active' &&
-    !!subscription.expires_at &&
-    new Date(subscription.expires_at) > new Date();
-
-  const daysLeft = subscription?.expires_at
-    ? Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  const daysLeft = status?.date_fin
+    ? Math.max(0, Math.ceil((new Date(status.date_fin).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  return { subscription, isActive, isLoading, daysLeft, refetch: () => fetchSubscription(true) };
+  return {
+    subscription: status ? { plan: status.plan as PlanType | null, date_fin: status.date_fin } : null,
+    isActive: status?.actif ?? false,
+    isLoading: isAuthLoading,
+    daysLeft,
+    refetch,
+  };
 }

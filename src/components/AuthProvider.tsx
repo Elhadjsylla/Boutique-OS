@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, createContext, useContext } from 'react';
 import { supabase } from '../lib/supabase';
+import { supabaseService } from '../services/supabaseService';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Profile, Boutique } from '../store/useAuthStore';
 import type { User, Session } from '@supabase/supabase-js';
@@ -42,7 +43,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { setAuth, clearAuth, setLoading, user, profile, boutique, isLoading } = useAuthStore();
+  const { setAuth, clearAuth, setLoading, setSubscriptionStatus, user, profile, boutique, isLoading } = useAuthStore();
   const [session, setSessionState] = React.useState<Session | null>(null);
 
   const getRoleFromJWT = useCallback((accessToken: string): string | null => {
@@ -54,6 +55,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
   }, []);
+
+  // Chargé une seule fois à la connexion et mis en cache dans le store — le reste de l'app
+  // (paywalls, badges d'abonnement...) le lit depuis useAuthStore au lieu de le refetch.
+  const loadSubscriptionStatus = useCallback((boutiqueId: string | null) => {
+    if (!boutiqueId) {
+      setSubscriptionStatus(null);
+      return;
+    }
+    supabaseService.getBoutiqueSubscriptionStatus(boutiqueId)
+      .then(setSubscriptionStatus)
+      .catch((err) => {
+        console.error('Error fetching subscription status:', err);
+        setSubscriptionStatus(null);
+      });
+  }, [setSubscriptionStatus]);
 
   const fetchProfileAndBoutique = useCallback(async (currentSession: Session) => {
     const authUser = currentSession.user;
@@ -82,13 +98,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? { id: boutiqueId, nom: boutiqueName, adresse: null, gerant_id: null } as Boutique
             : null
         );
+        loadSubscriptionStatus(boutiqueId);
         clearTimeout(failsafe);
         return;
       }
 
       const userProfile = profileData as Profile;
       let userBoutique: Boutique | null = null;
-      
+
       if (userProfile.boutique_id) {
         const { data: boutiqueData, error: boutiqueError } = await supabase
           .from('boutiques')
@@ -108,12 +125,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setAuth(authUser, userProfile, userBoutique);
+      loadSubscriptionStatus(userProfile.boutique_id);
       clearTimeout(failsafe);
     } catch (err) {
       console.error('Unexpected error in fetchProfileAndBoutique:', err);
       setAuth(currentSession?.user || null, null, null);
     }
-  }, [setAuth, setLoading, getRoleFromJWT]);
+  }, [setAuth, setLoading, getRoleFromJWT, loadSubscriptionStatus]);
 
   // Applies DEV role override to any session (real or fake)
   const applyDevRoleOverride = useCallback((s: any) => {

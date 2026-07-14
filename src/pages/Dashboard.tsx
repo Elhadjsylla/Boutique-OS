@@ -118,7 +118,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const boutiqueId = profile?.boutique_id;
     if (!boutiqueId) return;
     try {
-      const allProds = await supabaseService.getProduits(boutiqueId);
+      // Analyse produits dormants = doit porter sur tout le catalogue, pas une page
+      const allProds = await supabaseService.getProduits(boutiqueId, { limit: 5000 });
       const items = await supabaseService.getVenteItemsAll(boutiqueId);
 
       const productSalesMap: Record<string, number> = {};
@@ -1003,7 +1004,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
                 // Generate exports client-side for offline-first resilience
                 if (exportScope === 'stock') {
-                  const produits = await supabaseService.getProduits(boutiqueId);
+                  // Export = doit couvrir tout le catalogue, pas seulement la première page
+                  const produits = await supabaseService.getProduits(boutiqueId, { limit: 5000 });
                   
                   if (exportType === 'excel') {
                     let csvContent = '\ufeff'; // UTF-8 BOM for Excel
@@ -1058,7 +1060,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     }
                   }
                 } else if (exportScope === 'ardoises') {
-                  const ardoises = await supabaseService.getArdoises(boutiqueId);
+                  // Export = doit couvrir toutes les ardoises, pas seulement la première page
+                  const ardoises = await supabaseService.getArdoises(boutiqueId, { limit: 5000 });
                   
                   if (exportType === 'excel') {
                     let csvContent = '\ufeff';

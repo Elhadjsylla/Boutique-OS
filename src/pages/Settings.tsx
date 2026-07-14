@@ -263,10 +263,11 @@ export const Settings: React.FC<SettingsProps> = ({
     }
     
     try {
+      // Export complet de la boutique = doit tout couvrir, pas une page
       const [produits, ventes, ardoises, items, paiements] = await Promise.all([
-        supabaseService.getProduits(boutiqueId),
+        supabaseService.getProduits(boutiqueId, { limit: 5000 }),
         supabaseService.getVentesAll(boutiqueId),
-        supabaseService.getArdoises(boutiqueId),
+        supabaseService.getArdoises(boutiqueId, { limit: 5000 }),
         supabaseService.getVenteItemsAll(boutiqueId),
         supabaseService.getArdoisePaiementsAll(boutiqueId),
       ]);
