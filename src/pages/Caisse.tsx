@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { supabaseService } from '../services/supabaseService';
 import { useCart } from '../features/caisse/useCart';
@@ -37,9 +37,15 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   const [isSaleDetailOpen, setIsSaleDetailOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'vente' | 'tickets'>('vente');
 
+  // Recherche produit/client faite côté serveur (voir supabaseService) — ces refs évitent
+  // que les effets Realtime/focus (qui ne dépendent que de boutiqueId) ne recapturent une
+  // valeur de recherche périmée.
+  const productSearchRef = useRef('');
+  const clientSearchRef = useRef('');
+
   const fetchProducts = async () => {
     try {
-      const data = await supabaseService.getProduits(boutiqueId);
+      const data = await supabaseService.getProduits(boutiqueId, { search: productSearchRef.current });
       setProducts(data);
     } catch (err) {
       console.error(err);
@@ -49,7 +55,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
   const fetchTodaySales = async () => {
     try {
       const today = new Date().toISOString().split('T')[0] + 'T00:00:00.000Z';
-      const data = await supabaseService.getVentes(boutiqueId, today);
+      const data = await supabaseService.getVentes(boutiqueId, { sinceDate: today, limit: 500 });
       setTodaySales(data);
     } catch (err) {
       console.error(err);
@@ -58,7 +64,7 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
 
   const fetchArdoises = async () => {
     try {
-      const data = await supabaseService.getArdoises(boutiqueId);
+      const data = await supabaseService.getArdoises(boutiqueId, { search: clientSearchRef.current });
       setArdoises(data);
     } catch (err) {
       console.error(err);
@@ -136,6 +142,22 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
     };
   }, [boutiqueId]);
 
+  // Recherche produit débouncée — évite de tout charger en mémoire pour filtrer côté client.
+  useEffect(() => {
+    productSearchRef.current = search;
+    const t = setTimeout(() => { fetchProducts(); }, search ? 300 : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, boutiqueId]);
+
+  // Recherche client (suggestions ardoise) débouncée, même logique.
+  useEffect(() => {
+    clientSearchRef.current = clientNom;
+    const t = setTimeout(() => { fetchArdoises(); }, clientNom ? 300 : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientNom, boutiqueId]);
+
   const selectedSale = todaySales.find(s => s.id === selectedSaleId);
 
   const {
@@ -155,7 +177,9 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
     (msg) => setToast({ message: msg, type: 'error' })
   );
 
-  const filteredProducts = products.filter(p => p.nom.toLowerCase().includes(search.toLowerCase()));
+  // Le filtrage se fait désormais côté serveur (voir fetchProducts) — `products` est déjà
+  // la liste correspondant à `search`.
+  const filteredProducts = products;
 
   return (
     <div className="pb-40 pt-20 px-4 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
@@ -571,12 +595,10 @@ export const Caisse: React.FC<CaisseProps> = ({ boutiqueId, caissierId }) => {
                   )}
                 </div>
 
-                {/* Client Suggestions Dropdown */}
+                {/* Client Suggestions Dropdown — `ardoises` est déjà filtré côté serveur sur clientNom */}
                 {showClientSuggestions && clientNom.trim().length > 0 && (
                   (() => {
-                    const filtered = ardoises.filter(a => 
-                      a.client_nom.toLowerCase().includes(clientNom.toLowerCase())
-                    );
+                    const filtered = ardoises;
                     if (filtered.length === 0) return null;
                     return (
                       <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-outline-variant rounded-xl shadow-lg z-50 max-h-36 overflow-y-auto">

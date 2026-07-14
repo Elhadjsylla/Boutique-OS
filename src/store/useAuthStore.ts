@@ -14,12 +14,22 @@ export interface Boutique {
   gerant_id: string | null
 }
 
+export interface SubscriptionStatus {
+  actif: boolean
+  plan: string | null
+  date_fin: string | null
+}
+
 interface AuthState {
   user: User | null
   profile: Profile | null
   boutique: Boutique | null
+  // Statut d'abonnement de la boutique, chargé une fois à la connexion (voir AuthProvider)
+  // pour que le front n'ait jamais besoin de le recalculer à chaque écran.
+  subscriptionStatus: SubscriptionStatus | null
   isLoading: boolean
   setAuth: (user: User | null, profile: Profile | null, boutique: Boutique | null) => void
+  setSubscriptionStatus: (status: SubscriptionStatus | null) => void
   clearAuth: () => void
   setLoading: (isLoading: boolean) => void
 }
@@ -28,8 +38,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   boutique: null,
+  subscriptionStatus: null,
   isLoading: true,
   setAuth: (user, profile, boutique) => set({ user, profile, boutique, isLoading: false }),
-  clearAuth: () => set({ user: null, profile: null, boutique: null, isLoading: false }),
+  setSubscriptionStatus: (subscriptionStatus) => set({ subscriptionStatus }),
+  clearAuth: () => set({ user: null, profile: null, boutique: null, subscriptionStatus: null, isLoading: false }),
   setLoading: (isLoading) => set({ isLoading }),
 }))

@@ -266,7 +266,8 @@ export const Stock: React.FC<StockProps> = ({ boutiqueId }) => {
 
   const fetchProducts = async () => {
     try {
-      const data = await supabaseService.getProduits(boutiqueId);
+      // Stock a besoin du catalogue complet (compteurs rupture/stock bas calculés sur toute la liste)
+      const data = await supabaseService.getProduits(boutiqueId, { limit: 5000 });
       setProducts(data);
     } catch (err) {
       console.error(err);

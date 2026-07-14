@@ -311,7 +311,8 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
 
   const fetchArdoises = async () => {
     try {
-      const data = await supabaseService.getArdoises(boutiqueId);
+      // La page Ardoise a besoin de la liste complète (total du crédit en cours calculé dessus)
+      const data = await supabaseService.getArdoises(boutiqueId, { limit: 5000 });
       setArdoises(data);
     } catch (err) {
       console.error(err);
