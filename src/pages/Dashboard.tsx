@@ -361,32 +361,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         const paddingY = 25;
 
         const maxVal = Math.max(...chartData.map(d => d.value), 1000);
-        const points = chartData.map((d, idx) => {
-          const x = paddingX + (chartData.length > 1 ? (idx / (chartData.length - 1)) * (width - 2 * paddingX) : (width / 2));
-          const y = height - paddingY - (d.value / maxVal) * (height - 2 * paddingY);
-          return { x, y, label: d.label, value: d.value, detail: d.detail };
-        });
+        const peakValue = Math.max(...chartData.map(d => d.value));
 
-        // Compute Bezier Curve path
-        let pathD = '';
-        let fillPath = '';
-        if (points.length > 1) {
-          pathD = `M ${points[0].x} ${points[0].y}`;
-          for (let i = 0; i < points.length - 1; i++) {
-            const p0 = points[i];
-            const p1 = points[i + 1];
-            const cpX1 = p0.x + (p1.x - p0.x) / 2;
-            const cpY1 = p0.y;
-            const cpX2 = p0.x + (p1.x - p0.x) / 2;
-            const cpY2 = p1.y;
-            pathD += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
-          }
-          fillPath = `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
-        } else if (points.length === 1) {
-          pathD = `M ${points[0].x} ${points[0].y}`;
-        }
+        const innerWidth = width - 2 * paddingX;
+        const innerHeight = height - 2 * paddingY;
+        const maxBarHeight = innerHeight - 18;
 
-        const hoveredPoint = hoveredPointIdx !== null ? points[hoveredPointIdx] : null;
+        const N = chartData.length;
+        const step = innerWidth / N;
+        const barWidth = Math.max(step * 0.6, 4);
+
+        const hoveredPoint = hoveredPointIdx !== null ? chartData[hoveredPointIdx] : null;
 
         return (
           <section className="flex flex-col gap-3 text-left">
@@ -440,79 +425,111 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
               {/* Graphic area */}
               <div className="relative w-full overflow-visible mt-2">
-                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-                  <defs>
-                    <linearGradient id="dashboardGlowGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1A3C5E" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#1A3C5E" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
+                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none">
                   {/* Horizontal gridlines */}
                   <line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke="#E5E7EB" strokeWidth="1.5" />
                   <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="#E5E7EB" strokeWidth="0.5" strokeDasharray="3,3" />
 
-                  {/* Shaded Area */}
-                  {fillPath && <path d={fillPath} fill="url(#dashboardGlowGrad)" className="transition-all duration-300" />}
-
-                  {/* Curve Path */}
-                  {pathD && <path d={pathD} fill="none" stroke="#1A3C5E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />}
-
-                  {/* Interactive Cursor line on hover */}
-                  {hoveredPoint && (
-                    <line
-                      x1={hoveredPoint.x}
-                      y1={paddingY}
-                      x2={hoveredPoint.x}
-                      y2={height - paddingY}
-                      stroke="#1A3C5E"
-                      strokeWidth="1"
-                      strokeDasharray="2,2"
-                      className="animate-fade-in"
-                    />
-                  )}
-
-                  {/* Interaction Dots */}
-                  {points.map((p, idx) => {
+                  {/* Bars */}
+                  {chartData.map((d, idx) => {
+                    const barCenterX = paddingX + idx * step + step / 2;
+                    const x = barCenterX - barWidth / 2;
+                    const barHeight = d.value > 0 ? Math.max((d.value / maxVal) * maxBarHeight, 4) : 0;
+                    const y = height - paddingY - barHeight;
+                    const isPeak = d.value === peakValue && d.value > 0;
                     const isHovered = hoveredPointIdx === idx;
+
                     return (
-                      <g
-                        key={idx}
-                        onMouseEnter={() => setHoveredPointIdx(idx)}
-                        onMouseLeave={() => setHoveredPointIdx(null)}
-                        className="cursor-pointer"
-                      >
-                        {/* Glow indicator */}
-                        {isHovered && (
-                          <circle
-                            cx={p.x}
-                            cy={p.y}
-                            r="8"
-                            fill="#1A3C5E"
-                            opacity="0.25"
-                            className="transition-all duration-150 animate-pulse-subtle"
-                          />
-                        )}
-                        <circle
-                          cx={p.x}
-                          cy={p.y}
-                          r={isHovered ? "5" : "3.5"}
-                          fill={isHovered ? "#1A3C5E" : "#FFFFFF"}
-                          stroke="#1A3C5E"
-                          strokeWidth="2"
-                          className="transition-all duration-150"
+                      <g key={idx}>
+                        <rect
+                          x={x}
+                          y={y}
+                          width={barWidth}
+                          height={barHeight}
+                          rx={Math.min(barWidth / 2, 3)}
+                          fill="#1A3C5E"
+                          fillOpacity={isPeak ? 1 : (isHovered ? 0.7 : 0.35)}
+                          className="transition-all duration-200"
                         />
                       </g>
                     );
                   })}
-                </svg>
-              </div>
 
-              {/* Bottom Labels */}
-              <div className="flex justify-between items-center text-[8px] text-outline font-black uppercase tracking-wider mt-2 px-4.5">
-                <span>{chartData[0]?.label || ''}</span>
-                <span>{chartData[Math.floor(chartData.length / 2)]?.label || ''}</span>
-                <span>{chartData[chartData.length - 1]?.label || ''}</span>
+                  {/* Tooltip Badge above active bar */}
+                  {chartData.map((d, idx) => {
+                    const isHovered = hoveredPointIdx === idx;
+                    if (!isHovered) return null;
+                    const barCenterX = paddingX + idx * step + step / 2;
+                    const barHeight = d.value > 0 ? Math.max((d.value / maxVal) * maxBarHeight, 4) : 0;
+                    const yTop = height - paddingY - barHeight;
+
+                    return (
+                      <g key={`tooltip-${idx}`} className="animate-fade-in pointer-events-none">
+                        <rect
+                          x={barCenterX - 28}
+                          y={yTop - 18}
+                          width="56"
+                          height="12"
+                          rx="4"
+                          fill="#1A3C5E"
+                        />
+                        <polygon
+                          points={`${barCenterX - 3},${yTop - 6} ${barCenterX + 3},${yTop - 6} ${barCenterX},${yTop - 3}`}
+                          fill="#1A3C5E"
+                        />
+                        <text
+                          x={barCenterX}
+                          y={yTop - 10}
+                          textAnchor="middle"
+                          fill="#FFFFFF"
+                          fontSize="6.5"
+                          fontWeight="black"
+                        >
+                          {fmtFr(d.value)}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Axis labels */}
+                  {chartData.map((d, idx) => {
+                    if (!d.label) return null;
+                    const barCenterX = paddingX + idx * step + step / 2;
+                    return (
+                      <text
+                        key={`lbl-${idx}`}
+                        x={barCenterX}
+                        y={height - paddingY + 12}
+                        textAnchor="middle"
+                        fill="#9CA3AF"
+                        fontSize="6.5"
+                        fontWeight="black"
+                        className="uppercase select-none font-sans"
+                      >
+                        {d.label}
+                      </text>
+                    );
+                  })}
+
+                  {/* Tap hitboxes (Overlay) */}
+                  {chartData.map((_, idx) => {
+                    const barCenterX = paddingX + idx * step + step / 2;
+                    const hitX = barCenterX - step / 2;
+                    return (
+                      <rect
+                        key={`hit-${idx}`}
+                        x={hitX}
+                        y={0}
+                        width={step}
+                        height={height}
+                        fill="transparent"
+                        className="cursor-pointer"
+                        onTouchStart={() => setHoveredPointIdx(idx)}
+                        onMouseDown={() => setHoveredPointIdx(idx)}
+                      />
+                    );
+                  })}
+                </svg>
               </div>
             </Card>
           </section>
