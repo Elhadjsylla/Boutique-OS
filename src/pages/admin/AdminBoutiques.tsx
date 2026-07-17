@@ -338,7 +338,7 @@ export const AdminBoutiques: React.FC = () => {
                       <span className="px-1.5 py-0.5 bg-admin-primary/20 text-admin-primary-light rounded text-[8px] font-bold uppercase">Gérant</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-admin-text-muted italic">Aucun gérant assigné à cette boutique.</span>
+                    <span className="text-xs text-admin-text-muted italic">Aucun utilisateur avec le rôle Gérant n'est assigné à cette boutique. Le compteur "Utilisateurs" ci-dessus inclut tous les rôles (Super Admin, Caissier...) affiliés à cette boutique, pas seulement le Gérant.</span>
                   )}
                 </div>
               </div>
