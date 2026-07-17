@@ -22,7 +22,7 @@ interface BoutiqueDetails {
   suspended_at: string | null;
   suspended_reason: string | null;
   created_at: string;
-  gerant: { id: string; email: string; role: string } | null;
+  gerant: { id: string; email: string; role: string; nom?: string; prenom?: string } | null;
   stats: {
     total_users: number;
     total_products: number;
@@ -334,11 +334,34 @@ export const AdminBoutiques: React.FC = () => {
                   <span className="text-[9px] font-bold text-admin-text-muted uppercase tracking-wide">Gérant de la Boutique</span>
                   {selectedBoutiqueDetails.gerant ? (
                     <div className="p-2.5 bg-admin-surface border border-admin-border/60 rounded-xl flex items-center justify-between text-xs">
-                      <span className="font-bold text-admin-text truncate">{selectedBoutiqueDetails.gerant.email}</span>
-                      <span className="px-1.5 py-0.5 bg-admin-primary/20 text-admin-primary-light rounded text-[8px] font-bold uppercase">Gérant</span>
+                      <div className="flex flex-col gap-0.5 truncate">
+                        <span className="font-bold text-admin-text truncate">
+                          {selectedBoutiqueDetails.gerant.nom || selectedBoutiqueDetails.gerant.prenom
+                            ? `${selectedBoutiqueDetails.gerant.prenom || ''} ${selectedBoutiqueDetails.gerant.nom || ''}`.trim()
+                            : selectedBoutiqueDetails.gerant.email}
+                        </span>
+                        {(selectedBoutiqueDetails.gerant.nom || selectedBoutiqueDetails.gerant.prenom) && (
+                          <span className="text-[10px] text-admin-text-muted truncate">{selectedBoutiqueDetails.gerant.email}</span>
+                        )}
+                      </div>
+                      <span className="px-1.5 py-0.5 bg-admin-primary/20 text-admin-primary-light rounded text-[8px] font-bold uppercase shrink-0">
+                        {selectedBoutiqueDetails.gerant.role === 'super_admin' ? 'Super Admin' : 'Gérant'}
+                      </span>
                     </div>
-                  ) : (
-                    <span className="text-xs text-admin-text-muted italic">Aucun utilisateur avec le rôle Gérant n'est assigné à cette boutique. Le compteur "Utilisateurs" ci-dessus inclut tous les rôles (Super Admin, Caissier...) affiliés à cette boutique, pas seulement le Gérant.</span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-admin-text-muted italic">Aucun utilisateur avec le rôle Gérant n'est assigné à cette boutique. Le compteur "Utilisateurs" ci-dessus inclut tous les rôles (Super Admin, Caissier...) affiliés à cette boutique, pas seulement le Gérant.</span>
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('admin_users_filter_boutique_id', selectedBoutiqueDetails.id);
+                          window.location.hash = '#admin-users';
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }}
+                        className="text-left text-[10px] font-black uppercase text-admin-primary-light hover:underline mt-1 cursor-pointer flex items-center gap-1 w-fit"
+                      >
+                        <span className="material-symbols-outlined text-xs">group</span>
+                        Voir les utilisateurs affiliés
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

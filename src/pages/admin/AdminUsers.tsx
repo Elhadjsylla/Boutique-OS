@@ -25,6 +25,9 @@ export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [boutiques, setBoutiques] = useState<Boutique[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterBoutiqueId, setFilterBoutiqueId] = useState<string | null>(() => {
+    return localStorage.getItem('admin_users_filter_boutique_id');
+  });
 
   // Reveal State
   const { revealStates, revealedDetails, handleReveal } = useRevealUser();
@@ -109,12 +112,37 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
+  const filteredUsers = filterBoutiqueId
+    ? users.filter(u => u.boutique_id === filterBoutiqueId)
+    : users;
+
   return (
     <div className="flex flex-col gap-6 text-left">
       <div>
         <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Utilisateurs</h1>
         <p className="text-xs text-admin-text-muted">Affichez les profils utilisateurs et réassignez les rôles et boutiques.</p>
       </div>
+
+      {filterBoutiqueId && (
+        <div className="p-3.5 bg-admin-surface border border-admin-border/60 rounded-xl flex items-center justify-between gap-3 text-xs shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2 text-admin-text-muted">
+            <span className="material-symbols-outlined text-admin-primary-light text-lg">filter_alt</span>
+            <span>
+              Filtré par boutique : <strong className="text-admin-text">{boutiques.find(b => b.id === filterBoutiqueId)?.nom || 'Chargement...'}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFilterBoutiqueId(null);
+              localStorage.removeItem('admin_users_filter_boutique_id');
+            }}
+            className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted hover:text-admin-text border border-admin-border hover:bg-admin-surface px-2.5 py-1.5 rounded-lg transition-all active:scale-95 cursor-pointer"
+          >
+            Réinitialiser le filtre
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-xl flex items-center justify-between gap-3">
@@ -152,7 +180,7 @@ export const AdminUsers: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
+                {filteredUsers.map(u => (
                   <tr key={u.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
                     <td className="py-3 px-4 font-mono select-all truncate max-w-[120px]" title={u.id}>
                       {u.id}
@@ -218,7 +246,7 @@ export const AdminUsers: React.FC = () => {
 
           {/* Mobile/Tablet Card View */}
           <div className="lg:hidden flex flex-col gap-4">
-            {users.map(u => (
+            {filteredUsers.map(u => (
               <div key={u.id} className="bg-admin-card border border-admin-border rounded-2xl p-4 flex flex-col gap-3.5 shadow-sm text-xs">
                 <div className="flex justify-between items-center border-b border-admin-border pb-2.5">
                   <div className="flex flex-col gap-1 min-w-0">
