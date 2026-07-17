@@ -149,7 +149,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onExit }) => {
       </header>
 
       {/* Main Panel Content */}
-      <main className="flex-1 p-6 md:p-10 pb-24 md:pb-10 overflow-y-auto overflow-x-hidden max-w-7xl mx-auto w-full min-w-0">
+      <main className="flex-1 p-6 md:p-10 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-10 overflow-y-auto overflow-x-hidden max-w-7xl mx-auto w-full min-w-0">
         {activeTab === 'dashboard' && <AdminDashboard onNavigate={setActiveTab} />}
         {activeTab === 'boutiques' && <AdminBoutiques />}
         {activeTab === 'users' && <AdminUsers />}
@@ -158,7 +158,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onExit }) => {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-admin-card border-t border-admin-border h-16 flex justify-around items-center z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-admin-card border-t border-admin-border pb-[env(safe-area-inset-bottom)] h-[calc(4rem+env(safe-area-inset-bottom))] flex justify-around items-center z-50">
         {navItems.map(item => (
           <button
             key={item.id}
