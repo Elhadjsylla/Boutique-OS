@@ -12,6 +12,7 @@ export interface Boutique {
   nom: string
   adresse: string | null
   gerant_id: string | null
+  message_ticket?: string | null
 }
 
 export interface SubscriptionStatus {
@@ -29,6 +30,7 @@ interface AuthState {
   subscriptionStatus: SubscriptionStatus | null
   isLoading: boolean
   setAuth: (user: User | null, profile: Profile | null, boutique: Boutique | null) => void
+  setBoutique: (boutique: Boutique | null) => void
   setSubscriptionStatus: (status: SubscriptionStatus | null) => void
   clearAuth: () => void
   setLoading: (isLoading: boolean) => void
@@ -41,6 +43,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   subscriptionStatus: null,
   isLoading: true,
   setAuth: (user, profile, boutique) => set({ user, profile, boutique, isLoading: false }),
+  setBoutique: (boutique) => set({ boutique }),
   setSubscriptionStatus: (subscriptionStatus) => set({ subscriptionStatus }),
   clearAuth: () => set({ user: null, profile: null, boutique: null, subscriptionStatus: null, isLoading: false }),
   setLoading: (isLoading) => set({ isLoading }),

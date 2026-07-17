@@ -25,8 +25,9 @@ export const Reglages: React.FC<ReglagesProps> = ({
     { code: 'wo', label: 'Wolof', flag: '🇸🇳' },
   ];
 
-  const { user, profile, boutique } = useAuthStore();
+  const { user, profile, boutique, setBoutique } = useAuthStore();
   const [boutiqueName, setBoutiqueName] = useState(boutique?.nom || '');
+  const [messageTicket, setMessageTicket] = useState(boutique?.message_ticket || '');
   const [stockThreshold, setStockThreshold] = useState(5);
   const [boutiqueQuartier, setBoutiqueQuartier] = useState('');
   const [quartiers, setQuartiers] = useState<string[]>([]);
@@ -44,16 +45,17 @@ export const Reglages: React.FC<ReglagesProps> = ({
           setQuartiers(["Dakar Plateau", "Médina", "Fann-Point E-Amitié", "Ouakam", "Yoff", "Ngor-Almadies", "Mermoz-Sacré Cœur", "Grand Dakar", "Parcelles Assainies", "Pikine", "Guédiawaye", "Rufisque"]);
         }
 
-        // Fetch current boutique quartier
+        // Fetch current boutique details
         const { data: bData } = await supabase
           .from('boutiques')
-          .select('nom, quartier')
+          .select('nom, quartier, message_ticket')
           .eq('id', boutiqueId)
           .single();
         
         if (bData) {
           if (bData.nom) setBoutiqueName(bData.nom);
           if (bData.quartier) setBoutiqueQuartier(bData.quartier);
+          if (bData.message_ticket !== undefined) setMessageTicket(bData.message_ticket || '');
         }
       } catch (err) {
         console.error("Error loading boutique details:", err);
@@ -71,11 +73,22 @@ export const Reglages: React.FC<ReglagesProps> = ({
         .from('boutiques')
         .update({ 
           nom: boutiqueName.trim(),
-          quartier: boutiqueQuartier || null
+          quartier: boutiqueQuartier || null,
+          message_ticket: messageTicket.trim() || null
         })
         .eq('id', boutiqueId);
       if (error) throw error;
-      setToast({ message: 'Paramètres sauvegardés avec succès.', type: 'success' });
+
+      // Update global store
+      if (boutique) {
+        setBoutique({
+          ...boutique,
+          nom: boutiqueName.trim(),
+          message_ticket: messageTicket.trim() || null
+        });
+      }
+
+      setToast({ message: 'Modifications enregistrées', type: 'success' });
     } catch {
       setToast({ message: 'Erreur lors de la sauvegarde.', type: 'error' });
     } finally {
@@ -168,6 +181,22 @@ export const Reglages: React.FC<ReglagesProps> = ({
               ...quartiers.map(q => ({ value: q, label: q }))
             ]}
           />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
+            Message du ticket de caisse
+          </label>
+          <textarea
+            value={messageTicket}
+            onChange={(e) => setMessageTicket(e.target.value)}
+            placeholder="Ex: Merci pour votre visite ! À bientôt."
+            rows={2}
+            className="w-full p-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-semibold text-on-surface resize-none"
+          />
+          <p className="text-[10px] text-outline">
+            Ce message sera imprimé en bas des reçus de vos clients.
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">

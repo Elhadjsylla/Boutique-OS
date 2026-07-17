@@ -20,6 +20,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null); // contains { ardoise: {...}, paiements: [...] }
   const [isDemo, setIsDemo] = useState(false);
+  const [boutique, setBoutique] = useState<{ nom: string; message_ticket: string | null } | null>(null);
 
   // Fetch ardoise by token
   useEffect(() => {
@@ -36,6 +37,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
           { id: "p-2", montant: 15000, paid_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString() }
         ]
       });
+      setBoutique({ nom: "Sama Boutik Démo", message_ticket: "Merci pour votre confiance sur la démo !" });
       setLoading(false);
       return;
     }
@@ -56,6 +58,20 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
 
     fetchArdoise();
   }, [token]);
+
+  // Fetch boutique details once the ardoise is loaded
+  useEffect(() => {
+    if (data?.ardoise?.boutique_id) {
+      supabase
+        .from('boutiques')
+        .select('nom, message_ticket')
+        .eq('id', data.ardoise.boutique_id)
+        .single()
+        .then(({ data: b }) => {
+          if (b) setBoutique(b);
+        });
+    }
+  }, [data]);
 
   // Claim ardoise if logged in as client
   useEffect(() => {
@@ -242,7 +258,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
         <body>
           <div class="receipt-container">
             <div class="header">
-              <div class="logo">Sama Boutik</div>
+              <div class="logo">${boutique?.nom || 'Sama Boutik'}</div>
               <div class="subtitle">Reçu de Compte Client</div>
             </div>
             
@@ -304,8 +320,9 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
             </div>
 
             <div class="footer">
-              Reçu officiel généré par <strong>Sama Boutik</strong> — Le système de gestion intelligent pour votre boutique.<br>
-              Merci pour votre confiance !
+              ${boutique?.message_ticket 
+                ? boutique.message_ticket.replace(/\n/g, '<br>')
+                : `Reçu officiel généré par <strong>${boutique?.nom || 'Sama Boutik'}</strong> — Le système de gestion intelligent pour votre boutique.<br>Merci pour votre confiance !`}
             </div>
           </div>
 

@@ -69,6 +69,7 @@ const VALID_TABS = ['caisse', 'stock', 'ardoise', 'dashboard', 'settings', 'regl
 function App() {
   const { session, isLoading: isProfileLoading, signOut: handleLogout } = useAuth();
   const storeProfile = useAuthStore(state => state.profile);
+  const boutique = useAuthStore(state => state.boutique);
   useSyncEngine();
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -428,7 +429,7 @@ function App() {
   // Extract metadata safely with fallbacks if needed
   const user = session.user;
   const boutiqueId = storeProfile?.boutique_id || user.user_metadata?.boutique_id || 'boutique-1';
-  const boutiqueName = (storeProfile as any)?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
+  const boutiqueName = boutique?.nom || (storeProfile as any)?.boutique_name || user.user_metadata?.boutique_name || 'Sama Boutik';
   const caissierId = user.id;
   const userRole = storeProfile?.role || user.user_metadata?.role || 'caissier';
 
