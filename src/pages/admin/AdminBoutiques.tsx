@@ -348,6 +348,7 @@ export const AdminBoutiques: React.FC = () => {
                         {selectedBoutiqueDetails.gerant.role === 'super_admin' ? 'Super Admin' : 'Gérant'}
                       </span>
                     </div>
+                  ) : (
                     <div className="flex flex-col gap-1.5">
                       <span className="text-xs text-admin-text-muted italic">Aucun utilisateur avec le rôle Gérant n'est assigné à cette boutique. Le compteur "Utilisateurs" ci-dessus inclut tous les rôles (Super Admin, Caissier...) affiliés à cette boutique, pas seulement le Gérant.</span>
                       <button
