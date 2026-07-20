@@ -28,7 +28,6 @@ interface SubscriptionEntry {
   revocation_reason?: string | null;
   revocation_type?: string | null;
   revoked_by_name?: string | null;
-  revoked_previous_plan?: string | null;
 }
 
 export const AdminSubscriptions: React.FC = () => {
@@ -51,6 +50,12 @@ export const AdminSubscriptions: React.FC = () => {
   const [reactivatingSub, setReactivatingSub] = useState<SubscriptionEntry | null>(null);
   const [isReactivating, setIsReactivating]   = useState(false);
   const [doubleConfirmReactivate, setDoubleConfirmReactivate] = useState(false);
+
+  // Deletion State
+  const [deletingSub, setDeletingSub]     = useState<SubscriptionEntry | null>(null);
+  const [deleteReason, setDeleteReason]   = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting]       = useState(false);
 
   // History / Audit Logs state
   const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
@@ -201,6 +206,32 @@ export const AdminSubscriptions: React.FC = () => {
     }
   };
 
+  const handleOpenDelete = (sub: SubscriptionEntry) => {
+    setDeletingSub(sub);
+    setDeleteReason('');
+    setDeleteConfirmText('');
+  };
+
+  const handleDeleteSubscription = async () => {
+    if (!deletingSub || deleteConfirmText !== 'SUPPRIMER') return;
+    setIsDeleting(true);
+    try {
+      const { error } = await callRpcWithRetry('delete_subscription', {
+        p_subscription_id: deletingSub.id,
+        p_reason: deleteReason.trim()
+      });
+      if (error) throw error;
+
+      setDeletingSub(null);
+      showToast("Abonnement supprimé avec succès.", "success");
+      fetchSubscriptions();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Erreur lors de la suppression", "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const statusBadge = (s: SubscriptionEntry) => {
     if (s.revoked_at) {
       const mode = s.revocation_type === 'immediate' ? 'Immédiat' : 'Fin de période';
@@ -333,6 +364,12 @@ export const AdminSubscriptions: React.FC = () => {
                                 Révoquer
                               </button>
                             )}
+                            <button
+                              onClick={() => handleOpenDelete(s)}
+                              className="h-8 px-2.5 bg-zinc-700/40 hover:bg-red-900/40 text-zinc-400 hover:text-red-400 border border-zinc-700/50 hover:border-red-800/50 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                            >
+                              Supprimer
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -564,6 +601,12 @@ export const AdminSubscriptions: React.FC = () => {
                         Révoquer
                       </button>
                     )}
+                    <button
+                      onClick={() => handleOpenDelete(s)}
+                      className="h-8 px-2.5 bg-zinc-700/40 hover:bg-red-900/40 text-zinc-400 hover:text-red-400 border border-zinc-700/50 hover:border-red-800/50 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                    >
+                      Supprimer
+                    </button>
                   </div>
                 </div>
               );
@@ -759,7 +802,7 @@ export const AdminSubscriptions: React.FC = () => {
             </div>
 
             <div className="p-3 bg-emerald-950/20 border border-emerald-500/20 rounded-xl text-[10px] text-emerald-300 leading-normal font-mono">
-              ℹ️ Voulez-vous réactiver l'abonnement du marchand ? Son plan précédent (<span className="font-bold uppercase">{reactivatingSub.revoked_previous_plan || 'starter'}</span>) sera restauré avec ses droits associés.
+              ℹ️ Voulez-vous réactiver l'abonnement du marchand ? Son plan (<span className="font-bold uppercase">{reactivatingSub.plan}</span>) sera restauré avec ses droits associés.
             </div>
 
             {/* Double confirmation */}
@@ -790,6 +833,69 @@ export const AdminSubscriptions: React.FC = () => {
                 className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
               >
                 {isReactivating ? 'RÉACTIVATION...' : 'RÉACTIVER'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL : Suppression abonnement */}
+      {deletingSub && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-admin-card rounded-2xl p-6 max-w-sm w-full relative shadow-xl text-left border border-red-500/30 flex flex-col gap-4 animate-scale-in">
+            <h3 className="text-sm font-black text-red-400 uppercase tracking-wider flex items-center gap-1">⚠️ Supprimer l'Abonnement</h3>
+
+            <div className="flex flex-col text-[10px] text-admin-text-muted font-mono leading-relaxed gap-0.5 border-b border-admin-border/50 pb-2">
+              <span className="truncate">Marchand : {revealedDetails[deletingSub.user_id]?.nom || deletingSub.nom_masque}</span>
+              <span className="truncate text-admin-text-muted/60">{revealedDetails[deletingSub.user_id]?.email || deletingSub.email_masque}</span>
+            </div>
+
+            <p className="text-[11px] text-amber-400 leading-relaxed">
+              L'abonnement sera masqué de la liste active{deletingSub.status === 'active' || deletingSub.status === 'trial' ? ' et le marchand repassera immédiatement au plan Free' : ''}.
+              L'historique des paiements et transactions liés n'est jamais supprimé.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-black uppercase tracking-wider text-admin-text-muted">Motif de la suppression</label>
+              <textarea
+                required
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                rows={3}
+                placeholder="Ex: Compte marchand fermé définitivement..."
+                className="w-full p-3 text-xs bg-admin-surface border border-admin-border rounded-xl text-admin-text focus:outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-admin-border/50 pt-3">
+              <label className="text-[9px] font-black uppercase tracking-wider text-red-400">
+                Confirmation requise : écrire "SUPPRIMER"
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Écrire SUPPRIMER pour valider"
+                className="w-full h-10 bg-admin-surface border border-admin-border rounded-xl px-3 text-xs text-admin-text focus:outline-none focus:border-red-500/50"
+              />
+            </div>
+
+            <div className="flex gap-2.5 mt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingSub(null)}
+                disabled={isDeleting}
+                className="flex-1 h-10 border border-admin-border hover:bg-admin-surface text-admin-text text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSubscription}
+                disabled={isDeleting || !deleteReason.trim() || deleteConfirmText !== 'SUPPRIMER'}
+                className="flex-1 h-10 bg-red-600 hover:bg-red-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
+              >
+                {isDeleting ? 'SUPPRESSION...' : 'CONFIRMER'}
               </button>
             </div>
           </div>
