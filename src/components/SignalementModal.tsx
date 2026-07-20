@@ -3,6 +3,7 @@ import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Select } from './ui/Select';
 import { Input } from './ui/Input';
+import { ImagePicker } from './ui/ImagePicker';
 import { useOnline } from '../hooks/useOnline';
 import { signalementService } from '../services/signalementService';
 
@@ -18,9 +19,10 @@ export const SignalementModal: React.FC<SignalementModalProps> = ({
   boutiqueId,
 }) => {
   const isOnline = useOnline();
-  const [type, setType] = useState<'bug' | 'suggestion' | 'plainte' | 'autre'>('bug');
+  const [type, setType] = useState<'bug' | 'paiement' | 'compte' | 'autre'>('bug');
   const [sujet, setSujet] = useState('');
   const [message, setMessage] = useState('');
+  const [captureUrl, setCaptureUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -47,7 +49,8 @@ export const SignalementModal: React.FC<SignalementModalProps> = ({
         type,
         sujet,
         message,
-        isOnline
+        isOnline,
+        captureUrl || null
       );
 
       if (res.success) {
@@ -59,6 +62,7 @@ export const SignalementModal: React.FC<SignalementModalProps> = ({
         setSujet('');
         setMessage('');
         setType('bug');
+        setCaptureUrl('');
       } else {
         setErrorMsg(res.error || "Une erreur est survenue lors de l'envoi.");
       }
@@ -87,8 +91,8 @@ export const SignalementModal: React.FC<SignalementModalProps> = ({
             onChange={(val) => setType(val as any)}
             options={[
               { value: 'bug', label: 'Bug / Dysfonctionnement' },
-              { value: 'suggestion', label: 'Suggestion d\'amélioration' },
-              { value: 'plainte', label: 'Problème de Paiement/Facturation' },
+              { value: 'paiement', label: 'Paiement / Abonnement' },
+              { value: 'compte', label: 'Compte / Accès' },
               { value: 'autre', label: 'Autre demande' },
             ]}
           />
@@ -120,6 +124,12 @@ export const SignalementModal: React.FC<SignalementModalProps> = ({
               <span>{message.length} / 1000</span>
             </div>
           </div>
+
+          <ImagePicker
+            value={captureUrl}
+            onChange={setCaptureUrl}
+            label="Capture d'écran (optionnel)"
+          />
 
           {!isOnline && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex gap-2.5 items-center">

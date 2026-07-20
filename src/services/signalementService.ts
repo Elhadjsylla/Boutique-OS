@@ -7,21 +7,24 @@ export const signalementService = {
    */
   async createSignalement(
     boutiqueId: string,
-    type: 'bug' | 'suggestion' | 'plainte' | 'autre',
+    type: 'bug' | 'paiement' | 'compte' | 'autre',
     sujet: string,
     message: string,
-    isOnline: boolean
+    isOnline: boolean,
+    captureUrl: string | null = null
   ): Promise<{ success: boolean; offline?: boolean; error?: string }> {
     const uuid = crypto.randomUUID();
     const createdAt = new Date().toISOString();
 
     if (isOnline) {
       try {
+        // boutique_id n'est plus envoyé : le RPC le dérive côté serveur
+        // (get_my_boutique_id()) pour empêcher un client de le falsifier.
         const { error } = await supabase.rpc('create_signalement', {
-          p_boutique_id: boutiqueId,
           p_type: type,
           p_sujet: sujet.trim(),
-          p_message: message.trim()
+          p_message: message.trim(),
+          p_capture_url: captureUrl
         });
 
         if (error) throw error;
@@ -33,6 +36,7 @@ export const signalementService = {
           type,
           sujet: sujet.trim(),
           message: message.trim(),
+          capture_url: captureUrl,
           created_at: createdAt,
           synced: 1
         });
@@ -51,6 +55,7 @@ export const signalementService = {
       type,
       sujet: sujet.trim(),
       message: message.trim(),
+      capture_url: captureUrl,
       created_at: createdAt,
       synced: 0
     });
@@ -75,10 +80,10 @@ export const signalementService = {
       for (const sig of pending) {
         try {
           const { error } = await supabase.rpc('create_signalement', {
-            p_boutique_id: sig.boutique_id,
             p_type: sig.type,
             p_sujet: sig.sujet,
-            p_message: sig.message
+            p_message: sig.message,
+            p_capture_url: sig.capture_url
           });
 
           if (error) {

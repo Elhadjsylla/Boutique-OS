@@ -4,9 +4,10 @@ export interface LocalSignalement {
   id?: number;
   uuid: string;
   boutique_id: string;
-  type: 'bug' | 'suggestion' | 'plainte' | 'autre';
+  type: 'bug' | 'paiement' | 'compte' | 'autre';
   sujet: string;
   message: string;
+  capture_url: string | null;
   created_at: string;
   synced: number; // 0 = non synchronisé, 1 = synchronisé
 }
