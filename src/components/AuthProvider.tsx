@@ -129,6 +129,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      // Un Caissier retiré de son équipe (gerant_remove_staff, migration 0063)
+      // se retrouve avec boutique_id = NULL — rejeté à l'authentification,
+      // pas seulement laissé avec un dashboard vide sans boutique à afficher.
+      if (userProfile.role === 'caissier' && !userProfile.boutique_id) {
+        await supabase.auth.signOut();
+        clearAuth();
+        setAuthError("Vous avez été retiré de l'équipe de votre boutique. Contactez votre gérant.");
+        clearTimeout(failsafe);
+        return;
+      }
+
       let userBoutique: Boutique | null = null;
 
       if (userProfile.boutique_id) {

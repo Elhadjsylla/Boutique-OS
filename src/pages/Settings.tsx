@@ -50,6 +50,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const [inviteRole, setInviteRole] = useState<'caissier' | 'gerant'>('caissier');
   const [isInviting, setIsInviting] = useState(false);
 
+  // Retrait d'un membre de l'équipe
+  const [removingMember, setRemovingMember] = useState<any | null>(null);
+  const [removeReason, setRemoveReason] = useState('');
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [teamActivityLog, setTeamActivityLog] = useState<any[]>([]);
+  const [showTeamHistory, setShowTeamHistory] = useState(false);
+
   const fetchTeam = async () => {
     try {
       const { data: profs } = await supabase
@@ -65,6 +72,14 @@ export const Settings: React.FC<SettingsProps> = ({
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString());
       if (invs) setPendingInvitations(invs);
+
+      const { data: logs } = await supabase
+        .from('team_activity_log')
+        .select('*')
+        .eq('boutique_id', boutiqueId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (logs) setTeamActivityLog(logs);
     } catch (e) {
       console.error(e);
     }
@@ -73,6 +88,26 @@ export const Settings: React.FC<SettingsProps> = ({
   useEffect(() => {
     fetchTeam();
   }, [boutiqueId]);
+
+  const handleConfirmRemove = async () => {
+    if (!removingMember) return;
+    setIsRemoving(true);
+    try {
+      const { error } = await supabase.rpc('gerant_remove_staff', {
+        p_target_user_id: removingMember.id,
+        p_reason: removeReason.trim() || null,
+      });
+      if (error) throw error;
+      setToast({ message: 'Membre retiré de l\'équipe.', type: 'success' });
+      setRemovingMember(null);
+      setRemoveReason('');
+      fetchTeam();
+    } catch (e: any) {
+      setToast({ message: e.message || 'Erreur lors du retrait.', type: 'error' });
+    } finally {
+      setIsRemoving(false);
+    }
+  };
 
   const [boutiqueName, setBoutiqueName] = useState(initialBoutiqueName);
   const [seuilAlerte, setSeuilAlerte] = useState(parseInt(localStorage.getItem('seuil_alerte_global') || '5'));
@@ -524,7 +559,18 @@ export const Settings: React.FC<SettingsProps> = ({
                   <span className="text-[9px] text-outline uppercase font-black">{member.role}</span>
                 </div>
               </div>
-              <span className="text-[9px] text-secondary font-black uppercase tracking-wider bg-secondary/15 px-2 py-0.5 rounded-full">Actif</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] text-secondary font-black uppercase tracking-wider bg-secondary/15 px-2 py-0.5 rounded-full">Actif</span>
+                {member.role === 'caissier' && (
+                  <button
+                    type="button"
+                    onClick={() => { setRemovingMember(member); setRemoveReason(''); }}
+                    className="text-[9px] text-error font-black uppercase tracking-wider bg-error-container/40 hover:bg-error-container/70 px-2 py-0.5 rounded-full active:scale-95 transition-all cursor-pointer"
+                  >
+                    Retirer
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           {pendingInvitations.map((inv) => (
@@ -641,6 +687,32 @@ export const Settings: React.FC<SettingsProps> = ({
             {isInviting ? 'ENVOI DE L\'INVITATION...' : 'INVITER L\'UTILISATEUR'}
           </button>
         </div>
+
+        {/* Historique des retraits d'équipe */}
+        {teamActivityLog.length > 0 && (
+          <div className="border-t border-outline-variant/40 pt-3">
+            <button
+              type="button"
+              onClick={() => setShowTeamHistory(!showTeamHistory)}
+              className="flex items-center gap-1.5 text-[10px] text-outline font-bold uppercase tracking-wider hover:text-on-surface transition-all"
+            >
+              <span className="material-symbols-outlined text-sm">{showTeamHistory ? 'expand_less' : 'expand_more'}</span>
+              Historique de l'équipe ({teamActivityLog.length})
+            </button>
+            {showTeamHistory && (
+              <div className="flex flex-col gap-1.5 mt-2 max-h-40 overflow-y-auto pr-1">
+                {teamActivityLog.map((log) => (
+                  <div key={log.id} className="p-2 bg-surface-container/20 border border-outline-variant/40 rounded-lg text-[9px] text-outline">
+                    <span className="font-bold text-on-surface">Membre {log.target_id.slice(0, 8)} retiré</span>
+                    {' — '}
+                    {new Date(log.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {log.reason && <span className="block italic mt-0.5">Motif : {log.reason}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Settings Form */}
@@ -840,6 +912,46 @@ export const Settings: React.FC<SettingsProps> = ({
           onClose={() => setIsSignalementOpen(false)}
           boutiqueId={boutiqueId}
         />
+      )}
+
+      {/* MODAL : Retirer un membre de l'équipe */}
+      {removingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full relative shadow-xl text-left border border-error/30 flex flex-col gap-4 animate-scale-in">
+            <h3 className="text-sm font-black text-error uppercase tracking-wider flex items-center gap-1">⚠️ Retirer ce membre</h3>
+            <p className="text-xs text-outline leading-relaxed">
+              Ce caissier perdra immédiatement l'accès à la boutique. Son historique de ventes reste intact et lui reste attribué — il pourra être réinvité plus tard, dans cette boutique ou une autre.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-outline">Motif (optionnel)</label>
+              <textarea
+                value={removeReason}
+                onChange={(e) => setRemoveReason(e.target.value)}
+                rows={2}
+                placeholder="Ex: Fin de contrat, changement de poste..."
+                className="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-2 focus:ring-error/20 focus:border-error outline-none transition-all text-sm text-on-surface resize-none"
+              />
+            </div>
+            <div className="flex gap-2.5 mt-2">
+              <button
+                type="button"
+                onClick={() => setRemovingMember(null)}
+                disabled={isRemoving}
+                className="flex-1 h-10 border border-outline-variant hover:bg-surface-container text-on-surface text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRemove}
+                disabled={isRemoving}
+                className="flex-1 h-10 bg-error hover:bg-error/90 disabled:opacity-50 text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
+              >
+                {isRemoving ? 'RETRAIT...' : 'CONFIRMER'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
