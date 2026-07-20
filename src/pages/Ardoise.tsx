@@ -11,7 +11,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { formatMontantFull } from '../lib/format';
+import { formatMontantFull, toWhatsAppNumber } from '../lib/format';
 
 const getAvatarGradient = (name: string) => {
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -93,10 +93,12 @@ const ArdoiseInteractiveChart: React.FC<{
   const selectedPoint = points.find(p => p.item.id === selectedId);
   const hoveredPoint = points.find(p => p.item.id === hoveredId);
 
-  // Generate WhatsApp text
-  const getWhatsAppLink = (clientNom: string, remaining: number) => {
+  // Génère le lien de relance WhatsApp — cible directement le client si son
+  // numéro est enregistré, sinon retombe sur un partage sans destinataire.
+  const getWhatsAppLink = (clientNom: string, remaining: number, whatsappNumero?: string | null) => {
     const message = `Bonjour ${clientNom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${formatMontantFull(remaining)} FCFA. Merci !`;
-    return `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const target = toWhatsAppNumber(whatsappNumero);
+    return `https://wa.me/${target || ''}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -242,7 +244,7 @@ const ArdoiseInteractiveChart: React.FC<{
           {/* WhatsApp and WhatsApp template */}
           <div className="flex gap-2 border-t border-outline-variant/30 pt-2.5">
             <a
-              href={getWhatsAppLink(selectedPoint.item.client_nom, selectedPoint.item.remaining)}
+              href={getWhatsAppLink(selectedPoint.item.client_nom, selectedPoint.item.remaining, selectedPoint.item.whatsapp_numero)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 h-8 rounded-lg bg-green-500 hover:bg-green-600 text-white text-[10px] font-black flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm"
@@ -296,6 +298,11 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
   // Form states — création
   const [newClientName, setNewClientName] = useState('');
   const [newInitialAmount, setNewInitialAmount] = useState('');
+  const [newClientWhatsapp, setNewClientWhatsapp] = useState('');
+
+  // Form state — édition du numéro WhatsApp d'une fiche existante
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [isSavingWhatsapp, setIsSavingWhatsapp] = useState(false);
 
   // Form states — versement dans la fiche client
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -378,13 +385,14 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
     // Réinitialise tous les champs
     setNewClientName('');
     setNewInitialAmount('');
+    setNewClientWhatsapp('');
     setPaymentAmount('');
     setAddDebtAmount('');
     setShowAddDebt(false);
     // La fiche client (isDetailOpen) reste ouverte pour que le user voie la mise à jour
   };
 
-  const { createArdoise, addPayment, addDebt } = useArdoise(
+  const { createArdoise, addPayment, addDebt, updateWhatsapp } = useArdoise(
     handleSuccess,
     (msg) => setToast({ message: msg, type: 'error' })
   );
@@ -423,6 +431,7 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
     setPaymentAmount('');
     setAddDebtAmount('');
     setShowAddDebt(false);
+    setEditWhatsapp(processedArdoises.find((a) => a.id === id)?.whatsapp_numero || '');
     setIsDetailOpen(true);
   };
 
@@ -605,7 +614,13 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
         <div className="flex flex-col gap-4">
           <Input label="Nom du Client" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Nom complet..." />
           <MontantInput label="Montant Initial Dû (FCFA)" value={newInitialAmount} onChange={setNewInitialAmount} placeholder="Ex: 5000" />
-          <Button onClick={() => createArdoise(boutiqueId, newClientName, parseFloat(newInitialAmount))} disabled={!newClientName || !newInitialAmount} className="w-full mt-2">
+          <Input
+            label="Numéro WhatsApp (optionnel)"
+            value={newClientWhatsapp}
+            onChange={(e) => setNewClientWhatsapp(e.target.value)}
+            placeholder="Ex: 77 123 45 67"
+          />
+          <Button onClick={() => createArdoise(boutiqueId, newClientName, parseFloat(newInitialAmount), newClientWhatsapp)} disabled={!newClientName || !newInitialAmount} className="w-full mt-2">
             CRÉER LA FICHE
           </Button>
         </div>
@@ -689,6 +704,31 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                 </div>
               );
             })()}
+
+            {/* ── Numéro WhatsApp du client ── */}
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2 items-end">
+                <Input
+                  label="Numéro WhatsApp"
+                  value={editWhatsapp}
+                  onChange={(e) => setEditWhatsapp(e.target.value)}
+                  placeholder="Ex: 77 123 45 67 (optionnel)"
+                  className="flex-1"
+                />
+                <Button
+                  variant="ghost"
+                  className="border border-outline-variant text-xs px-4"
+                  disabled={isSavingWhatsapp || editWhatsapp.trim() === (selectedArdoise.whatsapp_numero || '')}
+                  onClick={async () => {
+                    setIsSavingWhatsapp(true);
+                    await updateWhatsapp(selectedArdoise.id, editWhatsapp);
+                    setIsSavingWhatsapp(false);
+                  }}
+                >
+                  Enregistrer
+                </Button>
+              </div>
+            </div>
 
             {/* ── Section Versement ── visible uniquement si ardoise en cours */}
             {selectedArdoise.statut !== 'soldee' && (

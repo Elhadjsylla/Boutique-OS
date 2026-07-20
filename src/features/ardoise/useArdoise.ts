@@ -4,11 +4,15 @@ import { supabase } from '../../lib/supabase';
 import { supabaseService } from '../../services/supabaseService';
 import { formatMontantFull } from '../../lib/format';
 
+// Même regex que handle_new_user()/update_phone_number() côté SQL (0027/0028).
+const SENEGAL_PHONE_REGEX = /^(\+221|221)?7[0-9]{8}$/;
+
 // Validation schemas using Zod
 export const createArdoiseSchema = z.object({
   clientNom: z.string().min(1, "Le nom du client est obligatoire."),
   montantInitial: z.number().positive("Le montant doit être supérieur à 0."),
   description: z.string().optional(),
+  whatsappNumero: z.string().regex(SENEGAL_PHONE_REGEX, "Numéro invalide — format Sénégal requis (ex: 77XXXXXXX).").optional().or(z.literal('')),
 });
 
 export const paymentSchema = z.object({
@@ -17,9 +21,9 @@ export const paymentSchema = z.object({
 
 export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: string) => void) {
   
-  const createArdoise = useCallback(async (boutiqueId: string, clientNom: string, montantInitial: number) => {
+  const createArdoise = useCallback(async (boutiqueId: string, clientNom: string, montantInitial: number, whatsappNumero?: string) => {
     try {
-      createArdoiseSchema.parse({ clientNom, montantInitial });
+      createArdoiseSchema.parse({ clientNom, montantInitial, whatsappNumero });
 
       const ardoiseId = crypto.randomUUID();
       const timestamp = new Date().toISOString();
@@ -30,6 +34,7 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
         client_nom: clientNom.trim(),
         montant_total: montantInitial,
         statut: 'en_cours' as const,
+        whatsapp_numero: whatsappNumero?.trim() || null,
         created_at: timestamp,
         updated_at: timestamp,
       };
@@ -134,9 +139,25 @@ export function useArdoise(onSuccess: (msg: string) => void, onError: (msg: stri
     }
   }, [onSuccess, onError]);
 
+  const updateWhatsapp = useCallback(async (ardoiseId: string, whatsappNumero: string) => {
+    const trimmed = whatsappNumero.trim();
+    if (trimmed && !SENEGAL_PHONE_REGEX.test(trimmed)) {
+      onError("Numéro invalide — format Sénégal requis (ex: 77XXXXXXX).");
+      return;
+    }
+    try {
+      await supabaseService.updateArdoiseWhatsapp(ardoiseId, trimmed || null);
+      onSuccess(trimmed ? "Numéro WhatsApp enregistré." : "Numéro WhatsApp retiré.");
+    } catch (err: any) {
+      console.error(err);
+      onError(err?.message || "Erreur lors de l'enregistrement du numéro.");
+    }
+  }, [onSuccess, onError]);
+
   return {
     createArdoise,
     addPayment,
     addDebt,
+    updateWhatsapp,
   };
 }

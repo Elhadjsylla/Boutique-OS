@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { MoneyText } from '../components/ui/MoneyText';
 import { useAuth } from '../components/AuthProvider';
-import { formatMontantFull } from '../lib/format';
+import { formatMontantFull, toWhatsAppNumber } from '../lib/format';
 
 interface PortalClientProps {
   token?: string;
@@ -388,6 +388,7 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
   const remaining = Math.max(0, ardoise.montant_total - paid);
   const percent = ardoise.montant_total > 0 ? Math.round((paid / ardoise.montant_total) * 100) : 0;
   const b = getRepaymentBadge(percent);
+  const boutiqueWhatsapp = toWhatsAppNumber(data.boutique_telephone_gerant);
 
   return (
     <div className="pb-40 pt-20 px-4 max-w-lg mx-auto flex flex-col gap-6 animate-fade-in">
@@ -454,15 +455,26 @@ export const PortalClient: React.FC<PortalClientProps> = ({ token }) => {
             <span className="material-symbols-outlined text-base">download</span>
             Télécharger Reçu
           </button>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur Sama Boutik. Solde restant dû : ${formatMontantFull(remaining)} FCFA.`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.97]"
-          >
-            <span className="material-symbols-outlined text-base">chat</span>
-            Contacter Boutique
-          </a>
+          {boutiqueWhatsapp ? (
+            <a
+              href={`https://wa.me/${boutiqueWhatsapp}?text=${encodeURIComponent(`Bonjour, je consulte mon ardoise sur Sama Boutik. Solde restant dû : ${formatMontantFull(remaining)} FCFA.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.97]"
+            >
+              <span className="material-symbols-outlined text-base">chat</span>
+              Contacter Boutique
+            </a>
+          ) : (
+            <button
+              disabled
+              title="La boutique n'a pas encore renseigné de numéro de contact."
+              className="h-10 bg-surface-container text-outline rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+            >
+              <span className="material-symbols-outlined text-base">chat</span>
+              Contacter Boutique
+            </button>
+          )}
         </div>
 
         {/* Payment History */}

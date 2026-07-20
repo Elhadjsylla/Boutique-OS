@@ -63,3 +63,16 @@ export function formatMontantInput(rawDigits: string): string {
   if (!digits) return '';
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
+
+/**
+ * Normalise un numéro sénégalais (+221771234567, 221771234567 ou 771234567)
+ * vers le format attendu par les liens wa.me (indicatif sans "+", sans espaces).
+ * Retourne null si le numéro est absent ou invalide.
+ */
+export function toWhatsAppNumber(numero: string | null | undefined): string | null {
+  if (!numero) return null;
+  const digits = numero.replace(/\D/g, '');
+  if (/^221[0-9]{9}$/.test(digits)) return digits;
+  if (/^[0-9]{9}$/.test(digits)) return `221${digits}`;
+  return null;
+}

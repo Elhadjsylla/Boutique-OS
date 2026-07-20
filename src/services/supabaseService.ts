@@ -42,6 +42,7 @@ export interface Ardoise {
   updated_at: string;
   access_token?: string;
   deleted_at?: string | null;
+  whatsapp_numero?: string | null;
 }
 
 export interface ArdoisePaiement {
@@ -77,7 +78,7 @@ interface PageOptions {
 const PRODUIT_COLUMNS = 'id, boutique_id, nom, prix, quantite, seuil_alerte, archive, updated_at, image_url, deleted_at';
 const VENTE_COLUMNS = 'id, boutique_id, caissier_id, total, created_at, updated_at, deleted_at';
 const VENTE_ITEM_COLUMNS = 'id, vente_id, produit_id, quantite, prix_unitaire, updated_at';
-const ARDOISE_COLUMNS = 'id, boutique_id, client_nom, montant_total, statut, created_at, updated_at, access_token, client_id, deleted_at';
+const ARDOISE_COLUMNS = 'id, boutique_id, client_nom, montant_total, statut, created_at, updated_at, access_token, client_id, deleted_at, whatsapp_numero';
 const ARDOISE_PAIEMENT_COLUMNS = 'id, ardoise_id, montant, paid_at, updated_at';
 
 // Catalogue produit d'une boutique typique de quelques dizaines à quelques centaines d'articles :
@@ -231,6 +232,16 @@ export const supabaseService = {
         updated_at: timestamp
       });
 
+    if (error) throw error;
+  },
+
+  /** Modifie le whatsapp_numero d'une fiche existante via RPC dédiée (le caissier n'a pas
+   *  de droit UPDATE général sur ardoises — voir migration 0062). */
+  async updateArdoiseWhatsapp(ardoiseId: string, whatsappNumero: string | null): Promise<void> {
+    const { error } = await supabase.rpc('update_ardoise_whatsapp', {
+      p_ardoise_id: ardoiseId,
+      p_whatsapp_numero: whatsappNumero,
+    });
     if (error) throw error;
   },
 
