@@ -57,6 +57,9 @@ export const AdminSubscriptions: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting]       = useState(false);
 
+  // Filtering State
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
   // History / Audit Logs state
   const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
   const [auditLogs, setAuditLogs]         = useState<Record<string, any[]>>({});
@@ -255,11 +258,51 @@ export const AdminSubscriptions: React.FC = () => {
     return <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase tracking-wider">Expiré</span>;
   };
 
+  const getSubscriptionComputedStatus = (s: SubscriptionEntry): string => {
+    if (s.revoked_at) {
+      return s.revocation_type === 'immediate' ? 'revoked_immediate' : 'revoked_delayed';
+    }
+    const expired = new Date(s.expires_at) < new Date();
+    if (s.status === 'active' && !expired) return 'active';
+    if (s.status === 'pending') return 'pending';
+    if (s.status === 'failed') return 'failed';
+    return 'expired';
+  };
+
+  const filteredSubscriptions = subscriptions.filter(s => {
+    if (filterStatus === 'all') return true;
+    const currentStatus = getSubscriptionComputedStatus(s);
+    if (filterStatus === 'active') return currentStatus === 'active';
+    if (filterStatus === 'pending') return currentStatus === 'pending';
+    if (filterStatus === 'suspended') return currentStatus === 'revoked_immediate';
+    if (filterStatus === 'cancelled') return currentStatus === 'revoked_delayed';
+    if (filterStatus === 'expired') return currentStatus === 'expired' || currentStatus === 'failed';
+    return true;
+  });
+
   return (
     <div className="flex flex-col gap-6 text-left">
-      <div>
-        <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Abonnements</h1>
-        <p className="text-xs text-admin-text-muted">Consultez l'historique et modifiez manuellement les formules d'abonnements.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface/30 p-4 border border-admin-border rounded-xl">
+        <div>
+          <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Abonnements</h1>
+          <p className="text-xs text-admin-text-muted">Consultez l'historique et modifiez manuellement les formules d'abonnements.</p>
+        </div>
+        <div className="w-full sm:w-48">
+          <Select
+            value={filterStatus}
+            onChange={(val) => setFilterStatus(val)}
+            options={[
+              { value: 'all', label: 'Tous les statuts' },
+              { value: 'active', label: 'Actif' },
+              { value: 'pending', label: 'En attente' },
+              { value: 'suspended', label: 'Suspendu (Immédiat)' },
+              { value: 'cancelled', label: 'Annulé (Fin de période)' },
+              { value: 'expired', label: 'Expiré / Échoué' },
+            ]}
+            isAdmin={true}
+            label="Filtrer par Statut"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -283,7 +326,7 @@ export const AdminSubscriptions: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {subscriptions.map(s => {
+                {filteredSubscriptions.map(s => {
                   const identity = revealedDetails[s.user_id];
                   const revealStatus = revealStates[s.user_id] || 'hidden';
 
@@ -352,22 +395,23 @@ export const AdminSubscriptions: React.FC = () => {
                             {s.revoked_at ? (
                               <button
                                 onClick={() => handleOpenReactivate(s)}
-                                className="h-8 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                                className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                               >
                                 Réactiver
                               </button>
                             ) : (
                               <button
                                 onClick={() => handleOpenRevoke(s)}
-                                className="h-8 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                                className="h-8 px-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                               >
                                 Révoquer
                               </button>
                             )}
                             <button
                               onClick={() => handleOpenDelete(s)}
-                              className="h-8 px-2.5 bg-zinc-700/40 hover:bg-red-900/40 text-zinc-400 hover:text-red-400 border border-zinc-700/50 hover:border-red-800/50 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                              className="h-8 px-2.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer flex items-center gap-1"
                             >
+                              <span className="material-symbols-outlined text-[10px]">warning</span>
                               Supprimer
                             </button>
                           </div>
@@ -450,14 +494,14 @@ export const AdminSubscriptions: React.FC = () => {
               </tbody>
             </table>
 
-            {subscriptions.length === 0 && (
+            {filteredSubscriptions.length === 0 && (
               <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
             )}
           </div>
 
           {/* Mobile/Tablet Card View */}
           <div className="lg:hidden flex flex-col gap-4">
-            {subscriptions.map(s => {
+            {filteredSubscriptions.map(s => {
               const identity = revealedDetails[s.user_id];
               const revealStatus = revealStates[s.user_id] || 'hidden';
               const isExpanded = expandedSubId === s.id;
@@ -589,22 +633,23 @@ export const AdminSubscriptions: React.FC = () => {
                     {s.revoked_at ? (
                       <button
                         onClick={() => handleOpenReactivate(s)}
-                        className="h-8 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                        className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                       >
                         Réactiver
                       </button>
                     ) : (
                       <button
                         onClick={() => handleOpenRevoke(s)}
-                        className="h-8 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                        className="h-8 px-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                       >
                         Révoquer
                       </button>
                     )}
                     <button
                       onClick={() => handleOpenDelete(s)}
-                      className="h-8 px-2.5 bg-zinc-700/40 hover:bg-red-900/40 text-zinc-400 hover:text-red-400 border border-zinc-700/50 hover:border-red-800/50 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                      className="h-8 px-2.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer flex items-center gap-1"
                     >
+                      <span className="material-symbols-outlined text-[10px]">warning</span>
                       Supprimer
                     </button>
                   </div>
@@ -612,7 +657,7 @@ export const AdminSubscriptions: React.FC = () => {
               );
             })}
 
-            {subscriptions.length === 0 && (
+            {filteredSubscriptions.length === 0 && (
               <p className="text-center text-admin-text-muted py-10 text-xs">Aucun abonnement trouvé.</p>
             )}
           </div>
