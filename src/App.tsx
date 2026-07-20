@@ -122,6 +122,16 @@ function App() {
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
   const [isClientViewingPortal, setIsClientViewingPortal] = useState(false);
 
+  // Synchronisation automatique des signalements locaux lors de la reconnexion
+  useEffect(() => {
+    if (isOnline) {
+      import('./services/signalementService').then(({ signalementService }) => {
+        signalementService.syncLocalSignalements();
+      });
+    }
+  }, [isOnline]);
+
+
 
 
   const [outOfStockCount, setOutOfStockCount] = useState(0);

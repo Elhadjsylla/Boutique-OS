@@ -7,6 +7,7 @@ import { Toast } from '../components/ui/Toast';
 import { supabaseService } from '../services/supabaseService';
 import { useAuthStore } from '../store/useAuthStore';
 import { Select } from '../components/ui/Select';
+import { SignalementModal } from '../components/SignalementModal';
 const DEV_BYPASS = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS !== 'false';
 
 interface SettingsProps {
@@ -26,6 +27,8 @@ export const Settings: React.FC<SettingsProps> = ({
   onNavigateToPortal,
   onActivateAdmin
 }) => {
+  const [isSignalementOpen, setIsSignalementOpen] = useState(false);
+
   const user = session.user;
   const storeProfile = useAuthStore(state => state.profile);
   const boutiqueId = user.user_metadata?.boutique_id || storeProfile?.boutique_id;
@@ -769,6 +772,30 @@ export const Settings: React.FC<SettingsProps> = ({
         </button>
       </Card>
 
+      {/* Support & Incident Reporting (Only for Caissier & Gerant) */}
+      {(userRole === 'caissier' || userRole === 'gerant') && (
+        <Card elevation={1} className="p-4 flex flex-col gap-4 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-600">
+              <span className="material-symbols-outlined text-lg">support_agent</span>
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] text-outline font-black uppercase tracking-wider">Support technique</span>
+              <span className="text-xs font-bold text-on-surface">Signaler un problème</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-outline">Vous rencontrez un bug ou un problème de paiement ? Signalez-le directement à notre équipe support.</p>
+          <button
+            type="button"
+            onClick={() => setIsSignalementOpen(true)}
+            className="h-9 px-4 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">report_problem</span>
+            Signaler un problème
+          </button>
+        </Card>
+      )}
+
       {/* Safety & Backups */}
       <Card elevation={1} className="p-4 flex flex-col gap-4">
         <h3 className="text-xs text-outline font-extrabold uppercase tracking-wider border-b border-outline-variant/40 pb-2">
@@ -806,7 +833,16 @@ export const Settings: React.FC<SettingsProps> = ({
           {isSaving ? 'ENREGISTREMENT...' : 'ENREGISTRER LA CONFIG'}
         </Button>
       </div>
+
+      {boutiqueId && (
+        <SignalementModal
+          isOpen={isSignalementOpen}
+          onClose={() => setIsSignalementOpen(false)}
+          boutiqueId={boutiqueId}
+        />
+      )}
     </div>
   );
+
 };
 export default Settings;
