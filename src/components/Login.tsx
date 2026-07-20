@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useRateLimitTimer } from '../hooks/useRateLimitTimer';
+import { useAuthStore } from '../store/useAuthStore';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { Toast } from './ui/Toast';
@@ -22,6 +23,16 @@ export const Login: React.FC<{ isModal?: boolean }> = ({ isModal = false }) => {
   const [boutiqueName, setBoutiqueName] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { authError, setAuthError } = useAuthStore();
+
+  // Compte rejeté côté serveur après connexion (statut non actif) — AuthProvider
+  // a déjà signOut() l'utilisateur, on affiche juste le message une fois.
+  useEffect(() => {
+    if (authError) {
+      setToast({ message: authError, type: 'error' });
+      setAuthError(null);
+    }
+  }, [authError, setAuthError]);
 
   // Rate-limit timers — each tracks its own localStorage key and countdown
   const otpRequestRL = useRateLimitTimer('otp_request'); // resetPasswordForEmail

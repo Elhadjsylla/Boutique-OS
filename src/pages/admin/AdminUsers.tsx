@@ -14,7 +14,54 @@ interface Profile {
   boutique_nom?: string;
   created_at: string;
   boutiques?: { nom: string } | null;
+  status?: string;
+  status_reason?: string | null;
+  status_changed_at?: string | null;
 }
+
+type ModerateAction = 'suspended' | 'blocked' | 'banned' | 'reactivate' | 'lift_ban' | 'delete';
+
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  active:    { label: 'Actif',    className: 'bg-emerald-500/20 text-emerald-300' },
+  pending:   { label: 'En attente', className: 'bg-slate-500/20 text-slate-300' },
+  rejected:  { label: 'Refusé',   className: 'bg-slate-500/20 text-slate-300' },
+  suspended: { label: 'Suspendu', className: 'bg-amber-500/20 text-amber-300' },
+  blocked:   { label: 'Bloqué',   className: 'bg-orange-500/20 text-orange-300' },
+  banned:    { label: 'Banni',    className: 'bg-red-500/20 text-red-300' },
+  deleted:   { label: 'Supprimé', className: 'bg-zinc-700/40 text-zinc-400' },
+};
+
+function getAvailableActions(status?: string): Array<{ key: ModerateAction; label: string }> {
+  if (status === 'deleted') return [];
+  if (status === 'banned') {
+    return [
+      { key: 'lift_ban', label: 'Lever le bannissement' },
+      { key: 'delete', label: 'Supprimer (anonymiser)' },
+    ];
+  }
+  if (status === 'suspended' || status === 'blocked') {
+    return [
+      { key: 'reactivate', label: 'Réactiver' },
+      { key: 'banned', label: 'Bannir' },
+      { key: 'delete', label: 'Supprimer (anonymiser)' },
+    ];
+  }
+  return [
+    { key: 'suspended', label: 'Suspendre' },
+    { key: 'blocked', label: 'Bloquer' },
+    { key: 'banned', label: 'Bannir' },
+    { key: 'delete', label: 'Supprimer (anonymiser)' },
+  ];
+}
+
+const ACTION_CONFIRM_LABEL: Record<ModerateAction, string> = {
+  suspended: 'Suspendre ce compte',
+  blocked: 'Bloquer ce compte',
+  banned: 'Bannir ce compte',
+  reactivate: 'Réactiver ce compte',
+  lift_ban: 'Lever le bannissement',
+  delete: 'Supprimer (anonymiser) ce compte',
+};
 
 interface Boutique {
   id: string;
@@ -39,6 +86,14 @@ export const AdminUsers: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
+  // Moderation State
+  const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
+  const [moderatingUser, setModeratingUser] = useState<Profile | null>(null);
+  const [moderateAction, setModerateAction] = useState<ModerateAction | null>(null);
+  const [moderateReason, setModerateReason] = useState('');
+  const [isModerating, setIsModerating] = useState(false);
+  const [moderateError, setModerateError] = useState<string | null>(null);
 
   const fetchUsersAndBoutiques = async (retryCount = 0) => {
     setLoading(true);
@@ -112,6 +167,55 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
+  const handleOpenModerate = (u: Profile, action: ModerateAction) => {
+    setOpenMenuUserId(null);
+    setModeratingUser(u);
+    setModerateAction(action);
+    setModerateReason('');
+    setModerateError(null);
+  };
+
+  const handleConfirmModerate = async () => {
+    if (!moderatingUser || !moderateAction) return;
+    setIsModerating(true);
+    setModerateError(null);
+    try {
+      if (moderateAction === 'delete') {
+        const { error } = await supabase.functions.invoke('delete-user-account', {
+          body: { user_id: moderatingUser.id, reason: moderateReason.trim() || undefined },
+        });
+        if (error) throw error;
+      } else if (moderateAction === 'reactivate') {
+        const { error } = await callRpcWithRetry('reactivate_user', {
+          p_user_id: moderatingUser.id,
+          p_reason: moderateReason.trim() || null,
+        });
+        if (error) throw error;
+      } else if (moderateAction === 'lift_ban') {
+        const { error } = await callRpcWithRetry('lift_ban_user', {
+          p_user_id: moderatingUser.id,
+          p_reason: moderateReason.trim() || null,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await callRpcWithRetry('moderate_user', {
+          p_user_id: moderatingUser.id,
+          p_new_status: moderateAction,
+          p_reason: moderateReason.trim() || null,
+        });
+        if (error) throw error;
+      }
+
+      setModeratingUser(null);
+      setModerateAction(null);
+      fetchUsersAndBoutiques();
+    } catch (err: any) {
+      setModerateError(err.message || "Erreur lors de l'action de modération.");
+    } finally {
+      setIsModerating(false);
+    }
+  };
+
   const filteredUsers = filterBoutiqueId
     ? users.filter(u => u.boutique_id === filterBoutiqueId)
     : users;
@@ -174,6 +278,7 @@ export const AdminUsers: React.FC = () => {
                   <th className="py-3 px-4 font-black">Nom</th>
                   <th className="py-3 px-4 font-black">Email</th>
                   <th className="py-3 px-4 font-black">Rôle</th>
+                  <th className="py-3 px-4 font-black">Statut</th>
                   <th className="py-3 px-4 font-black">Boutique</th>
                   <th className="py-3 px-4 font-black">Créé le</th>
                   <th className="py-3 px-4 font-black text-right">Actions</th>
@@ -212,30 +317,64 @@ export const AdminUsers: React.FC = () => {
                         {u.role}
                       </span>
                     </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${STATUS_BADGE[u.status || 'active']?.className || STATUS_BADGE.active.className}`}>
+                        {STATUS_BADGE[u.status || 'active']?.label || u.status}
+                      </span>
+                    </td>
                     <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
                       {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
                     </td>
                     <td className="py-3 px-4 text-admin-text-muted">
                       {new Date(u.created_at).toLocaleDateString('fr-FR')}
                     </td>
-                    <td className="py-3 px-4 text-right flex justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenEdit(u)}
-                        className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                      >
-                        Modifier
-                      </button>
-
-                      <div className="relative group inline-block">
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex justify-end gap-2">
                         <button
-                          disabled
-                          className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
+                          onClick={() => handleOpenEdit(u)}
+                          className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
                         >
-                          Reset MDP
+                          Modifier
                         </button>
-                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-admin-surface border border-admin-border text-admin-text text-[9px] font-semibold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
-                          Bientôt disponible (SMTP)
+
+                        <div className="relative group inline-block">
+                          <button
+                            disabled
+                            className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
+                          >
+                            Reset MDP
+                          </button>
+                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-admin-surface border border-admin-border text-admin-text text-[9px] font-semibold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
+                            Bientôt disponible (SMTP)
+                          </div>
                         </div>
+
+                        {u.role !== 'super_admin' && getAvailableActions(u.status).length > 0 && (
+                          <div className="relative inline-block">
+                            <button
+                              onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
+                              className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                            >
+                              Modérer
+                            </button>
+                            {openMenuUserId === u.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenuUserId(null)} />
+                                <div className="absolute right-0 top-full mt-1 bg-admin-card border border-admin-border rounded-xl shadow-xl overflow-hidden z-20 py-1 flex flex-col min-w-[180px]">
+                                  {getAvailableActions(u.status).map(a => (
+                                    <button
+                                      key={a.key}
+                                      onClick={() => handleOpenModerate(u, a.key)}
+                                      className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap"
+                                    >
+                                      {a.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -297,9 +436,15 @@ export const AdminUsers: React.FC = () => {
                       {new Date(u.created_at).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase tracking-wider text-admin-text-muted">Statut</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider w-fit ${STATUS_BADGE[u.status || 'active']?.className || STATUS_BADGE.active.className}`}>
+                      {STATUS_BADGE[u.status || 'active']?.label || u.status}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="border-t border-admin-border/50 pt-3 flex justify-end gap-2">
+                <div className="border-t border-admin-border/50 pt-3 flex justify-end gap-2 flex-wrap">
                   <button
                     onClick={() => handleOpenEdit(u)}
                     className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
@@ -312,6 +457,32 @@ export const AdminUsers: React.FC = () => {
                   >
                     Reset MDP
                   </button>
+                  {u.role !== 'super_admin' && getAvailableActions(u.status).length > 0 && (
+                    <div className="relative inline-block">
+                      <button
+                        onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
+                        className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                      >
+                        Modérer
+                      </button>
+                      {openMenuUserId === u.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setOpenMenuUserId(null)} />
+                          <div className="absolute right-0 top-full mt-1 bg-admin-card border border-admin-border rounded-xl shadow-xl overflow-hidden z-20 py-1 flex flex-col min-w-[180px]">
+                            {getAvailableActions(u.status).map(a => (
+                              <button
+                                key={a.key}
+                                onClick={() => handleOpenModerate(u, a.key)}
+                                className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap"
+                              >
+                                {a.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -368,6 +539,63 @@ export const AdminUsers: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL: Moderate User */}
+      {moderatingUser && moderateAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-admin-card rounded-2xl p-6 max-w-sm w-full relative shadow-xl text-left border border-admin-border flex flex-col gap-4 animate-scale-in">
+            <h3 className="text-sm font-black text-admin-text uppercase">⚠️ {ACTION_CONFIRM_LABEL[moderateAction]}</h3>
+            <p className="text-[10px] text-admin-text-muted font-mono leading-relaxed truncate">
+              ID : {moderatingUser.id}
+            </p>
+
+            {moderateAction === 'delete' && (
+              <p className="text-[11px] text-amber-400 leading-relaxed">
+                Le nom, le téléphone et l'email seront anonymisés. L'historique des ventes et transactions
+                de cette boutique n'est jamais supprimé.
+              </p>
+            )}
+
+            {moderateError && (
+              <div className="p-2.5 bg-red-950/20 border border-red-900/40 rounded-lg text-red-400 text-[10px]">
+                {moderateError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-admin-text-muted">
+                Raison {moderateAction === 'reactivate' || moderateAction === 'lift_ban' ? '(optionnelle)' : ''}
+              </label>
+              <textarea
+                value={moderateReason}
+                onChange={(e) => setModerateReason(e.target.value)}
+                rows={3}
+                placeholder="Ex: Comportement frauduleux signalé par plusieurs boutiques..."
+                className="w-full bg-admin-surface border border-admin-border rounded-xl p-3 text-xs text-admin-text focus:outline-none focus:border-admin-primary resize-none"
+              />
+            </div>
+
+            <div className="flex gap-2.5 mt-2">
+              <button
+                type="button"
+                onClick={() => { setModeratingUser(null); setModerateAction(null); }}
+                disabled={isModerating}
+                className="flex-1 h-10 border border-admin-border hover:bg-admin-surface text-admin-text text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmModerate}
+                disabled={isModerating}
+                className="flex-1 h-10 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
+              >
+                {isModerating ? 'TRAITEMENT...' : 'CONFIRMER'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

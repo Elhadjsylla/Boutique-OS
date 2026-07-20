@@ -42,8 +42,19 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Messages affichés sur l'écran de connexion selon le statut du compte.
+// Seul 'active' (et l'absence de statut, cas de secours ci-dessous) autorise l'accès.
+const STATUS_BLOCK_MESSAGES: Record<string, string> = {
+  pending: "Votre compte est en attente de validation par un administrateur.",
+  rejected: "Votre demande d'inscription n'a pas été approuvée. Contactez le support.",
+  suspended: "Votre compte a été suspendu. Contactez le support Sama Boutik.",
+  blocked: "Votre compte a été bloqué. Contactez le support Sama Boutik.",
+  banned: "Votre compte a été banni définitivement.",
+  deleted: "Ce compte n'existe plus.",
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { setAuth, clearAuth, setLoading, setSubscriptionStatus, user, profile, boutique, isLoading } = useAuthStore();
+  const { setAuth, clearAuth, setLoading, setSubscriptionStatus, setAuthError, user, profile, boutique, isLoading } = useAuthStore();
   const [session, setSessionState] = React.useState<Session | null>(null);
 
   const getRoleFromJWT = useCallback((accessToken: string): string | null => {
@@ -104,6 +115,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const userProfile = profileData as Profile;
+
+      // Rejet à l'authentification pour tout statut différent de 'active' —
+      // vérifié à chaque connexion (login, refresh de session, restauration
+      // de session au chargement), pas seulement à l'affichage : la policy
+      // RESTRICTIVE côté RLS (get_my_status(), migration 0060) coupe aussi
+      // l'accès aux données métier si ce garde-fou client était contourné.
+      if (userProfile.status && userProfile.status !== 'active') {
+        await supabase.auth.signOut();
+        clearAuth();
+        setAuthError(STATUS_BLOCK_MESSAGES[userProfile.status] || 'Accès refusé pour ce compte.');
+        clearTimeout(failsafe);
+        return;
+      }
+
       let userBoutique: Boutique | null = null;
 
       if (userProfile.boutique_id) {
