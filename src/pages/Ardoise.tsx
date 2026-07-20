@@ -558,7 +558,23 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                       {initials}
                     </div>
                     <div className="text-left">
-                      <h3 className="font-headline-sm text-sm text-on-surface leading-tight font-bold">{a.client_nom}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-headline-sm text-sm text-on-surface leading-tight font-bold">{a.client_nom}</h3>
+                        {a.whatsapp_numero && (
+                          <a
+                            href={`https://wa.me/${toWhatsAppNumber(a.whatsapp_numero)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-green-500 hover:text-green-600 transition-colors"
+                            title="Contacter sur WhatsApp"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.714-1.464L0 24zm6.59-4.846c1.6.95 3.198 1.451 4.757 1.452 5.4 0 9.795-4.39 9.798-9.789.002-2.614-1.012-5.071-2.859-6.918C16.438 2.05 13.985 1.037 11.37.037c-5.4 0-9.797 4.39-9.8 9.788-.001 1.952.521 3.856 1.513 5.51l-.99 3.618 3.712-.973zm13.116-4.87c-.27-.135-1.593-.787-1.839-.877-.247-.09-.427-.135-.607.135-.18.27-.697.877-.855 1.057-.157.18-.315.202-.585.067-.27-.135-1.139-.42-2.17-1.34-1.018-.908-1.704-2.03-1.903-2.368-.2-.338-.021-.52.148-.687.153-.15.345-.405.518-.607.172-.202.23-.338.345-.562.115-.225.057-.42-.028-.585-.084-.166-.607-1.462-.832-2.007-.22-.528-.48-.456-.607-.463-.12-.006-.27-.007-.42-.007-.15 0-.394.056-.601.281-.207.225-.792.775-.792 1.89s.81 2.193.923 2.348c.113.155 1.593 2.433 3.86 3.41.538.232.959.37 1.287.475.54.172 1.03.147 1.417.09.432-.064 1.593-.652 1.819-1.282.225-.63.225-1.17.157-1.282-.067-.113-.247-.202-.517-.337z"/>
+                            </svg>
+                          </a>
+                        )}
+                      </div>
                       <span className="text-xs text-outline font-semibold">
                         {isSold ? 'Solde entièrement réglé' : `Remboursé à ${a.percent}%`}
                       </span>
