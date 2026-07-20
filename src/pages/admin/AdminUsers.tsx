@@ -35,7 +35,6 @@ function getAvailableActions(status?: string): Array<{ key: ModerateAction; labe
   if (status === 'deleted') return [];
   if (status === 'banned') {
     return [
-      { key: 'lift_ban', label: 'Lever le bannissement' },
       { key: 'delete', label: 'Supprimer (anonymiser)' },
     ];
   }
@@ -88,6 +87,8 @@ export const AdminUsers: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Moderation State
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [openMenuUserId, setOpenMenuUserId] = useState<string | null>(null);
   const [moderatingUser, setModeratingUser] = useState<Profile | null>(null);
   const [moderateAction, setModerateAction] = useState<ModerateAction | null>(null);
@@ -172,6 +173,7 @@ export const AdminUsers: React.FC = () => {
     setModeratingUser(u);
     setModerateAction(action);
     setModerateReason('');
+    setDeleteConfirmText('');
     setModerateError(null);
   };
 
@@ -216,15 +218,36 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
-  const filteredUsers = filterBoutiqueId
-    ? users.filter(u => u.boutique_id === filterBoutiqueId)
-    : users;
+  const filteredUsers = users.filter(u => {
+    const matchesBoutique = !filterBoutiqueId || u.boutique_id === filterBoutiqueId;
+    const matchesStatus = filterStatus === 'all' || (u.status || 'active') === filterStatus;
+    return matchesBoutique && matchesStatus;
+  });
 
   return (
     <div className="flex flex-col gap-6 text-left">
-      <div>
-        <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Utilisateurs</h1>
-        <p className="text-xs text-admin-text-muted">Affichez les profils utilisateurs et réassignez les rôles et boutiques.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-admin-surface/30 p-4 border border-admin-border rounded-xl">
+        <div>
+          <h1 className="text-xl font-black text-admin-text uppercase tracking-wider">Gestion Utilisateurs</h1>
+          <p className="text-xs text-admin-text-muted">Affichez les profils utilisateurs et réassignez les rôles et boutiques.</p>
+        </div>
+        <div className="w-full sm:w-48">
+          <Select
+            value={filterStatus}
+            onChange={(val) => setFilterStatus(val)}
+            options={[
+              { value: 'all', label: 'Tous les statuts' },
+              { value: 'active', label: 'Actif' },
+              { value: 'pending', label: 'En attente' },
+              { value: 'suspended', label: 'Suspendu' },
+              { value: 'blocked', label: 'Bloqué' },
+              { value: 'banned', label: 'Banni' },
+              { value: 'deleted', label: 'Supprimé' },
+            ]}
+            isAdmin={true}
+            label="Filtrer par Statut"
+          />
+        </div>
       </div>
 
       {filterBoutiqueId && (
@@ -349,6 +372,15 @@ export const AdminUsers: React.FC = () => {
                           </div>
                         </div>
 
+                        {u.role !== 'super_admin' && u.status === 'banned' && (
+                          <button
+                            onClick={() => handleOpenModerate(u, 'lift_ban')}
+                            className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                          >
+                            Lever le bannissement
+                          </button>
+                        )}
+
                         {u.role !== 'super_admin' && getAvailableActions(u.status).length > 0 && (
                           <div className="relative inline-block">
                             <button
@@ -365,8 +397,11 @@ export const AdminUsers: React.FC = () => {
                                     <button
                                       key={a.key}
                                       onClick={() => handleOpenModerate(u, a.key)}
-                                      className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap"
+                                      className={`px-4 py-2.5 text-[10px] font-bold text-left hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap ${
+                                        a.key === 'delete' ? 'text-red-500 hover:text-red-600 font-black flex items-center gap-1.5' : 'text-admin-text'
+                                      }`}
                                     >
+                                      {a.key === 'delete' && <span className="material-symbols-outlined text-xs">warning</span>}
                                       {a.label}
                                     </button>
                                   ))}
@@ -457,6 +492,14 @@ export const AdminUsers: React.FC = () => {
                   >
                     Reset MDP
                   </button>
+                  {u.role !== 'super_admin' && u.status === 'banned' && (
+                    <button
+                      onClick={() => handleOpenModerate(u, 'lift_ban')}
+                      className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                    >
+                      Lever le bannissement
+                    </button>
+                  )}
                   {u.role !== 'super_admin' && getAvailableActions(u.status).length > 0 && (
                     <div className="relative inline-block">
                       <button
@@ -473,8 +516,11 @@ export const AdminUsers: React.FC = () => {
                               <button
                                 key={a.key}
                                 onClick={() => handleOpenModerate(u, a.key)}
-                                className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap"
+                                className={`px-4 py-2.5 text-[10px] font-bold text-left hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap ${
+                                  a.key === 'delete' ? 'text-red-500 hover:text-red-600 font-black flex items-center gap-1.5' : 'text-admin-text'
+                                }`}
                               >
+                                {a.key === 'delete' && <span className="material-symbols-outlined text-xs">warning</span>}
                                 {a.label}
                               </button>
                             ))}
@@ -551,6 +597,13 @@ export const AdminUsers: React.FC = () => {
               ID : {moderatingUser.id}
             </p>
 
+            {moderateAction === 'banned' && (
+              <div className="p-3 bg-red-950/30 border border-red-900/40 rounded-xl text-red-300 text-[10px] leading-relaxed flex flex-col gap-1">
+                <strong>Procédure de Sécurité Maximale :</strong>
+                <span>Le bannissement bloque immédiatement toutes les sessions actives. Cette action requiert ensuite une levée de bannissement manuelle explicite.</span>
+              </div>
+            )}
+
             {moderateAction === 'delete' && (
               <p className="text-[11px] text-amber-400 leading-relaxed">
                 Le nom, le téléphone et l'email seront anonymisés. L'historique des ventes et transactions
@@ -566,16 +619,31 @@ export const AdminUsers: React.FC = () => {
 
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black uppercase tracking-wider text-admin-text-muted">
-                Raison {moderateAction === 'reactivate' || moderateAction === 'lift_ban' ? '(optionnelle)' : ''}
+                Raison {moderateAction === 'reactivate' || moderateAction === 'lift_ban' ? '(optionnelle)' : '(obligatoire, min 10 car. pour bannir)'}
               </label>
               <textarea
                 value={moderateReason}
                 onChange={(e) => setModerateReason(e.target.value)}
                 rows={3}
-                placeholder="Ex: Comportement frauduleux signalé par plusieurs boutiques..."
+                placeholder={moderateAction === 'banned' ? "Saisir la raison obligatoire (ex: Multiples fraudes de caisse...)" : "Ex: Comportement frauduleux signalé par plusieurs boutiques..."}
                 className="w-full bg-admin-surface border border-admin-border rounded-xl p-3 text-xs text-admin-text focus:outline-none focus:border-admin-primary resize-none"
               />
             </div>
+
+            {moderateAction === 'delete' && (
+              <div className="flex flex-col gap-2 border-t border-admin-border/50 pt-3">
+                <label className="text-[10px] font-black uppercase tracking-wider text-red-400">
+                  Confirmation requise : Écrire "SUPPRIMER"
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Écrire SUPPRIMER pour valider"
+                  className="w-full h-10 bg-admin-surface border border-admin-border rounded-xl px-3 text-xs text-admin-text focus:outline-none focus:border-admin-primary"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2.5 mt-2">
               <button
@@ -589,8 +657,12 @@ export const AdminUsers: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmModerate}
-                disabled={isModerating}
-                className="flex-1 h-10 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
+                disabled={
+                  isModerating ||
+                  (moderateAction === 'banned' && moderateReason.trim().length < 10) ||
+                  (moderateAction === 'delete' && deleteConfirmText !== 'SUPPRIMER')
+                }
+                className="flex-1 h-10 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-xl uppercase tracking-wider active:scale-95 transition-all cursor-pointer"
               >
                 {isModerating ? 'TRAITEMENT...' : 'CONFIRMER'}
               </button>
