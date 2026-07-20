@@ -292,12 +292,21 @@ export const AdminUsers: React.FC = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Desktop Table View */}
-          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 shadow-sm">
+            <table className="w-full text-left text-xs border-collapse table-fixed">
+              <colgroup>
+                <col className="w-[14%]" />
+                <col className="w-[15%]" />
+                <col className="w-[18%]" />
+                <col className="w-[10%]" />
+                <col className="w-[10%]" />
+                <col className="w-[15%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
-                  <th className="py-3 px-4 font-black">ID Utilisateur</th>
+                  <th className="py-3 px-4 font-black">ID</th>
                   <th className="py-3 px-4 font-black">Nom</th>
                   <th className="py-3 px-4 font-black">Email</th>
                   <th className="py-3 px-4 font-black">Rôle</th>
@@ -310,10 +319,10 @@ export const AdminUsers: React.FC = () => {
               <tbody>
                 {filteredUsers.map(u => (
                   <tr key={u.id} className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
-                    <td className="py-3 px-4 font-mono select-all truncate max-w-[120px]" title={u.id}>
+                    <td className="py-3 px-4 font-mono select-all truncate" title={u.id}>
                       {u.id}
                     </td>
-                    <td className="py-3 px-4 truncate max-w-[150px]">
+                    <td className="py-3 px-4 truncate">
                       <MaskedValue 
                         maskedText={u.nom_masque || 'Anonyme'}
                         revealedText={revealedDetails[u.id]?.nom}
@@ -322,7 +331,7 @@ export const AdminUsers: React.FC = () => {
                         type="nom"
                       />
                     </td>
-                    <td className="py-3 px-4 truncate max-w-[180px]">
+                    <td className="py-3 px-4 truncate">
                       <MaskedValue 
                         maskedText={u.email_masque || '***@***.**'}
                         revealedText={revealedDetails[u.id]?.email}
@@ -331,7 +340,7 @@ export const AdminUsers: React.FC = () => {
                         type="email"
                       />
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 truncate">
                       <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
                         u.role === 'super_admin' ? 'bg-purple-500/20 text-purple-300' :
                         u.role === 'gerant' ? 'bg-sky-500/20 text-sky-300' :
@@ -340,76 +349,60 @@ export const AdminUsers: React.FC = () => {
                         {u.role}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 truncate">
                       <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${STATUS_BADGE[u.status || 'active']?.className || STATUS_BADGE.active.className}`}>
                         {STATUS_BADGE[u.status || 'active']?.label || u.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 truncate max-w-[150px]" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
+                    <td className="py-3 px-4 truncate" title={u.boutique_nom || u.boutiques?.nom || 'Aucune'}>
                       {u.boutique_nom || u.boutiques?.nom || <span className="text-admin-text-muted italic">Non assignée</span>}
                     </td>
-                    <td className="py-3 px-4 text-admin-text-muted">
+                    <td className="py-3 px-4 text-admin-text-muted truncate">
                       {new Date(u.created_at).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenEdit(u)}
-                          className="h-8 px-3 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                        >
-                          Modifier
-                        </button>
-
-                        <div className="relative group inline-block">
-                          <button
-                            disabled
-                            className="h-8 px-3 bg-admin-border/30 text-admin-text-muted font-black uppercase rounded-lg tracking-wider text-[9px] cursor-not-allowed opacity-50"
-                          >
-                            Reset MDP
-                          </button>
-                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-admin-surface border border-admin-border text-admin-text text-[9px] font-semibold py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
-                            Bientôt disponible (SMTP)
-                          </div>
-                        </div>
-
+                      <div className="flex justify-end items-center gap-1.5">
                         {u.role !== 'super_admin' && u.status === 'banned' && (
                           <button
                             onClick={() => handleOpenModerate(u, 'lift_ban')}
-                            className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                            className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[8px] cursor-pointer"
                           >
-                            Lever le bannissement
+                            Lever
                           </button>
                         )}
-
-                        {u.role !== 'super_admin' && getAvailableActions(u.status).length > 0 && (
-                          <div className="relative inline-block">
-                            <button
-                              onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
-                              className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                            >
-                              Modérer
-                            </button>
-                            {openMenuUserId === u.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenuUserId(null)} />
-                                <div className="absolute right-0 top-full mt-1 bg-admin-card border border-admin-border rounded-xl shadow-xl overflow-hidden z-20 py-1 flex flex-col min-w-[180px]">
-                                  {getAvailableActions(u.status).map(a => (
-                                    <button
-                                      key={a.key}
-                                      onClick={() => handleOpenModerate(u, a.key)}
-                                      className={`px-4 py-2.5 text-[10px] font-bold text-left hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap ${
-                                        a.key === 'delete' ? 'text-red-500 hover:text-red-600 font-black flex items-center gap-1.5' : 'text-admin-text'
-                                      }`}
-                                    >
-                                      {a.key === 'delete' && <span className="material-symbols-outlined text-xs">warning</span>}
-                                      {a.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
+                        <div className="relative inline-block">
+                          <button
+                            onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
+                            className="h-8 w-8 bg-admin-surface hover:bg-admin-border border border-admin-border text-admin-text font-black rounded-lg active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">more_vert</span>
+                          </button>
+                          {openMenuUserId === u.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setOpenMenuUserId(null)} />
+                              <div className="absolute right-0 bottom-full mb-1 bg-admin-card border border-admin-border rounded-xl shadow-xl overflow-hidden z-20 py-1 flex flex-col min-w-[180px]">
+                                <button
+                                  onClick={() => { handleOpenEdit(u); setOpenMenuUserId(null); }}
+                                  className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer"
+                                >
+                                  Modifier le compte
+                                </button>
+                                {u.role !== 'super_admin' && getAvailableActions(u.status).map(a => (
+                                  <button
+                                    key={a.key}
+                                    onClick={() => { handleOpenModerate(u, a.key); setOpenMenuUserId(null); }}
+                                    className={`px-4 py-2.5 text-[10px] font-bold text-left hover:bg-admin-surface transition-colors cursor-pointer whitespace-nowrap ${
+                                      a.key === 'delete' ? 'text-red-500 hover:text-red-600 font-black flex items-center gap-1.5' : 'text-admin-text'
+                                    }`}
+                                  >
+                                    {a.key === 'delete' && <span className="material-symbols-outlined text-xs">warning</span>}
+                                    {a.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

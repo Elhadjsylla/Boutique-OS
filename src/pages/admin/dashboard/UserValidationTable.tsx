@@ -127,8 +127,15 @@ export const UserValidationTable: React.FC = () => {
         <div className="p-5 border-b border-admin-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-lg font-black tracking-tight text-admin-text">Comptes à valider ({users.length})</h2>
         </div>
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="hidden md:block">
+          <table className="w-full text-left text-sm table-fixed">
+            <colgroup>
+              <col className="w-[30%]" />
+              <col className="w-[30%]" />
+              <col className="w-[18%]" />
+              <col className="w-[15%]" />
+              <col className="w-[7%]" />
+            </colgroup>
             <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold">
               <tr>
                 <th className="px-5 py-3">Boutique</th>

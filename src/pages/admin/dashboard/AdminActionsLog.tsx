@@ -43,7 +43,12 @@ export const AdminActionsLog: React.FC = () => {
         ) : (
           <>
             <div className="hidden md:block">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[30%]" />
+                  <col className="w-[50%]" />
+                  <col className="w-[20%]" />
+                </colgroup>
                 <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold sticky top-0">
                   <tr>
                     <th className="px-5 py-3">Action</th>

@@ -59,6 +59,7 @@ export const AdminSubscriptions: React.FC = () => {
 
   // Filtering State
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [openMenuSubId, setOpenMenuSubId] = useState<string | null>(null);
 
   // History / Audit Logs state
   const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
@@ -312,8 +313,17 @@ export const AdminSubscriptions: React.FC = () => {
       ) : (
         <div className="flex flex-col gap-4">
           {/* Desktop Table View */}
-          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 overflow-x-auto shadow-sm">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="hidden lg:block bg-admin-card border border-admin-border rounded-2xl p-4 shadow-sm">
+            <table className="w-full text-left text-xs border-collapse table-fixed">
+              <colgroup>
+                <col className="w-[20%]" />
+                <col className="w-[18%]" />
+                <col className="w-[11%]" />
+                <col className="w-[12%]" />
+                <col className="w-[11%]" />
+                <col className="w-[12%]" />
+                <col className="w-[16%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-admin-border text-admin-text-muted uppercase tracking-wider">
                   <th className="py-3 px-4 font-black">Marchand</th>
@@ -334,9 +344,9 @@ export const AdminSubscriptions: React.FC = () => {
                     <React.Fragment key={s.id}>
                       <tr className="border-b border-admin-border/50 hover:bg-admin-surface/20 text-admin-text">
                         {/* Marchand */}
-                        <td className="py-3 px-4 min-w-[180px]">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-semibold text-admin-text">
+                        <td className="py-3 px-4 truncate">
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold text-admin-text truncate">
                               <MaskedValue 
                                 maskedText={s.nom_masque || 'Anonyme'}
                                 revealedText={identity?.nom}
@@ -345,7 +355,7 @@ export const AdminSubscriptions: React.FC = () => {
                                 type="nom"
                               />
                             </span>
-                            <span className="text-admin-primary-light font-mono">
+                            <span className="text-admin-primary-light font-mono truncate">
                               <MaskedValue 
                                 maskedText={s.email_masque || '***@***.**'}
                                 revealedText={identity?.email}
@@ -355,30 +365,30 @@ export const AdminSubscriptions: React.FC = () => {
                               />
                             </span>
                             {s.revoked_at && (
-                              <span className="text-[8px] text-admin-text-muted leading-tight font-mono">
+                              <span className="text-[8px] text-admin-text-muted leading-tight font-mono truncate">
                                 Révoqué par {s.revoked_by_name} le {new Date(s.revoked_at).toLocaleDateString('fr-FR')}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-admin-text-muted">
+                        <td className="py-3 px-4 text-admin-text-muted truncate">
                           {s.boutique_nom ?? '—'}
                         </td>
-                        <td className="py-3 px-4 font-bold uppercase text-admin-primary-light">
+                        <td className="py-3 px-4 font-bold uppercase text-admin-primary-light truncate">
                           {s.plan}{s.is_trial && <span className="ml-1 text-[8px] text-amber-400">(essai)</span>}
                         </td>
-                        <td className="py-3 px-4">{statusBadge(s)}</td>
-                        <td className="py-3 px-4 font-bold font-numeric-display">
+                        <td className="py-3 px-4 truncate">{statusBadge(s)}</td>
+                        <td className="py-3 px-4 font-bold font-numeric-display truncate">
                           {s.amount ? `${formatMontantCompact(s.amount)} F` : '0 F'}
                         </td>
-                        <td className="py-3 px-4 text-admin-text-muted" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
+                        <td className="py-3 px-4 text-admin-text-muted truncate" title={new Date(s.expires_at).toLocaleString('fr-FR')}>
                           {new Date(s.expires_at).toLocaleDateString('fr-FR')}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleToggleLogs(s)}
-                              className={`h-8 px-2.5 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer ${
+                              className={`h-7 px-2 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[8px] cursor-pointer ${
                                 expandedSubId === s.id 
                                   ? 'bg-admin-surface text-admin-text border border-admin-border' 
                                   : 'bg-admin-surface/60 hover:bg-admin-surface text-admin-text-muted'
@@ -386,34 +396,50 @@ export const AdminSubscriptions: React.FC = () => {
                             >
                               Logs
                             </button>
-                            <button
-                              onClick={() => handleOpenEdit(s)}
-                              className="h-8 px-2.5 bg-admin-primary/20 hover:bg-admin-primary/30 text-admin-primary-light font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                            >
-                              Ajuster
-                            </button>
-                            {s.revoked_at ? (
+                            {s.revoked_at && (
                               <button
                                 onClick={() => handleOpenReactivate(s)}
-                                className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
+                                className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[8px] cursor-pointer"
                               >
                                 Réactiver
                               </button>
-                            ) : (
-                              <button
-                                onClick={() => handleOpenRevoke(s)}
-                                className="h-8 px-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer"
-                              >
-                                Révoquer
-                              </button>
                             )}
-                            <button
-                              onClick={() => handleOpenDelete(s)}
-                              className="h-8 px-2.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 font-black uppercase rounded-lg tracking-wider active:scale-95 transition-all text-[9px] cursor-pointer flex items-center gap-1"
-                            >
-                              <span className="material-symbols-outlined text-[10px]">warning</span>
-                              Supprimer
-                            </button>
+                            <div className="relative inline-block">
+                              <button
+                                onClick={() => setOpenMenuSubId(openMenuSubId === s.id ? null : s.id)}
+                                className="h-8 w-8 bg-admin-surface hover:bg-admin-border border border-admin-border text-admin-text font-black rounded-lg active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-sm">more_vert</span>
+                              </button>
+                              {openMenuSubId === s.id && (
+                                <>
+                                  <div className="fixed inset-0 z-10" onClick={() => setOpenMenuSubId(null)} />
+                                  <div className="absolute right-0 bottom-full mb-1 bg-admin-card border border-admin-border rounded-xl shadow-xl overflow-hidden z-20 py-1 flex flex-col min-w-[180px]">
+                                    <button
+                                      onClick={() => { handleOpenEdit(s); setOpenMenuSubId(null); }}
+                                      className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer"
+                                    >
+                                      Ajuster l'abonnement
+                                    </button>
+                                    {!s.revoked_at && (
+                                      <button
+                                        onClick={() => { handleOpenRevoke(s); setOpenMenuSubId(null); }}
+                                        className="px-4 py-2.5 text-[10px] font-bold text-left text-admin-text hover:bg-admin-surface transition-colors cursor-pointer"
+                                      >
+                                        Révoquer (Suspendre/Annuler)
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => { handleOpenDelete(s); setOpenMenuSubId(null); }}
+                                      className="px-4 py-2.5 text-[10px] font-bold text-left text-red-500 hover:text-red-600 font-black hover:bg-admin-surface transition-colors cursor-pointer flex items-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-xs">warning</span>
+                                      Supprimer l'abonnement
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>

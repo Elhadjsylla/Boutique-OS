@@ -150,8 +150,15 @@ export const SignalementsTable: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm">
+            <div className="hidden md:block">
+              <table className="w-full text-left text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[30%]" />
+                  <col className="w-[35%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[10%]" />
+                </colgroup>
                 <thead className="bg-admin-surface text-admin-text-muted text-[10px] uppercase tracking-wider font-bold">
                   <tr>
                     <th className="px-5 py-3">Boutique / User</th>
