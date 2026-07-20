@@ -11,6 +11,7 @@ import { MoneyText } from '../components/ui/MoneyText';
 import { Toast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { Tooltip } from '../components/ui/Tooltip';
 import { formatMontantFull, toWhatsAppNumber } from '../lib/format';
 
 const getAvatarGradient = (name: string) => {
@@ -252,21 +253,22 @@ const ArdoiseInteractiveChart: React.FC<{
               <span className="material-symbols-outlined text-sm">chat</span>
               Relance WhatsApp
             </a>
-            <button
-              onClick={() => {
-                const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${formatMontantFull(selectedPoint.item.remaining)} FCFA. Merci !`;
-                navigator.clipboard.writeText(text);
-                if (onShowToast) {
-                  onShowToast("Message de relance copié !", "success");
-                } else {
-                  console.log("Message de relance copié !");
-                }
-              }}
-              className="px-2.5 h-8 rounded-lg border border-outline-variant text-[10px] font-black text-texte-2 hover:bg-surface-container active:scale-95 transition-all"
-              title="Copier le texte de relance"
-            >
-              Copier texte
-            </button>
+            <Tooltip content="Copier le texte de relance" position="top">
+              <button
+                onClick={() => {
+                  const text = `Bonjour ${selectedPoint.item.client_nom}, nous vous rappelons amicalement que le solde restant de votre ardoise chez Sama Boutik est de ${formatMontantFull(selectedPoint.item.remaining)} FCFA. Merci !`;
+                  navigator.clipboard.writeText(text);
+                  if (onShowToast) {
+                    onShowToast("Message de relance copié !", "success");
+                  } else {
+                    console.log("Message de relance copié !");
+                  }
+                }}
+                className="px-2.5 h-8 rounded-lg border border-outline-variant text-[10px] font-black text-texte-2 hover:bg-surface-container active:scale-95 transition-all"
+              >
+                Copier texte
+              </button>
+            </Tooltip>
           </div>
         </div>
       ) : (
@@ -561,20 +563,21 @@ export const Ardoise: React.FC<ArdoiseProps> = ({ boutiqueId }) => {
                       <div className="flex items-center gap-1.5">
                         <h3 className="font-headline-sm text-sm text-on-surface leading-tight font-bold">{a.client_nom}</h3>
                         {a.whatsapp_numero && (
-                          <a
-                            href={`https://wa.me/${toWhatsAppNumber(a.whatsapp_numero)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center hover:opacity-85 transition-opacity"
-                            title="Contacter sur WhatsApp"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <img 
-                              src={new URL('../assets/whatsapp.png', import.meta.url).href} 
-                              alt="WhatsApp" 
-                              className="h-[18px] w-[18px] object-contain ml-1.5 self-center"
-                            />
-                          </a>
+                          <Tooltip content="Contacter sur WhatsApp" position="top">
+                            <a
+                              href={`https://wa.me/${toWhatsAppNumber(a.whatsapp_numero)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center hover:opacity-85 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img 
+                                src={new URL('../assets/whatsapp.png', import.meta.url).href} 
+                                alt="WhatsApp" 
+                                className="h-[18px] w-[18px] object-contain ml-1.5 self-center"
+                              />
+                            </a>
+                          </Tooltip>
                         )}
                       </div>
                       <span className="text-xs text-outline font-semibold">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Tooltip } from '../../components/ui/Tooltip';
 
 interface AuditLogEntry {
   id: string;
@@ -160,9 +161,11 @@ export const AdminLogs: React.FC = () => {
                       Par : <span className="font-mono">{log.actor_id}</span>
                       {log.target_id && <> • Cible : <span className="font-mono">{log.target_id}</span></>}
                     </span>
-                    <p className="text-[11px] font-semibold text-admin-text mt-1.5 truncate" title={formatLogDetails(log.action, log.details)}>
-                      {formatLogDetails(log.action, log.details)}
-                    </p>
+                    <Tooltip content={formatLogDetails(log.action, log.details)} position="top">
+                      <p className="text-[11px] font-semibold text-admin-text mt-1.5 truncate max-w-lg">
+                        {formatLogDetails(log.action, log.details)}
+                      </p>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -175,14 +178,15 @@ export const AdminLogs: React.FC = () => {
                       {new Date(log.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <button
-                    onClick={() => setSelectedLogJson(log)}
-                    className="h-8 px-3 bg-admin-surface hover:bg-admin-border border border-admin-border text-admin-text text-[9px] font-black uppercase tracking-wider rounded-xl active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Voir le JSON complet"
-                  >
-                    <span className="material-symbols-outlined text-sm">visibility</span>
-                    Détails
-                  </button>
+                  <Tooltip content="Voir le JSON complet" position="left">
+                    <button
+                      onClick={() => setSelectedLogJson(log)}
+                      className="h-8 px-3 bg-admin-surface hover:bg-admin-border border border-admin-border text-admin-text text-[9px] font-black uppercase tracking-wider rounded-xl active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      Détails
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             );

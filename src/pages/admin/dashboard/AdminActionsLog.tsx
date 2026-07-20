@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { Tooltip } from '../../../components/ui/Tooltip';
 
 export const AdminActionsLog: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -118,20 +119,23 @@ export const AdminActionsLog: React.FC = () => {
                           {log.action.replace(/[_.]/g, ' ')}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-xs text-admin-text-muted truncate" title={formatLogDetails(log.action, log.details)}>
-                        {formatLogDetails(log.action, log.details)}
+                      <td className="px-5 py-3 text-xs text-admin-text-muted truncate">
+                        <Tooltip content={formatLogDetails(log.action, log.details)} position="top">
+                          <span className="truncate block max-w-full">{formatLogDetails(log.action, log.details)}</span>
+                        </Tooltip>
                       </td>
                       <td className="px-5 py-3 text-[10px] text-admin-text-muted uppercase tracking-wider truncate">
                         {new Date(log.created_at).toLocaleString('fr-FR')}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={() => setSelectedLogJson(log)}
-                          className="p-1 hover:bg-admin-surface rounded text-admin-primary-light transition-colors"
-                          title="Voir le JSON complet"
-                        >
-                          <span className="material-symbols-outlined text-sm">visibility</span>
-                        </button>
+                        <Tooltip content="Voir le JSON complet" position="left">
+                          <button
+                            onClick={() => setSelectedLogJson(log)}
+                            className="p-1 hover:bg-admin-surface rounded text-admin-primary-light transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                          </button>
+                        </Tooltip>
                       </td>
                     </tr>
                   ))}
